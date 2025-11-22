@@ -1,0 +1,279 @@
+@import './tokens.css';
+
+.home-garden-card {
+  background: var(--ms-surface);
+  border-radius: 24px;
+  padding: 28px 20px;
+  border: 1px solid rgba(36, 51, 41, 0.08);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  min-height: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.home-garden-content {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+}
+
+.home-garden-left {
+  flex: 0 0 42%;
+  display: flex;
+  justify-content: center;
+}
+
+.home-garden-right {
+  flex: 0 0 60%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.home-garden-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a2b22;
+  margin-bottom: 2px;
+}
+
+.home-garden-caption {
+  font-size: 12px;
+  color: var(--ms-ink-muted);
+}
+
+.home-garden-stage {
+  font-size: 14px;
+  color: var(--ms-ink-soft);
+}
+
+.home-garden-seed-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.home-garden-message {
+  font-size: 12px;
+  color: var(--ms-ink-soft);
+}
+
+.home-seed-edit {
+  font-size: 11px;
+  border-radius: 999px;
+  border: 1px solid var(--ms-line);
+  background: #fff;
+  padding: 4px 8px;
+  cursor: pointer;
+  color: var(--ms-ink-muted);
+  line-height: 1;
+}
+
+.home-garden-gauge {
+  width: 150px;
+  height: 150px;
+  position: relative;
+}
+
+.home-garden-gauge svg {
+  width: 150px;
+  height: 150px;
+  transform: rotate(-90deg);
+}
+
+.home-garden-ring-bg {
+  stroke: #e5efe7;
+  stroke-width: 12;
+  fill: none;
+}
+
+.home-garden-ring-progress {
+  stroke: var(--ms-primary);
+  stroke-width: 12;
+  fill: none;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.4s ease;
+}
+
+.home-garden-gauge-center {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.home-garden-gauge-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -52%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.home-garden-gauge-icon img {
+  width: 58px;
+  height: 58px;
+}
+
+.home-garden-gauge-percent {
+  position: absolute;
+  left: 50%;
+  bottom: 22px;
+  transform: translateX(-50%);
+  font-size: 16px;
+  font-weight: 700;
+  color: #1c3727;
+}
+
+.home-week-card {
+  background: var(--ms-surface);
+  border-radius: 24px;
+  padding: 18px 18px 20px;
+  border: 1px solid rgba(36, 51, 41, 0.08);
+  box-shadow: var(--ms-shadow-soft);
+}
+
+.home-week-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.home-week-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a2b22;
+}
+
+.home-week-desc {
+  font-size: 12px;
+  color: var(--ms-ink-muted);
+}
+
+.home-week-range-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ms-primary-dark, #2c7768);
+}
+
+.home-week-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+  text-align: center;
+}
+
+.home-week-day-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ms-ink-soft);
+}
+
+.home-week-day-btn {
+  width: 40px;
+  height: 40px;
+  margin: 0 auto;
+  border-radius: 50%;
+  border: 1px solid var(--ms-line);
+  background: #fff;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.home-week-day-btn.has-emotion {
+  background: #f4fbf7;
+  border-color: #bfe6d1;
+}
+
+.home-week-day-btn.is-today {
+  background: #e8f6f1;
+  border: 2px solid #2c7768;
+  transform: scale(1.05);
+  box-shadow: 0 0 0 2px rgba(44, 119, 104, 0.2);
+}
+
+.home-week-day-btn.is-selected {
+  border-color: var(--ms-primary);
+  background: var(--ms-primary-soft);
+  box-shadow: 0 6px 12px rgba(29, 78, 58, 0.18);
+}
+
+.home-week-day-btn.is-empty {
+  color: var(--ms-ink-muted);
+  font-size: 14px;
+}
+
+.home-week-helper {
+  font-size: 12px;
+  color: var(--ms-ink-muted);
+  margin-top: 10px;
+}
+
+.home-modal-title {
+  font-size: 17px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.home-modal-date {
+  font-size: 12px;
+  color: var(--ms-ink-muted);
+  margin-bottom: 12px;
+}
+
+.home-modal-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #e7fff6;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+  margin-bottom: 12px;
+}
+
+.home-modal-body {
+  font-size: 13px;
+  color: var(--ms-ink-soft);
+  line-height: 1.6;
+}
+
+.home-week-detail-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.home-week-detail-actions button {
+  border-radius: 999px;
+  padding: 6px 12px;
+  border: 1px solid var(--ms-line);
+  background: #fff;
+  font-size: 12px;
+  color: var(--ms-ink-soft);
+}
+
+@media (max-width: 480px) {
+  .home-garden-content {
+    flex-direction: column;
+  }
+  .home-garden-left,
+  .home-garden-right {
+    flex: 1 1 auto;
+  }
+}
+

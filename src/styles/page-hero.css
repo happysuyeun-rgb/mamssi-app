@@ -1,0 +1,30 @@
+.page-hero {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding-bottom: 16px;
+}
+
+.page-hero-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 18px;
+  background: #e8f6f1;
+  display: grid;
+  place-items: center;
+  font-size: 26px;
+}
+
+.page-hero-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #1f2e25;
+}
+
+.page-hero-desc {
+  margin: 4px 0 0;
+  font-size: 14px;
+  color: var(--ms-ink-soft, #4d5c53);
+}
+

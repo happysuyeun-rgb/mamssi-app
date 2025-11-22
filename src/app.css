@@ -1,0 +1,17 @@
+.ms-shell{
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  background:var(--ms-color-bg);
+}
+.ms-app{
+  width:100%;
+  max-width:720px;
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  padding:16px 16px 72px;
+  position:relative;
+}
+
+

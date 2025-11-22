@@ -1,0 +1,294 @@
+/* =====================
+   Maeumssi Onboarding Styles
+   ===================== */
+.onboarding-shell {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  background:
+    radial-gradient(1400px 380px at 50% -80px, var(--mint-50, #E9FFF7), transparent 60%),
+    var(--bg, #F6FAF9);
+}
+
+.onboarding-app {
+  width: 100%;
+  max-width: 430px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 22px 18px 28px;
+}
+
+.onboarding-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.onboarding-logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #BDF3E8, #69DFC6);
+  display: grid;
+  place-items: center;
+  box-shadow: 0 6px 18px rgba(35, 184, 157, 0.35);
+  font-size: 20px;
+}
+
+.onboarding-brand-title {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.onboarding-brand-sub {
+  font-size: 11px;
+  color: var(--ink-muted, #8A94A6);
+}
+
+.onboarding-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.onboarding-panel {
+  background: var(--surface, #FFFFFF);
+  border-radius: var(--radius, 24px);
+  padding: 22px 20px;
+  box-shadow: var(--shadow, 0 14px 40px rgba(20, 78, 67, 0.16));
+  border: 1px solid var(--border, #E6EBF0);
+  min-height: 370px;
+  display: flex;
+  flex-direction: column;
+}
+
+.onboarding-panel.hidden {
+  display: none !important;
+}
+
+.onboarding-eyebrow {
+  font-size: 11px;
+  color: var(--ink-muted, #8A94A6);
+}
+
+.onboarding-panel h1 {
+  font-size: 22px;
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+  margin: 6px 0 0;
+  white-space: pre-line;
+  color: var(--ink, #0F172A);
+}
+
+.onboarding-desc {
+  font-size: 13px;
+  color: var(--ink-soft, #49566A);
+  margin-top: 8px;
+  line-height: 1.6;
+  white-space: pre-line;
+}
+
+.onboarding-hero {
+  display: grid;
+  place-items: center;
+  margin: 16px 0;
+}
+
+.onboarding-circle {
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 25% 20%, #fff 0, var(--mint-50, #E9FFF7) 42%, #D6F7EC 100%);
+  position: relative;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.onboarding-orbit {
+  position: absolute;
+  inset: 12px;
+  border-radius: 50%;
+  border: 1px dashed rgba(35, 184, 157, 0.35);
+}
+
+.onboarding-emoji {
+  font-size: 58px;
+  z-index: 1;
+}
+
+.onboarding-bar {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.onboarding-dot {
+  flex: 1;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.35);
+}
+
+.onboarding-dot.active {
+  background: linear-gradient(90deg, var(--mint-500, #39C6A5), var(--mint-600, #24B89D));
+}
+
+.onboarding-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.onboarding-tag {
+  font-size: 11px;
+  color: var(--ivy-800, #144E43);
+  background: linear-gradient(180deg, #F0FFFA, #E5FAF4);
+  border: 1px solid #CDEAE1;
+  border-radius: 999px;
+  padding: 6px 10px;
+}
+
+.onboarding-btn {
+  height: 54px;
+  border-radius: var(--radius-btn, 18px);
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.onboarding-btn-primary {
+  background: linear-gradient(180deg, var(--mint-500, #39C6A5), var(--mint-600, #24B89D));
+  color: #fff;
+  box-shadow: 0 10px 26px rgba(35, 184, 157, 0.35);
+}
+
+.onboarding-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 30px rgba(35, 184, 157, 0.4);
+}
+
+.onboarding-btn-outline {
+  background: #fff;
+  color: var(--ivy-800, #144E43);
+  border-color: #CFE7E0;
+}
+
+.onboarding-btn-outline:hover {
+  background: var(--mint-50, #E9FFF7);
+}
+
+.onboarding-btn-ghost {
+  background: none;
+  border: none;
+  color: #7B8797;
+  font-weight: 700;
+  height: auto;
+  padding: 0;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.onboarding-btn-ghost:hover {
+  color: var(--ivy-800, #144E43);
+}
+
+.onboarding-btn-full {
+  width: 92%;
+}
+
+.onboarding-btn-wide {
+  min-width: 72%;
+}
+
+.onboarding-row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.onboarding-bottom {
+  margin-top: auto;
+}
+
+.onboarding-center {
+  text-align: center;
+}
+
+.onboarding-terms {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--ink-soft, #49566A);
+  margin-top: 10px;
+}
+
+.onboarding-terms label {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.onboarding-terms input[type="checkbox"] {
+  margin-top: 2px;
+  cursor: pointer;
+}
+
+.onboarding-input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border, #E6EBF0);
+  border-radius: 16px;
+  background: #F9FAFB;
+  font-size: 16px;
+  color: var(--ink, #0F172A);
+  transition: all 0.2s;
+}
+
+.onboarding-input:focus {
+  border-color: var(--mint-500, #39C6A5);
+  outline: none;
+  background: #fff;
+  box-shadow: 0 0 0 1px rgba(35, 184, 157, 0.2);
+}
+
+.onboarding-error {
+  color: #DC2626;
+  font-size: 11px;
+  margin-top: 4px;
+  display: none;
+}
+
+.onboarding-error.show {
+  display: block;
+}
+
+/* CSS Variables for Onboarding */
+:root {
+  --mint-50: #E9FFF7;
+  --mint-100: #CFF6EC;
+  --mint-300: #7EDBC2;
+  --mint-500: #39C6A5;
+  --mint-600: #24B89D;
+  --ivy-800: #144E43;
+  --ink: #0F172A;
+  --ink-soft: #49566A;
+  --ink-muted: #8A94A6;
+  --border: #E6EBF0;
+  --surface: #FFFFFF;
+  --bg: #F6FAF9;
+  --shadow: 0 14px 40px rgba(20, 78, 67, 0.16);
+  --radius: 24px;
+  --radius-btn: 18px;
+}
+

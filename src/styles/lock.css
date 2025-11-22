@@ -1,0 +1,413 @@
+@import './tokens.css';
+
+/* 잠금 설정 페이지 */
+.lock-setting-page {
+  padding: 12px 0 96px;
+}
+
+.lock-section {
+  margin-top: 24px;
+  padding: 20px;
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid rgba(23, 39, 32, 0.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.lock-section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2e25;
+  margin: 0 0 12px;
+}
+
+.lock-section-desc {
+  font-size: 13px;
+  color: var(--ms-ink-muted);
+  margin: 0 0 16px;
+}
+
+/* 토글 스위치 */
+.lock-toggle-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.lock-toggle-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2e25;
+  margin-bottom: 4px;
+}
+
+.lock-toggle-desc {
+  font-size: 12px;
+  color: var(--ms-ink-muted);
+}
+
+.lock-switch {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.lock-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.lock-switch-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #e5e5e5;
+  transition: 0.2s;
+  border-radius: 28px;
+}
+
+.lock-switch-slider:before {
+  position: absolute;
+  content: '';
+  height: 22px;
+  width: 22px;
+  left: 3px;
+  bottom: 3px;
+  background-color: #fff;
+  transition: 0.2s;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.lock-switch input:checked + .lock-switch-slider {
+  background-color: var(--ms-primary, #2c7768);
+}
+
+.lock-switch input:checked + .lock-switch-slider:before {
+  transform: translateX(20px);
+}
+
+/* 잠금 방식 선택 */
+.lock-mode-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.lock-mode-option {
+  display: block;
+  cursor: pointer;
+}
+
+.lock-mode-option input {
+  display: none;
+}
+
+.lock-mode-content {
+  padding: 16px;
+  border-radius: 12px;
+  border: 2px solid #e5e5e5;
+  background: #fff;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.lock-mode-option input:checked + .lock-mode-content {
+  border-color: var(--ms-primary, #2c7768);
+  background: #f0f9f6;
+}
+
+.lock-mode-icon {
+  font-size: 32px;
+  flex-shrink: 0;
+}
+
+.lock-mode-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2e25;
+  margin-bottom: 2px;
+}
+
+.lock-mode-desc {
+  font-size: 12px;
+  color: var(--ms-ink-muted);
+}
+
+/* PIN 설정 */
+.lock-pin-setup {
+  margin-top: 24px;
+}
+
+.lock-pin-input-section {
+  margin-top: 24px;
+}
+
+.lock-pin-step {
+  margin-bottom: 24px;
+}
+
+.lock-pin-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2e25;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.lock-pin-dots {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.lock-pin-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid #d7e5dc;
+  background: #fff;
+  transition: all 0.2s;
+}
+
+.lock-pin-dot.filled {
+  background: var(--ms-primary, #2c7768);
+  border-color: var(--ms-primary, #2c7768);
+}
+
+.lock-pin-dot.error {
+  border-color: #ef4444;
+  animation: shake 0.3s;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+.lock-pin-hidden-input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  width: 0;
+  height: 0;
+}
+
+.lock-pin-error {
+  text-align: center;
+  color: #ef4444;
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+.lock-pin-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 32px;
+}
+
+/* 버튼 */
+.lock-btn {
+  flex: 1;
+  padding: 14px 20px;
+  border-radius: 12px;
+  border: none;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.lock-btn-primary {
+  background: var(--ms-primary, #2c7768);
+  color: #fff;
+}
+
+.lock-btn-primary:active {
+  background: #245f4a;
+}
+
+.lock-btn-secondary {
+  background: #f7f7f7;
+  color: var(--ms-ink-soft);
+}
+
+.lock-btn-secondary:active {
+  background: #e5e5e5;
+}
+
+.lock-btn-link {
+  margin-top: 12px;
+  background: transparent;
+  border: none;
+  color: var(--ms-primary, #2c7768);
+  font-size: 13px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.lock-actions {
+  margin-top: 32px;
+  display: flex;
+  gap: 12px;
+}
+
+/* 정보 박스 */
+.lock-info-box {
+  padding: 16px;
+  background: #f6fffb;
+  border-radius: 12px;
+  border: 1px solid #d7ede3;
+}
+
+.lock-info-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2e25;
+  margin-bottom: 8px;
+}
+
+.lock-info-text {
+  font-size: 12px;
+  color: var(--ms-ink-muted);
+  line-height: 1.6;
+}
+
+/* 마음을 감싸는 중 오버레이 */
+.lock-maeum-cover {
+  position: fixed;
+  inset: 0;
+  background: #fff;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lock-maeum-content {
+  text-align: center;
+}
+
+.lock-maeum-emoji {
+  font-size: 64px;
+  margin-bottom: 16px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.lock-maeum-text {
+  font-size: 16px;
+  color: var(--ms-ink-soft);
+  font-weight: 500;
+}
+
+/* 잠금 해제 화면 */
+.lock-screen {
+  position: fixed;
+  inset: 0;
+  background: #fff;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lock-screen-content {
+  text-align: center;
+  padding: 20px;
+  max-width: 320px;
+  width: 100%;
+}
+
+.lock-screen-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+}
+
+.lock-screen-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1f2e25;
+  margin-bottom: 8px;
+}
+
+.lock-screen-desc {
+  font-size: 14px;
+  color: var(--ms-ink-muted);
+  margin-bottom: 32px;
+}
+
+.lock-screen-pin .lock-pin-dots {
+  margin-bottom: 24px;
+}
+
+.lock-biometric-btn {
+  margin-top: 24px;
+  padding: 12px 20px;
+  background: transparent;
+  border: 1px solid #d7e5dc;
+  border-radius: 12px;
+  color: var(--ms-primary, #2c7768);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.lock-biometric-btn:active {
+  background: #f0f9f6;
+}
+
+.lock-pattern-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 70px);
+  gap: 14px;
+  justify-content: center;
+}
+
+.lock-pattern-node {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  border: 2px solid #d2ded6;
+  background: #fff;
+  font-size: 18px;
+  font-weight: 600;
+  color: #94a39a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: 0.2s;
+}
+
+.lock-pattern-node.active {
+  background: #dff4ea;
+  color: #21735f;
+  border-color: #21735f;
+}
+
+.lock-pattern-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.lock-pattern-actions .lock-btn {
+  flex: 1;
+}
+

@@ -1,0 +1,43 @@
+@import './tokens.css';
+
+:root {
+  --tabbar-height: 72px;
+}
+
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans KR", AppleSDGothicNeo, "Malgun Gothic", sans-serif;
+  background: var(--ms-bg);
+  color: var(--ms-ink);
+}
+
+.ms-app-shell {
+  min-height: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.ms-app {
+  width: 100%;
+  max-width: 720px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 72px;
+}
+
+/* Utility: 3-line clamp */
+.clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  /* Standard property for compatibility */
+  line-clamp: 3;
+  overflow: hidden;
+}
+
+/* End of globals */
+
+
