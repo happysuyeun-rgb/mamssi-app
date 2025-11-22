@@ -61,3 +61,4 @@ create trigger trigger_update_user_settings_updated_at
 --   on storage.objects for delete
 --   using (bucket_id = 'profile-images' AND auth.uid()::text = (storage.foldername(name))[1]);
 
+

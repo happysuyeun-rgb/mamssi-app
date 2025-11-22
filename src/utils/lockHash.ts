@@ -24,3 +24,4 @@ export async function verifyLockValue(input: number[] | string, storedHash: stri
   return inputHash === storedHash;
 }
 
+

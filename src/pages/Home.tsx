@@ -1,5 +1,5 @@
 import { useMemo, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import Layout from '@components/Layout';
 import HomeHeader from '@components/home/HomeHeader';
 import TodayRecordCTA from '@components/home/TodayRecordCTA';
@@ -11,7 +11,11 @@ import { useNotify } from '@providers/NotifyProvider';
 import { useHomeData } from '@hooks/useHomeData';
 import { useEmotions } from '@hooks/useEmotions';
 import { EMOTION_OPTIONS } from '@constants/emotions';
+import { safeStorage } from '@lib/safeStorage';
+import { diag } from '@boot/diag';
 import '@styles/home.css';
+
+const ONBOARDING_COMPLETE_KEY = 'onboardingComplete';
 
 function formatIso(date: Date): string {
   const y = date.getFullYear();
@@ -44,7 +48,8 @@ function clampPercent(value: number): number {
 
 export default function Home() {
   const [searchParams] = useSearchParams();
-  const { isGuest, session, user } = useAuth();
+  const navigate = useNavigate();
+  const { isGuest, session, user, loading: authLoading, sessionInitialized } = useAuth();
   const notify = useNotify();
   const { today, weekStats, flower, feedSummary, seedName, loading: homeDataLoading } = useHomeData(user?.id || null);
   const { emotions, loading: emotionsLoading } = useEmotions({
@@ -53,6 +58,30 @@ export default function Home() {
 
   // 게스트 모드 확인 (URL 파라미터 또는 상태)
   const guestMode = searchParams.get('guest') === '1' || isGuest;
+
+  // 온보딩 가드: 로그인하지 않았고 온보딩 미완료 시 온보딩으로 리다이렉트
+  useEffect(() => {
+    // 인증 상태가 로딩 중이거나 초기화되지 않았으면 체크하지 않음
+    if (authLoading || !sessionInitialized) {
+      return;
+    }
+
+    const isLoggedIn = !!session;
+    const hasCompletedOnboarding = safeStorage.getItem(ONBOARDING_COMPLETE_KEY) === 'true';
+
+    diag.log('Home: 온보딩 가드 체크', {
+      isLoggedIn,
+      hasCompletedOnboarding,
+      path: window.location.pathname
+    });
+
+    // 로그인하지 않았고 온보딩 미완료 → 온보딩으로 리다이렉트
+    if (!isLoggedIn && !hasCompletedOnboarding) {
+      diag.log('Home -> /onboarding', { reason: '로그인 없음 + 온보딩 미완료' });
+      navigate('/onboarding', { replace: true });
+      return;
+    }
+  }, [session, authLoading, sessionInitialized, navigate]);
 
   // 게스트 모드 배너 표시
   useEffect(() => {

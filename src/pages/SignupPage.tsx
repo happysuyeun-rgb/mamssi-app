@@ -3,20 +3,33 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@hooks/useAuth';
 import { useNotify } from '@providers/NotifyProvider';
 import { diag } from '@boot/diag';
+import { safeStorage } from '@utils/storage';
 import type { SocialProvider } from './LoginPage';
 import './SignupPage.css';
 
+const GUEST_MODE_KEY = 'isGuest';
+
 export default function SignupPage() {
   const navigate = useNavigate();
-  const { signInWithGoogle, signInWithApple, signInWithKakao } = useAuth();
+  const { signInWithGoogle, signInWithApple, signInWithKakao, isGuest } = useAuth();
   const notify = useNotify();
   const [agreeRequired, setAgreeRequired] = useState(false);
   const [agreeOptional, setAgreeOptional] = useState(false);
 
   const handleBack = () => {
     console.log('[SignupPage] 뒤로가기 클릭');
-    diag.log('SignupPage: 뒤로가기 클릭');
-    navigate(-1);
+    diag.log('SignupPage: 뒤로가기 클릭', { isGuest });
+    
+    // 게스트 상태 확인 및 유지
+    const currentGuestMode = safeStorage.getItem(GUEST_MODE_KEY) === 'true';
+    if (currentGuestMode || isGuest) {
+      // 게스트 모드가 활성화되어 있으면 게스트 상태 유지
+      safeStorage.setItem(GUEST_MODE_KEY, 'true');
+      diag.log('SignupPage: 게스트 상태 유지 후 홈으로 이동');
+    }
+    
+    // 항상 홈으로 이동 (히스토리 기반 navigate(-1) 대신)
+    navigate('/home', { replace: true });
   };
 
   const handleSocialSignup = async (provider: SocialProvider) => {
@@ -129,4 +142,5 @@ export default function SignupPage() {
     </div>
   );
 }
+
 

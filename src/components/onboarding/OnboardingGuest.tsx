@@ -129,6 +129,13 @@ export default function OnboardingGuest() {
   };
 
   const handleJoin = () => {
+    diag.log('OnboardingGuest: handleJoin 호출 (회원가입하기)');
+    // 회원가입하기 버튼 클릭 시에도 온보딩 완료 플래그 설정
+    // (회원가입 완료 후 AuthCallback에서도 설정되지만, 여기서 미리 설정하여 중간에 뒤로가기 해도 온보딩이 완료된 것으로 처리)
+    safeStorage.setItem(ONBOARDING_COMPLETE_KEY, 'true');
+    diag.log('OnboardingGuest: 회원가입하기 클릭, 온보딩 완료 플래그 저장', {
+      onboardingComplete: safeStorage.getItem(ONBOARDING_COMPLETE_KEY)
+    });
     showStep(4);
   };
 
