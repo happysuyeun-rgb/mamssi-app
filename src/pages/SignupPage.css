@@ -1,4 +1,4 @@
-/* SignupPage 스타일 - signup.html 기반 */
+/* SignupPage 스타일 - LoginPage와 동일한 구조로 통일 */
 
 .auth-shell {
   min-height: 100vh;
@@ -98,6 +98,7 @@
   white-space: pre-line;
 }
 
+/* 약관 동의 */
 .policy-wrap {
   margin-top: 8px;
   padding: 10px 4px 4px;
@@ -125,8 +126,86 @@
   user-select: none;
 }
 
-.auth-social-list {
+/* 이메일 회원가입 폼 */
+.auth-form {
   margin-top: 18px;
+}
+
+.auth-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.auth-input {
+  padding: 11px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--ms-border-soft, #dde8e3);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.auth-input:focus {
+  border-color: var(--ms-primary, #2f6f63);
+}
+
+.auth-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.auth-input-error {
+  border-color: #ef4444;
+}
+
+.auth-error {
+  font-size: 12px;
+  color: #ef4444;
+  padding: 0 4px;
+  text-align: center;
+}
+
+.auth-submit-btn {
+  padding: 11px 14px;
+  border-radius: 999px;
+  border: none;
+  font-size: 14px;
+  font-weight: 500;
+  background: var(--ms-primary, #2f6f63);
+  color: #ffffff;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.auth-submit-btn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.auth-submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 구분선 */
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0;
+  color: var(--ms-text-sub, #6b7d78);
+  font-size: 12px;
+}
+
+.auth-divider-line {
+  flex: 1;
+  height: 1px;
+  background: var(--ms-border-soft, #dde8e3);
+}
+
+/* 소셜 로그인 버튼 */
+.auth-social-list {
+  margin-top: 0;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -177,16 +256,6 @@
   color: var(--ms-text-main, #16352f);
 }
 
-.auth-btn-apple {
-  background: #000;
-  color: #fff;
-  border-color: #000;
-}
-
-.auth-btn-apple:hover:not(:disabled) {
-  background: #1a1a1a;
-}
-
 .auth-btn-kakao {
   background: #fee500;
   border-color: #fee500;
@@ -194,16 +263,6 @@
 
 .auth-btn-kakao:hover:not(:disabled) {
   background: #fdd835;
-}
-
-.auth-btn-facebook {
-  background: #1877f2;
-  color: #fff;
-  border-color: #1877f2;
-}
-
-.auth-btn-facebook:hover:not(:disabled) {
-  background: #166fe5;
 }
 
 .auth-btn-line {
@@ -255,5 +314,3 @@
     height: 96px;
   }
 }
-
-
