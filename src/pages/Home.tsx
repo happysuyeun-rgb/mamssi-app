@@ -1,5 +1,5 @@
 import { useMemo, useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import Layout from '@components/Layout';
 import HomeHeader from '@components/home/HomeHeader';
 import TodayRecordCTA from '@components/home/TodayRecordCTA';
@@ -15,7 +15,8 @@ import { safeStorage } from '@lib/safeStorage';
 import { diag } from '@boot/diag';
 import '@styles/home.css';
 
-const ONBOARDING_COMPLETE_KEY = 'onboardingComplete';
+// 로그인/가입 상태 키
+const AUTH_FLOW_KEY = 'authFlowType';
 
 function formatIso(date: Date): string {
   const y = date.getFullYear();
@@ -48,8 +49,7 @@ function clampPercent(value: number): number {
 
 export default function Home() {
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const { isGuest, session, user, loading: authLoading, sessionInitialized } = useAuth();
+  const { isGuest, session, user } = useAuth();
   const notify = useNotify();
   const { today, weekStats, flower, feedSummary, seedName, loading: homeDataLoading } = useHomeData(user?.id || null);
   const { emotions, loading: emotionsLoading } = useEmotions({
@@ -58,30 +58,6 @@ export default function Home() {
 
   // 게스트 모드 확인 (URL 파라미터 또는 상태)
   const guestMode = searchParams.get('guest') === '1' || isGuest;
-
-  // 온보딩 가드: 로그인하지 않았고 온보딩 미완료 시 온보딩으로 리다이렉트
-  useEffect(() => {
-    // 인증 상태가 로딩 중이거나 초기화되지 않았으면 체크하지 않음
-    if (authLoading || !sessionInitialized) {
-      return;
-    }
-
-    const isLoggedIn = !!session;
-    const hasCompletedOnboarding = safeStorage.getItem(ONBOARDING_COMPLETE_KEY) === 'true';
-
-    diag.log('Home: 온보딩 가드 체크', {
-      isLoggedIn,
-      hasCompletedOnboarding,
-      path: window.location.pathname
-    });
-
-    // 로그인하지 않았고 온보딩 미완료 → 온보딩으로 리다이렉트
-    if (!isLoggedIn && !hasCompletedOnboarding) {
-      diag.log('Home -> /onboarding', { reason: '로그인 없음 + 온보딩 미완료' });
-      navigate('/onboarding', { replace: true });
-      return;
-    }
-  }, [session, authLoading, sessionInitialized, navigate]);
 
   // 게스트 모드 배너 표시
   useEffect(() => {
@@ -96,6 +72,25 @@ export default function Home() {
       notify.dismissBanner('');
     }
   }, [guestMode, session, notify]);
+
+  // 로그인/가입 피드백 메시지 표시
+  useEffect(() => {
+    if (!session || !user) return;
+
+    const authFlowType = safeStorage.getItem(AUTH_FLOW_KEY);
+    if (authFlowType) {
+      diag.log('Home: 로그인/가입 피드백 표시', { authFlowType });
+      
+      if (authFlowType === 'SIGNUP') {
+        notify.success('처음 오셨네요, 씨앗을 받아볼까요? 🌱', '✨');
+      } else if (authFlowType === 'LOGIN') {
+        notify.success('다시 오셨네요! 오늘도 따뜻한 하루 되세요 🌿', '👋');
+      }
+      
+      // 메시지 표시 후 플래그 제거
+      safeStorage.removeItem(AUTH_FLOW_KEY);
+    }
+  }, [session, user, notify]);
 
   // 오늘 날짜
   const todayIso = useMemo(() => formatIso(new Date()), []);

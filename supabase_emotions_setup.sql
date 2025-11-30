@@ -50,3 +50,4 @@ create index if not exists idx_emotions_is_public on public.emotions(is_public) 
 create index if not exists idx_emotions_category_id on public.emotions(category_id) where category_id is not null;
 
 
+

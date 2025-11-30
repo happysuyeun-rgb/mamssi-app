@@ -52,19 +52,11 @@ export default function Guard({ children }: { children: React.ReactNode }) {
       onboardingComplete
     });
 
-    const atRoot = location.pathname === '/';
     const atOnboarding = location.pathname.startsWith('/onboarding');
     const atDebug = location.pathname === '/debug';
     const atAuthCallback = location.pathname.startsWith('/auth/callback');
     const atLogin = location.pathname === '/login';
     const atSignup = location.pathname === '/signup';
-
-    // "/" 경로는 RootRedirect가 처리하므로 Guard에서 예외 처리
-    if (atRoot) {
-      diag.log('Guard: 루트 경로, RootRedirect가 처리하도록 가드 우회', { path: location.pathname });
-      redirectedRef.current = null;
-      return;
-    }
 
     // /debug, /auth/callback, /login, /signup는 항상 허용 (가드 우회)
     if (atDebug || atAuthCallback || atLogin || atSignup) {
@@ -82,13 +74,11 @@ export default function Guard({ children }: { children: React.ReactNode }) {
       onboardingComplete
     });
 
-    // [핵심 로직] 최초 진입 시 온보딩 체크
-    // 로그인하지 않은 상태 AND 온보딩 미완료 → 온보딩으로
-    // 단, "/" 경로는 RootRedirect가 처리하므로 제외
-    if (!session && !onboardingComplete && !atOnboarding && !atRoot) {
+    // 온보딩 미완료 + 로그인 안됨 + 게스트 아님 → 온보딩으로
+    if (!session && !guestMode && !atOnboarding && !onboardingComplete) {
       if (redirectedRef.current !== '/onboarding') {
         diag.log('GUARD -> to /onboarding', { 
-          reason: '최초 사용자: 로그인 없음 + 온보딩 미완료' 
+          reason: '온보딩 미완료 + 로그인 없음 + 게스트 아님' 
         });
         redirectedRef.current = '/onboarding';
         navigate('/onboarding', { replace: true });

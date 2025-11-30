@@ -62,3 +62,4 @@ create trigger trigger_update_user_settings_updated_at
 --   using (bucket_id = 'profile-images' AND auth.uid()::text = (storage.foldername(name))[1]);
 
 
+

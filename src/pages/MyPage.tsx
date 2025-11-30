@@ -33,7 +33,7 @@ const PATTERN_GRID = [
 
 export default function MyPage() {
   const navigate = useNavigate();
-  const { user, isGuest, session } = useAuth();
+  const { user, isGuest, session, signOut } = useAuth();
   const notify = useNotify();
   const { requireAuthForAction } = useActionGuard();
   const { emotions, loading: emotionsLoading, fetchEmotions } = useEmotions({
@@ -541,6 +541,112 @@ export default function MyPage() {
           </div>
         </section>
 
+        {/* 계정 정보 섹션 */}
+        {user && session && (
+          <section className="mypage-profile" style={{ marginTop: 20 }}>
+            <div style={{ 
+              fontSize: 15, 
+              fontWeight: 700, 
+              marginBottom: 16,
+              color: 'var(--ms-text-main)'
+            }}>
+              계정 정보
+            </div>
+
+            {/* 내 프로필 */}
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ 
+                fontSize: 13, 
+                fontWeight: 600, 
+                marginBottom: 10,
+                color: 'var(--ms-ink-soft)'
+              }}>
+                내 프로필
+              </div>
+              <div style={{ display: 'grid', gap: 8, fontSize: 13 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: 'var(--ms-ink-muted)' }}>사용자 ID</span>
+                  <span style={{ color: 'var(--ms-ink-soft)', fontFamily: 'monospace', fontSize: 12 }}>
+                    {user.id.substring(0, 8)}...
+                  </span>
+                </div>
+                {dbSettings?.nickname && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ color: 'var(--ms-ink-muted)' }}>닉네임</span>
+                    <span style={{ color: 'var(--ms-ink-soft)' }}>{dbSettings.nickname}</span>
+                  </div>
+                )}
+                {dbSettings?.birthdate && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ color: 'var(--ms-ink-muted)' }}>생일</span>
+                    <span style={{ color: 'var(--ms-ink-soft)' }}>{dbSettings.birthdate}</span>
+                  </div>
+                )}
+                {dbSettings?.gender && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ color: 'var(--ms-ink-muted)' }}>성별</span>
+                    <span style={{ color: 'var(--ms-ink-soft)' }}>{dbSettings.gender}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* 로그인 정보 */}
+            <div>
+              <div style={{ 
+                fontSize: 13, 
+                fontWeight: 600, 
+                marginBottom: 10,
+                color: 'var(--ms-ink-soft)'
+              }}>
+                로그인 정보
+              </div>
+              <div style={{ display: 'grid', gap: 8, fontSize: 13 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: 'var(--ms-ink-muted)' }}>소셜 제공자</span>
+                  <span style={{ color: 'var(--ms-ink-soft)' }}>
+                    {(() => {
+                      const provider = session.user.app_metadata?.provider;
+                      const providerMap: Record<string, string> = {
+                        google: 'Google',
+                        apple: 'Apple',
+                        kakao: 'Kakao',
+                        facebook: 'Facebook',
+                        line: 'LINE'
+                      };
+                      return providerMap[provider || ''] || provider || '알 수 없음';
+                    })()}
+                  </span>
+                </div>
+                {user.email && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ color: 'var(--ms-ink-muted)' }}>이메일</span>
+                    <span style={{ color: 'var(--ms-ink-soft)', fontSize: 12 }}>{user.email}</span>
+                  </div>
+                )}
+                <div style={{ marginTop: 8 }}>
+                  <button
+                    onClick={() => notify.info('소셜 계정 관리는 준비 중이에요.', 'ℹ️')}
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px',
+                      borderRadius: 8,
+                      border: '1px solid var(--ms-line)',
+                      background: '#fff',
+                      color: 'var(--ms-ink-soft)',
+                      fontSize: 12,
+                      fontWeight: 500,
+                      cursor: 'pointer'
+                    }}
+                  >
+                    소셜 계정 관리
+                  </button>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* 설정 카드 리스트 */}
         <div className="card sub" onClick={() => setMProfile(true)}>
           <div>
@@ -575,20 +681,32 @@ export default function MyPage() {
           <div className="chev">›</div>
         </div>
 
-        <div className="card danger" onClick={() => {
-          if (confirm('정말 탈퇴하실까요? 마음씨에 쌓인 데이터가 모두 삭제돼요.')) {
-            localStorage.clear();
-            notify.success('계정이 초기화되었습니다', '✅');
-          }
-        }}>
-          <div className="tt" style={{ color: '#ef4444' }}>회원탈퇴</div>
-          <div className="chev" style={{ borderColor: '#fecaca', background: '#fff5f5' }}>✖</div>
-        </div>
+        {/* 로그아웃 버튼 (로그인 상태에서만 표시) */}
+        {user && session && (
+          <div className="card" onClick={async () => {
+            if (!confirm('정말 로그아웃하시겠어요?')) return;
+            try {
+              await signOut();
+              navigate('/login', { replace: true });
+            } catch (error) {
+              console.error('로그아웃 실패:', error);
+              notify.error('로그아웃에 실패했어요. 잠시 후 다시 시도해주세요.', '❌');
+            }
+          }}>
+            <div className="tt">로그아웃</div>
+            <div className="chev">↪</div>
+          </div>
+        )}
 
-        <div className="card" onClick={() => notify.info('로그아웃 되었습니다', '👋')}>
-          <div className="tt">로그아웃</div>
-          <div className="chev">↪</div>
-        </div>
+        {/* 회원탈퇴 버튼 (로그인 상태에서만 표시) */}
+        {user && session && (
+          <div className="card danger" onClick={() => {
+            navigate('/delete-account');
+          }}>
+            <div className="tt" style={{ color: '#ef4444' }}>회원탈퇴</div>
+            <div className="chev" style={{ borderColor: '#fecaca', background: '#fff5f5' }}>✖</div>
+          </div>
+        )}
       </div>
 
       {/* 프로필 설정 모달 */}

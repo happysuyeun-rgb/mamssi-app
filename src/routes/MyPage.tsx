@@ -1,120 +1,187 @@
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@hooks/useAuth';
+import { useNotify } from '@providers/NotifyProvider';
+import { useSettings } from '@hooks/useSettings';
+import SimpleCard from '@components/cards/SimpleCard';
+import { supabase } from '@lib/supabaseClient';
+import { diag } from '@boot/diag';
+
 export default function MyPage() {
+  const navigate = useNavigate();
+  const { user, session, signOut } = useAuth();
+  const notify = useNotify();
+  const { settings: dbSettings } = useSettings(user?.id || null);
+
+  // 소셜 제공자 이름 변환
+  const getProviderName = (provider?: string): string => {
+    if (!provider) return '알 수 없음';
+    const providerMap: Record<string, string> = {
+      google: 'Google',
+      apple: 'Apple',
+      kakao: 'Kakao',
+      facebook: 'Facebook',
+      line: 'LINE'
+    };
+    return providerMap[provider] || provider;
+  };
+
+  // 로그아웃 처리
+  const handleSignOut = async () => {
+    if (!confirm('정말 로그아웃하시겠어요?')) return;
+
+    try {
+      diag.log('MyPage: 로그아웃 시작');
+      await signOut();
+      diag.log('MyPage: 로그아웃 완료, /login으로 이동');
+      navigate('/login', { replace: true });
+    } catch (error) {
+      diag.err('MyPage: 로그아웃 실패', error);
+      notify.error('로그아웃에 실패했어요. 잠시 후 다시 시도해주세요.', '❌');
+    }
+  };
+
+  // 소셜 계정 관리 (placeholder)
+  const handleSocialAccountManage = () => {
+    notify.info('소셜 계정 관리는 준비 중이에요.', 'ℹ️');
+  };
+
+  // 회원탈퇴 페이지로 이동
+  const handleDeleteAccount = () => {
+    navigate('/delete-account');
+  };
+
+  // 로그인 상태 확인
+  const isLoggedIn = !!user && !!session;
+
   return (
-    <section style={{ display: 'grid', gap: 10 }}>
-      <div style={{ display: 'flex', gap: 14, alignItems: 'center', margin: '4px 0 8px' }}>
+    <section style={{ display: 'grid', gap: 16 }}>
+      {/* 계정 정보 섹션 */}
+      {isLoggedIn && (
         <div style={{
-          width: 84, height: 84, borderRadius: '50%', background: 'radial-gradient(125% 130% at 50% 0%,#ffffff,#e3edf0)',
-          border: '1px solid var(--ms-line)', display: 'grid', placeItems: 'center', boxShadow: 'var(--ms-shadow-soft)'
+          background: '#fff',
+          border: '1px solid var(--ms-line)',
+          borderRadius: 16,
+          padding: '18px 16px',
+          boxShadow: 'var(--ms-shadow-soft)'
         }}>
-          <div style={{ fontSize: 46 }}>🙂</div>
-        </div>
-        <div style={{ flex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <div style={{ fontWeight: 800, fontSize: 20, letterSpacing: '-0.03em' }}>수연</div>
-            <button style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 16, color: 'var(--ms-ink-muted)' }}>✏️</button>
+          <div style={{ 
+            fontSize: 15, 
+            fontWeight: 700, 
+            marginBottom: 16,
+            color: 'var(--ms-text-main)'
+          }}>
+            계정 정보
           </div>
-          <div style={{ color: 'var(--ms-ink-soft)', fontSize: 13 }}>MBTI ENFJ</div>
-          <div style={{ display: 'flex', gap: 8, marginTop: 9, flexWrap: 'wrap' }}>
-            {[
-              { label: '기록', value: 8, emoji: '📝' },
-              { label: '공감', value: 4, emoji: '💧' },
-              { label: '개화', value: 2, emoji: '🌸' }
-            ].map((b) => (
-              <div key={b.label} style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 10px',
-                borderRadius: 999, background: '#fff', boxShadow: 'var(--ms-shadow-soft)',
-                border: '1px solid var(--ms-line)', color: 'var(--ms-ink-soft)', fontWeight: 600, fontSize: 12
-              }}>
-                <span style={{ fontSize: 14 }}>{b.emoji}</span>{b.label} <b>{b.value}</b>
+
+          {/* 내 프로필 */}
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ 
+              fontSize: 13, 
+              fontWeight: 600, 
+              marginBottom: 10,
+              color: 'var(--ms-ink-soft)'
+            }}>
+              내 프로필
+            </div>
+            <div style={{ display: 'grid', gap: 8, fontSize: 13 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--ms-ink-muted)' }}>사용자 ID</span>
+                <span style={{ color: 'var(--ms-ink-soft)', fontFamily: 'monospace', fontSize: 12 }}>
+                  {user.id.substring(0, 8)}...
+                </span>
               </div>
-            ))}
+              {dbSettings?.nickname && (
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: 'var(--ms-ink-muted)' }}>닉네임</span>
+                  <span style={{ color: 'var(--ms-ink-soft)' }}>{dbSettings.nickname}</span>
+                </div>
+              )}
+              {dbSettings?.birthdate && (
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: 'var(--ms-ink-muted)' }}>생일</span>
+                  <span style={{ color: 'var(--ms-ink-soft)' }}>{dbSettings.birthdate}</span>
+                </div>
+              )}
+              {dbSettings?.gender && (
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: 'var(--ms-ink-muted)' }}>성별</span>
+                  <span style={{ color: 'var(--ms-ink-soft)' }}>{dbSettings.gender}</span>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      </div>
 
-      {[
-        { title: '프로필 설정', sub: '닉네임, MBTI, 프로필 사진 · 기본 이모티콘 설정' },
-        { title: '알림 설정' },
-        { title: '감정꽃 앨범' },
-        { title: '감정기록 모아보기' },
-        { title: '화면 잠금' },
-        { title: '고객 문의' }
-      ].map((c) => (
-        <div key={c.title} style={{
-          background: '#fff', border: '1px solid var(--ms-line)', borderRadius: 16,
-          padding: '14px 16px', boxShadow: 'var(--ms-shadow-soft)', display: 'flex',
-          justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer'
-        }}>
+          {/* 로그인 정보 */}
           <div>
-            <div style={{ fontWeight: 700, letterSpacing: '-0.01em' }}>{c.title}</div>
-            {c.sub && <div style={{ color: 'var(--ms-ink-muted)', marginTop: 5, fontSize: 12 }}>{c.sub}</div>}
+            <div style={{ 
+              fontSize: 13, 
+              fontWeight: 600, 
+              marginBottom: 10,
+              color: 'var(--ms-ink-soft)'
+            }}>
+              로그인 정보
+            </div>
+            <div style={{ display: 'grid', gap: 8, fontSize: 13 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--ms-ink-muted)' }}>소셜 제공자</span>
+                <span style={{ color: 'var(--ms-ink-soft)' }}>
+                  {getProviderName(session?.user.app_metadata?.provider)}
+                </span>
+              </div>
+              {user.email && (
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: 'var(--ms-ink-muted)' }}>이메일</span>
+                  <span style={{ color: 'var(--ms-ink-soft)', fontSize: 12 }}>{user.email}</span>
+                </div>
+              )}
+              <div style={{ marginTop: 8 }}>
+                <button
+                  onClick={handleSocialAccountManage}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    borderRadius: 8,
+                    border: '1px solid var(--ms-line)',
+                    background: '#fff',
+                    color: 'var(--ms-ink-soft)',
+                    fontSize: 12,
+                    fontWeight: 500,
+                    cursor: 'pointer'
+                  }}
+                >
+                  소셜 계정 관리
+                </button>
+              </div>
+            </div>
           </div>
-          <div style={{
-            width: 20, height: 20, borderRadius: 7, background: '#f4f6f8', display: 'grid', placeItems: 'center',
-            border: '1px solid var(--ms-line)', fontSize: 12
-          }}>›</div>
         </div>
-      ))}
+      )}
 
-      <div style={{
-        background: '#fff', border: '1px solid var(--ms-line)', borderRadius: 16,
-        padding: '14px 16px', boxShadow: 'var(--ms-shadow-soft)', display: 'flex',
-        justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer'
-      }}>
-        <div style={{ color: '#ef4444', fontWeight: 700 }}>회원탈퇴</div>
-        <div style={{
-          width: 20, height: 20, borderRadius: 7, background: '#fff5f5', display: 'grid', placeItems: 'center',
-          border: '1px solid #fecaca', fontSize: 12
-        }}>✖</div>
-      </div>
-      <div style={{
-        background: '#fff', border: '1px solid var(--ms-line)', borderRadius: 16,
-        padding: '14px 16px', boxShadow: 'var(--ms-shadow-soft)', display: 'flex',
-        justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer'
-      }}>
-        <div style={{ fontWeight: 700 }}>로그아웃</div>
-        <div style={{
-          width: 20, height: 20, borderRadius: 7, background: '#f4f6f8', display: 'grid', placeItems: 'center',
-          border: '1px solid var(--ms-line)', fontSize: 12
-        }}>↪</div>
-      </div>
+      {/* 설정 메뉴 */}
+      <SimpleCard title="프로필 설정" description="닉네임, MBTI, 프로필 사진 · 기본 이모티콘 설정" />
+      <SimpleCard title="알림 설정" />
+      <SimpleCard title="감정꽃 앨범" />
+      <SimpleCard title="감정기록 모아보기" />
+      <SimpleCard title="화면 잠금" />
+
+      {/* 로그아웃 버튼 */}
+      {isLoggedIn && (
+        <SimpleCard 
+          title="로그아웃" 
+          onClick={handleSignOut}
+        />
+      )}
+
+      {/* 회원탈퇴 버튼 (로그인 상태에서만 표시) */}
+      {isLoggedIn && (
+        <SimpleCard 
+          title="회원탈퇴" 
+          onClick={handleDeleteAccount}
+        />
+      )}
     </section>
   );
 }
 
-import SimpleCard from '@components/cards/SimpleCard';
-import ProfileEditor from '@components/mypage/ProfileEditor';
-import AlertSettings from '@components/mypage/AlertSettings';
-import LockSettings from '@components/mypage/LockSettings';
-import AlbumGrid from '@components/mypage/AlbumGrid';
-import FlowerDetail from '@components/mypage/FlowerDetail';
-import ExportPanel from '@components/mypage/ExportPanel';
-import { useState } from 'react';
-import toast from '@utils/toast';
-
-export default function MyPage() {
-  const [open, setOpen] = useState<null | 'profile' | 'alert' | 'lock' | 'album' | 'flower' | 'export'>(null);
-
-  return (
-    <>
-      <div className="ms-header-title">마이프로필</div>
-      <div className="ms-header-sub">프로필과 설정을 관리해요</div>
-
-      <SimpleCard title="프로필 설정" onClick={() => setOpen('profile')} />
-      <SimpleCard title="알림 설정" onClick={() => setOpen('alert')} />
-      <SimpleCard title="감정꽃 앨범" onClick={() => setOpen('album')} />
-      <SimpleCard title="감정기록 모아보기" onClick={() => setOpen('export')} />
-      <SimpleCard title="화면 잠금" onClick={() => setOpen('lock')} />
-      <SimpleCard title="로그아웃" onClick={() => toast('로그아웃 되었습니다')} />
-
-      <ProfileEditor open={open === 'profile'} onClose={() => setOpen(null)} />
-      <AlertSettings open={open === 'alert'} onClose={() => setOpen(null)} />
-      <LockSettings open={open === 'lock'} onClose={() => setOpen(null)} />
-      <AlbumGrid open={open === 'album'} onClose={() => setOpen(null)} onOpenFlower={() => setOpen('flower')} />
-      <FlowerDetail open={open === 'flower'} onClose={() => setOpen(null)} />
-      <ExportPanel open={open === 'export'} onClose={() => setOpen(null)} />
-    </>
-  );
-}
 
 

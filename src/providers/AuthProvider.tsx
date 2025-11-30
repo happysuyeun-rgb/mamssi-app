@@ -11,8 +11,6 @@ type AuthContextType = {
   loading: boolean;
   sessionInitialized: boolean; // 세션 초기화 완료 여부
   isGuest: boolean;
-  signUp: (params: { email: string; password: string; nickname?: string }) => Promise<{ error: string | null }>;
-  signIn: (params: { email: string; password: string }) => Promise<{ error: string | null }>;
   signInWithGoogle: () => Promise<void>;
   signInWithApple: () => Promise<void>;
   signInWithKakao: () => Promise<void>;
@@ -83,42 +81,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // 로그인 성공 시 게스트 모드 해제
         safeStorage.removeItem(GUEST_MODE_KEY);
         setIsGuest(false);
-        
-        // 이메일 회원가입/로그인 성공 시 onboardingComplete 설정
-        // (이미 설정되어 있지 않은 경우에만)
-        const currentOnboardingComplete = safeStorage.getItem(ONBOARDING_COMPLETE_KEY);
-        if (currentOnboardingComplete !== 'true') {
-          safeStorage.setItem(ONBOARDING_COMPLETE_KEY, 'true');
-          diag.log('AuthProvider: 로그인 성공, onboardingComplete 설정');
-        }
-
         notify.success('반가워요! 마음,씨 정원으로 이동합니다 🌿');
 
-        // users 테이블 확인 (OAuth 로그인 시 프로필이 없을 수 있음)
+        // 프로필 확인 및 생성
         try {
-          const { data: userProfile, error: userError } = await supabase
-            .from('users')
+          const { data: profile, error } = await supabase
+            .from('profiles')
             .select('*')
             .eq('id', session.user.id)
             .single();
 
-          if (userError && userError.code === 'PGRST116') {
-            // users 테이블에 프로필이 없으면 생성 (OAuth 로그인 시)
-            diag.log('AuthProvider: users 테이블에 프로필 생성');
-            const { error: insertError } = await supabase.from('users').insert({
+          if (error && error.code === 'PGRST116') {
+            // 프로필이 없으면 생성
+            const onboardingComplete = safeStorage.getItem(ONBOARDING_COMPLETE_KEY) === 'true';
+            diag.log('AuthProvider: 프로필 생성', { onboardingComplete });
+            const { error: insertError } = await supabase.from('profiles').insert({
               id: session.user.id,
-              email: session.user.email,
-              nickname: null
+              onboarding_complete: onboardingComplete
             });
 
             if (insertError) {
-              console.error('users 테이블 insert 실패:', insertError);
-              diag.err('users 테이블 insert 실패:', insertError);
+              diag.err('프로필 생성 실패:', insertError);
+            }
+          } else if (profile && !profile.onboarding_complete) {
+            // 온보딩 완료 상태 동기화
+            const onboardingComplete = safeStorage.getItem(ONBOARDING_COMPLETE_KEY) === 'true';
+            if (onboardingComplete) {
+              diag.log('AuthProvider: 온보딩 완료 상태 동기화');
+              await supabase
+                .from('profiles')
+                .update({ onboarding_complete: true })
+                .eq('id', session.user.id);
             }
           }
         } catch (err) {
-          console.error('users 테이블 확인 중 오류:', err);
-          diag.err('users 테이블 확인 중 오류:', err);
+          diag.err('프로필 확인 중 오류:', err);
         }
       } else if (event === 'SIGNED_OUT') {
         diag.log('AuthProvider: SIGNED_OUT');
@@ -178,96 +175,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     notify.info('카카오 로그인은 준비 중이에요. 곧 만나요!', 'ℹ️');
   };
 
-  const signUp = async (params: { email: string; password: string; nickname?: string }): Promise<{ error: string | null }> => {
-    try {
-      const { email, password, nickname } = params;
-      diag.log('AuthProvider: signUp 시작', { email, hasNickname: !!nickname });
-      
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: { nickname },
-          emailRedirectTo: `${window.location.origin}/auth/callback`
-        }
-      });
-
-      if (error) {
-        console.error('회원가입 실패:', error);
-        diag.err('AuthProvider: signUp 실패', error);
-        return { error: error.message || '회원가입에 실패했어요.' };
-      }
-
-      if (data.user) {
-        diag.log('AuthProvider: signUp 성공', { userId: data.user.id });
-        
-        // 회원가입 성공 시 public.users 테이블에 프로필 생성
-        try {
-          const { error: userError } = await supabase.from('users').insert({
-            id: data.user.id,
-            email: data.user.email,
-            nickname: nickname || null
-          });
-
-          if (userError) {
-            console.error('users 테이블 insert 실패:', userError);
-            diag.err('AuthProvider: users 테이블 insert 실패', userError);
-            // users 테이블 insert 실패해도 Auth는 성공했으므로 에러는 반환하지 않음
-            // (나중에 프로필 수정으로 보완 가능)
-          } else {
-            diag.log('AuthProvider: users 테이블 insert 성공');
-          }
-        } catch (err) {
-          console.error('users 테이블 insert 중 오류:', err);
-          diag.err('AuthProvider: users 테이블 insert 중 오류', err);
-        }
-      }
-
-      return { error: null };
-    } catch (error) {
-      const authError = error as AuthError;
-      console.error('회원가입 예외:', authError);
-      diag.err('AuthProvider: signUp 예외', authError);
-      return { error: authError.message || '회원가입에 실패했어요.' };
-    }
-  };
-
-  const signIn = async (params: { email: string; password: string }): Promise<{ error: string | null }> => {
-    try {
-      const { email, password } = params;
-      diag.log('AuthProvider: signIn 시작', { email });
-      
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-
-      if (error) {
-        console.error('로그인 실패:', error);
-        diag.err('AuthProvider: signIn 실패', error);
-        return { error: error.message || '로그인에 실패했어요.' };
-      }
-
-      diag.log('AuthProvider: signIn 성공');
-      return { error: null };
-    } catch (error) {
-      const authError = error as AuthError;
-      console.error('로그인 예외:', authError);
-      diag.err('AuthProvider: signIn 예외', authError);
-      return { error: authError.message || '로그인에 실패했어요.' };
-    }
-  };
-
   const signOut = async () => {
     try {
+      diag.log('AuthProvider: signOut 호출');
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
 
       safeStorage.removeItem(GUEST_MODE_KEY);
       setIsGuest(false);
+      setUser(null);
+      setSession(null);
+      diag.log('AuthProvider: 로그아웃 완료');
       notify.info('로그아웃되었어요.', '👋');
     } catch (error) {
       const authError = error as AuthError;
+      diag.err('AuthProvider: 로그아웃 실패', authError);
       console.error('로그아웃 실패:', authError);
       notify.error('로그아웃에 실패했어요. 잠시 후 다시 시도해주세요.', '❌');
     }
@@ -293,8 +215,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loading,
         sessionInitialized,
         isGuest,
-        signUp,
-        signIn,
         signInWithGoogle,
         signInWithApple,
         signInWithKakao,

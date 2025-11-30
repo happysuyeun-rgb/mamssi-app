@@ -9,7 +9,7 @@ import AuthCallback from '@pages/AuthCallback';
 import Debug from '@pages/Debug';
 import LoginPage from '@pages/LoginPage';
 import SignupPage from '@pages/SignupPage';
-import RootRedirect from '@pages/RootRedirect';
+import DeleteAccountPage from '@pages/DeleteAccountPage';
 import LockScreen from '@components/LockScreen';
 import ToastHost from '@components/feedback/ToastHost';
 import OnboardingGuest from '@components/onboarding/OnboardingGuest';
@@ -78,25 +78,19 @@ function AppRoutes() {
   return (
     <Guard>
       <Routes>
-        {/* 특수 경로들 (가드 우회) */}
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/debug" element={<Debug />} />
+        <Route path="/onboarding" element={<OnboardingGuest />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
-        
-        {/* 최초 진입은 무조건 RootRedirect (index 라우트 명시) */}
-        <Route index element={<RootRedirect />} />
-        
-        {/* 실제 화면 라우트들 */}
-        <Route path="/onboarding" element={<OnboardingGuest />} />
+        <Route path="/delete-account" element={<DeleteAccountPage />} />
+        <Route path="/" element={<Home />} />
         <Route path="/home" element={<Home />} />
         <Route path="/record" element={<Record />} />
         <Route path="/forest" element={<Forest />} />
         <Route path="/forest/my-posts" element={<Forest mode="mine" />} />
         <Route path="/forest/:postId" element={<ForestDetail />} />
         <Route path="/mypage" element={<MyPage />} />
-        
-        {/* 404: 루트로 리다이렉트 (RootRedirect가 처리) */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <ToastHost />

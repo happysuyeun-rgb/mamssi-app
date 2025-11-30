@@ -160,3 +160,4 @@ create trigger sync_community_post_trigger
   for each row execute function sync_community_post_from_emotion();
 
 
+
