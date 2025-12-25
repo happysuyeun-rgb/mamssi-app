@@ -1,4 +1,4 @@
-import { useMemo, useEffect } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Layout from '@components/Layout';
 import HomeHeader from '@components/home/HomeHeader';
@@ -52,9 +52,11 @@ export default function Home() {
   const { isGuest, session, user } = useAuth();
   const notify = useNotify();
   const { today, weekStats, flower, feedSummary, seedName, loading: homeDataLoading } = useHomeData(user?.id || null);
-  const { emotions, loading: emotionsLoading } = useEmotions({
+  const { emotions, loading: emotionsLoading, hasTodayEmotion, fetchEmotions } = useEmotions({
     userId: user?.id || null
   });
+  const [todayHasEmotion, setTodayHasEmotion] = useState<boolean>(false);
+  const [checkingToday, setCheckingToday] = useState<boolean>(false);
 
   // 게스트 모드 확인 (URL 파라미터 또는 상태)
   const guestMode = searchParams.get('guest') === '1' || isGuest;
@@ -183,11 +185,50 @@ export default function Home() {
     };
   }, [emotions, user, guestMode, emotionsLoading]);
 
-  // 오늘 기록 여부
+  // 오늘 기록 여부 체크 (hasTodayEmotion 사용)
+  useEffect(() => {
+    if (guestMode || !user || checkingToday) {
+      setTodayHasEmotion(false);
+      return;
+    }
+
+    const checkToday = async () => {
+      setCheckingToday(true);
+      try {
+        const hasEmotion = await hasTodayEmotion();
+        setTodayHasEmotion(hasEmotion);
+      } catch (err) {
+        console.error('오늘 기록 체크 실패:', err);
+        setTodayHasEmotion(false);
+      } finally {
+        setCheckingToday(false);
+      }
+    };
+
+    checkToday();
+  }, [user, guestMode, hasTodayEmotion, checkingToday]);
+
+  // emotions가 변경되면 오늘 기록 여부 다시 체크 (debounce)
+  useEffect(() => {
+    if (guestMode || !user || checkingToday) return;
+    
+    const timer = setTimeout(async () => {
+      try {
+        const hasEmotion = await hasTodayEmotion();
+        setTodayHasEmotion(hasEmotion);
+      } catch (err) {
+        console.error('오늘 기록 체크 실패:', err);
+      }
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(timer);
+  }, [emotions, user, guestMode, hasTodayEmotion, checkingToday]);
+
+  // 오늘 기록 여부 (hasTodayEmotion 결과 사용)
   const todayLogged = useMemo(() => {
     if (guestMode || !user) return false;
-    return !!today;
-  }, [today, user, guestMode]);
+    return todayHasEmotion;
+  }, [todayHasEmotion, user, guestMode]);
 
   // 공감숲 피드 요약
   const feedCount = useMemo(() => {

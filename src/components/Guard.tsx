@@ -16,7 +16,7 @@ const GUEST_MODE_KEY = 'isGuest';
 export default function Guard({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { session, loading, sessionInitialized, isGuest } = useAuth();
+  const { session, loading, sessionInitialized, isGuest, userProfile } = useAuth();
   const redirectedRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -41,15 +41,26 @@ export default function Guard({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    const onboardingComplete = safeStorage.getItem(ONBOARDING_COMPLETE_KEY) === 'true';
+    // 로그인 사용자의 경우 DB의 onboarding_completed 사용
+    // 게스트 모드의 경우 localStorage 사용
     const guestMode = safeStorage.getItem(GUEST_MODE_KEY) === 'true';
+    const onboardingComplete = session && userProfile
+      ? userProfile.onboarding_completed
+      : guestMode
+      ? safeStorage.getItem(ONBOARDING_COMPLETE_KEY) === 'true'
+      : false;
+
+    // is_deleted 체크
+    const isDeleted = userProfile?.is_deleted === true;
 
     diag.log('Guard: 상태 확인', {
       path: location.pathname,
       hasSession: !!session,
       isGuest,
       guestMode,
-      onboardingComplete
+      onboardingComplete,
+      isDeleted,
+      userProfile
     });
 
     const atOnboarding = location.pathname.startsWith('/onboarding');
@@ -65,6 +76,19 @@ export default function Guard({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    // is_deleted=true인 경우: 기능 접근 막고 복구/온보딩으로 유도
+    // (AuthCallback에서 이미 복구 처리하지만, 추가 안전장치)
+    if (session && isDeleted && !atOnboarding) {
+      if (redirectedRef.current !== '/onboarding') {
+        diag.log('GUARD -> to /onboarding', { 
+          reason: '탈퇴된 계정, 온보딩으로 이동' 
+        });
+        redirectedRef.current = '/onboarding';
+        navigate('/onboarding?step=5', { replace: true });
+      }
+      return;
+    }
+
     // 결정표 기반 리다이렉트
     diag.log('Guard: 결정표 검사 시작', {
       atOnboarding,
@@ -73,6 +97,18 @@ export default function Guard({ children }: { children: React.ReactNode }) {
       guestMode,
       onboardingComplete
     });
+
+    // 로그인 상태인데 onboarding_completed=false면 /home이 아니라 /onboarding으로 리다이렉트
+    if (session && !onboardingComplete && !atOnboarding) {
+      if (redirectedRef.current !== '/onboarding') {
+        diag.log('GUARD -> to /onboarding', { 
+          reason: '로그인 상태 + 온보딩 미완료' 
+        });
+        redirectedRef.current = '/onboarding';
+        navigate('/onboarding?step=5', { replace: true });
+      }
+      return;
+    }
 
     // 온보딩 미완료 + 로그인 안됨 + 게스트 아님 → 온보딩으로
     if (!session && !guestMode && !atOnboarding && !onboardingComplete) {
@@ -86,6 +122,7 @@ export default function Guard({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    // onboarding_completed=true면 /home으로 이동
     // 로그인/게스트 + 온보딩 완료 + 온보딩 화면 → 홈으로
     // 단, step 파라미터가 있으면 회원가입을 위해 온보딩 페이지 접근 허용
     const hasStepParam = new URLSearchParams(location.search).get('step') !== null;
@@ -130,7 +167,7 @@ export default function Guard({ children }: { children: React.ReactNode }) {
     // 그 외는 허용
     diag.log('Guard: 경로 허용', { path: location.pathname });
     redirectedRef.current = null;
-  }, [location.pathname, navigate, session, sessionInitialized, loading, isGuest]);
+  }, [location.pathname, navigate, session, sessionInitialized, loading, isGuest, userProfile]);
 
   // loading=true일 때는 절대 라우팅 금지, 스플래시 표시
   if (loading) {

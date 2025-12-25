@@ -45,7 +45,7 @@ export default function AuthCallback() {
         diag.log('AuthCallback: users 테이블 조회 시작');
         const { data: existingUser, error: userError } = await supabase
           .from('users')
-          .select('id, onboarding_status')
+          .select('id, onboarding_completed, is_deleted, deleted_at')
           .eq('id', userId)
           .single();
 
@@ -57,51 +57,86 @@ export default function AuthCallback() {
         }
 
         if (existingUser) {
-          // 기존 유저: 로그인으로 판단
+          // 기존 유저 존재
+          const isDeleted = existingUser.is_deleted === true;
+          const onboardingCompleted = existingUser.onboarding_completed === true;
+
+          if (isDeleted) {
+            // 탈퇴 후 재가입 사용자: 계정 재활성화
+            diag.log('AuthCallback: 탈퇴 후 재가입 사용자 확인, 계정 재활성화', { 
+              userId,
+              deletedAt: existingUser.deleted_at
+            });
+            
+            safeStorage.setItem(AUTH_FLOW_KEY, 'SIGNUP');
+            
+            // 계정 재활성화: is_deleted=false, deleted_at=null, onboarding_completed=false
+            const { error: updateError } = await supabase
+              .from('users')
+              .update({
+                is_deleted: false,
+                deleted_at: null,
+                onboarding_completed: false,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', userId);
+
+            if (updateError) {
+              diag.err('AuthCallback: 계정 재활성화 실패:', updateError);
+              navigate('/login', { replace: true });
+              return;
+            }
+
+            diag.log('AuthCallback: 계정 재활성화 완료, 온보딩 페이지로 이동');
+            navigate('/onboarding?step=5', { replace: true });
+            return;
+          }
+
+          // 일반 기존 유저: 로그인으로 판단
           diag.log('AuthCallback: 기존 유저 확인 (LOGIN)', { 
             userId, 
-            onboardingStatus: existingUser.onboarding_status 
+            onboardingCompleted
           });
           
-          // 로그인 상태 저장 (UX 피드백용)
           safeStorage.setItem(AUTH_FLOW_KEY, 'LOGIN');
           
-          // 온보딩 상태 확인
-          if (existingUser.onboarding_status === 'seed_pending' || !existingUser.onboarding_status) {
-            // 온보딩 미완료 유저: 온보딩/씨앗받기 화면으로 이동
-            diag.log('AuthCallback: 온보딩 미완료 유저, 온보딩 페이지로 이동');
-            navigate('/onboarding?step=5', { replace: true });
-          } else {
-            // 온보딩 완료 유저: /home으로 이동
+          // 온보딩 상태에 따라 라우팅
+          if (onboardingCompleted) {
             diag.log('AuthCallback: 온보딩 완료 유저, /home으로 이동');
             navigate('/home', { replace: true });
+          } else {
+            diag.log('AuthCallback: 온보딩 미완료 유저, 온보딩 페이지로 이동');
+            navigate('/onboarding?step=5', { replace: true });
           }
         } else {
           // 신규 유저: 가입으로 판단
           diag.log('AuthCallback: 신규 유저 확인 (SIGNUP)', { userId });
           
-          // 가입 상태 저장 (UX 피드백용)
           safeStorage.setItem(AUTH_FLOW_KEY, 'SIGNUP');
           
-          // users 테이블에 row 생성
+          // users 테이블에 row 생성 (upsert 보장)
           diag.log('AuthCallback: users 테이블에 row 생성 시작');
-          const { error: insertError } = await supabase
+          const { error: upsertError } = await supabase
             .from('users')
-            .insert({
+            .upsert({
               id: userId,
               email: userEmail,
-              onboarding_status: 'seed_pending',
+              onboarding_completed: false,
+              is_deleted: false,
+              deleted_at: null,
               created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            }, {
+              onConflict: 'id'
             });
 
-          if (insertError) {
-            diag.err('AuthCallback: users 테이블 insert 실패:', insertError);
+          if (upsertError) {
+            diag.err('AuthCallback: users 테이블 upsert 실패:', upsertError);
             navigate('/login', { replace: true });
             return;
           }
 
           diag.log('AuthCallback: 신규 유저 생성 완료, 온보딩/씨앗 받기 페이지로 이동');
-          // 신규 가입: 온보딩/씨앗 받기 페이지로 이동 (Step 5: 씨앗 받기)
           navigate('/onboarding?step=5', { replace: true });
         }
       } catch (error) {

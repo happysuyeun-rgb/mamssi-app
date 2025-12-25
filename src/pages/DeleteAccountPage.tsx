@@ -41,21 +41,24 @@ export default function DeleteAccountPage() {
     diag.log('DeleteAccountPage: 회원탈퇴 시작', { userId: user.id });
 
     try {
-      // users 테이블에서 삭제
-      const { error: deleteError } = await supabase
+      // users 테이블에서 soft delete 처리
+      // is_deleted=true, deleted_at=now(), onboarding_completed=false
+      const { error: updateError } = await supabase
         .from('users')
-        .delete()
+        .update({
+          is_deleted: true,
+          deleted_at: new Date().toISOString(),
+          onboarding_completed: false,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', user.id);
 
-      if (deleteError) {
-        diag.err('DeleteAccountPage: users 테이블 삭제 실패', deleteError);
-        throw deleteError;
+      if (updateError) {
+        diag.err('DeleteAccountPage: users 테이블 soft delete 실패', updateError);
+        throw updateError;
       }
 
-      // Supabase Auth에서도 삭제 (클라이언트에서는 admin API를 사용할 수 없으므로
-      // 서버 사이드 Edge Function이나 Database Trigger로 처리해야 함)
-      // 일단 users 테이블 삭제는 완료되었으므로 계속 진행
-      diag.log('DeleteAccountPage: users 테이블 삭제 완료 (Auth 삭제는 서버 사이드에서 처리 필요)');
+      diag.log('DeleteAccountPage: users 테이블 soft delete 완료');
 
       diag.log('DeleteAccountPage: 회원탈퇴 완료');
       notify.success('회원탈퇴가 완료되었어요. 이용해 주셔서 감사합니다.', '👋');

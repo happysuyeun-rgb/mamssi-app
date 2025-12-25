@@ -28,7 +28,7 @@ export default function Record() {
   const { user } = useAuth();
   const notify = useNotify();
   const { requireAuthForAction } = useActionGuard();
-  const { emotions, addEmotion, updateEmotion, fetchEmotions } = useEmotions({
+  const { emotions, addEmotion, updateEmotion, fetchEmotions, checkTodayPrivateEmotion } = useEmotions({
     userId: user?.id || null
   });
 
@@ -160,15 +160,14 @@ const isSharedToForest = isPublic && selectedCategories.length > 0;
       async () => {
         if (!user) return;
 
-        // 나만 보기 기록은 하루에 한 번만 작성 가능
+        // 나만 보기 기록은 하루에 한 번만 작성 가능 (서버 쿼리로 체크)
         if (!isPublic && !isEditing) {
           const todayDate = new Date(recordDate).toISOString().split('T')[0];
-          const existingToday = emotions.find((e) => {
-            const emotionDate = new Date(e.created_at).toISOString().split('T')[0];
-            return emotionDate === todayDate && !e.is_public;
-          });
-          if (existingToday) {
+          const hasTodayPrivate = await checkTodayPrivateEmotion(todayDate);
+          if (hasTodayPrivate) {
             notify.warning('나만 보기 기록은 하루에 한 번만 작성할 수 있어요', '⚠️');
+            setIsSaving(false);
+            setIsUploadingImage(false);
             return;
           }
         }
@@ -225,7 +224,8 @@ const isSharedToForest = isPublic && selectedCategories.length > 0;
         if (data) {
           await createNotification(user.id, 'record_updated', { recordId: data.id });
           notify.success('기록이 저장되었습니다 💧');
-          await fetchEmotions(); // 목록 갱신
+          // 목록 갱신 후 뒤로가기
+          await fetchEmotions();
           goBack();
         }
       } else {
@@ -260,12 +260,14 @@ const isSharedToForest = isPublic && selectedCategories.length > 0;
             notify.success('기록이 저장되었습니다 💧');
           }
 
+          // 목록 갱신 후 폼 초기화 및 이동
+          await fetchEmotions();
+          
           // 폼 초기화
           setSelectedEmotion(null);
           setNote('');
           setPhotos([]);
           setSelectedCategories([]);
-          await fetchEmotions(); // 목록 갱신
           navigate('/');
         }
       }

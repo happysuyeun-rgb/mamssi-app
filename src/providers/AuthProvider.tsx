@@ -5,9 +5,15 @@ import { diag } from '@boot/diag';
 import { safeStorage } from '@lib/safeStorage';
 import type { User, Session, AuthError } from '@supabase/supabase-js';
 
+type UserProfile = {
+  onboarding_completed: boolean;
+  is_deleted: boolean;
+};
+
 type AuthContextType = {
   user: User | null;
   session: Session | null;
+  userProfile: UserProfile | null; // public.users 테이블 정보
   loading: boolean;
   sessionInitialized: boolean; // 세션 초기화 완료 여부
   isGuest: boolean;
@@ -16,6 +22,7 @@ type AuthContextType = {
   signInWithKakao: () => Promise<void>;
   signOut: () => Promise<void>;
   setGuestMode: (isGuest: boolean) => void;
+  refreshUserProfile: () => Promise<void>; // userProfile 갱신 함수
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -28,11 +35,49 @@ const GUEST_MODE_KEY = 'isGuest';
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [sessionInitialized, setSessionInitialized] = useState(false);
   const [isGuest, setIsGuest] = useState(() => {
     return safeStorage.getItem(GUEST_MODE_KEY) === 'true';
   });
+
+  // public.users 테이블에서 userProfile 조회
+  const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('onboarding_completed, is_deleted')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // row not found - 신규 사용자
+          diag.log('AuthProvider: users 테이블에 row 없음 (신규 사용자)');
+          return null;
+        }
+        diag.err('AuthProvider: userProfile 조회 실패:', error);
+        return null;
+      }
+
+      return {
+        onboarding_completed: data.onboarding_completed ?? false,
+        is_deleted: data.is_deleted ?? false
+      };
+    } catch (err) {
+      diag.err('AuthProvider: userProfile 조회 중 오류:', err);
+      return null;
+    }
+  };
+
+  // userProfile 갱신 함수
+  const refreshUserProfile = async () => {
+    if (user?.id) {
+      const profile = await fetchUserProfile(user.id);
+      setUserProfile(profile);
+    }
+  };
 
   useEffect(() => {
     diag.log('AuthProvider: useEffect 진입');
@@ -53,10 +98,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // 초기 세션 확인
     diag.log('AuthProvider: getSession 호출 전', { loading: true });
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       diag.log('AuthProvider: getSession 완료', { hasSession: !!session, userId: session?.user?.id });
       setSession(session);
       setUser(session?.user ?? null);
+      
+      // 세션이 있으면 userProfile 조회
+      if (session?.user?.id) {
+        const profile = await fetchUserProfile(session.user.id);
+        setUserProfile(profile);
+      } else {
+        setUserProfile(null);
+      }
+      
       setSessionInitialized(true);
       setLoading(false);
       diag.log('AuthProvider: 초기화 완료', { sessionInitialized: true, loading: false });
@@ -76,51 +130,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
 
+      // 세션이 있으면 userProfile 조회
+      if (session?.user?.id) {
+        const profile = await fetchUserProfile(session.user.id);
+        setUserProfile(profile);
+      } else {
+        setUserProfile(null);
+      }
+
       if (event === 'SIGNED_IN' && session?.user) {
         diag.log('AuthProvider: SIGNED_IN', { userId: session.user.id });
         // 로그인 성공 시 게스트 모드 해제
         safeStorage.removeItem(GUEST_MODE_KEY);
         setIsGuest(false);
         notify.success('반가워요! 마음,씨 정원으로 이동합니다 🌿');
-
-        // 프로필 확인 및 생성
-        try {
-          const { data: profile, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
-
-          if (error && error.code === 'PGRST116') {
-            // 프로필이 없으면 생성
-            const onboardingComplete = safeStorage.getItem(ONBOARDING_COMPLETE_KEY) === 'true';
-            diag.log('AuthProvider: 프로필 생성', { onboardingComplete });
-            const { error: insertError } = await supabase.from('profiles').insert({
-              id: session.user.id,
-              onboarding_complete: onboardingComplete
-            });
-
-            if (insertError) {
-              diag.err('프로필 생성 실패:', insertError);
-            }
-          } else if (profile && !profile.onboarding_complete) {
-            // 온보딩 완료 상태 동기화
-            const onboardingComplete = safeStorage.getItem(ONBOARDING_COMPLETE_KEY) === 'true';
-            if (onboardingComplete) {
-              diag.log('AuthProvider: 온보딩 완료 상태 동기화');
-              await supabase
-                .from('profiles')
-                .update({ onboarding_complete: true })
-                .eq('id', session.user.id);
-            }
-          }
-        } catch (err) {
-          diag.err('프로필 확인 중 오류:', err);
-        }
       } else if (event === 'SIGNED_OUT') {
         diag.log('AuthProvider: SIGNED_OUT');
         setIsGuest(false);
         safeStorage.removeItem(GUEST_MODE_KEY);
+        setUserProfile(null);
       }
 
       // onAuthStateChange에서도 loading=false 보장
@@ -212,6 +240,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         session,
+        userProfile,
         loading,
         sessionInitialized,
         isGuest,
@@ -219,7 +248,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signInWithApple,
         signInWithKakao,
         signOut,
-        setGuestMode
+        setGuestMode,
+        refreshUserProfile
       }}
     >
       {children}

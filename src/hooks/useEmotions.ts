@@ -40,12 +40,14 @@ export function useEmotions(options: UseEmotionsOptions = {}) {
       let query = supabase.from('emotions').select('*');
 
       if (publicOnly) {
+        // 공개 기록만 조회
         query = query.eq('is_public', true);
       } else if (userId) {
         // RLS 정책에 의해 본인 기록만 조회됨
         query = query.eq('user_id', userId);
       }
 
+      // 최신순 정렬
       query = query.order('created_at', { ascending: false });
 
       if (limit) {
@@ -87,26 +89,34 @@ export function useEmotions(options: UseEmotionsOptions = {}) {
 
       setError(null);
 
-      const { data, error: insertError } = await supabase
-        .from('emotions')
-        .insert({
-          user_id: userId,
-          ...payload
-        })
-        .select()
-        .single();
+      try {
+        // RLS 정책에 의해 auth.uid() = user_id 조건이 자동 적용됨
+        const { data, error: insertError } = await supabase
+          .from('emotions')
+          .insert({
+            user_id: userId, // RLS 정책에서 auth.uid()와 일치해야 함
+            ...payload
+          })
+          .select()
+          .single();
 
-      if (insertError) {
-        const error = new Error(insertError.message || '감정 기록 저장에 실패했어요.');
+        if (insertError) {
+          const error = new Error(insertError.message || '감정 기록 저장에 실패했어요.');
+          setError(error);
+          throw error;
+        }
+
+        if (data) {
+          // 상태 업데이트: 최신 기록을 맨 앞에 추가
+          setEmotions((prev) => [data, ...prev]);
+        }
+
+        return { data, error: null };
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error('감정 기록 저장에 실패했어요.');
         setError(error);
         throw error;
       }
-
-      if (data) {
-        setEmotions((prev) => [data, ...prev]);
-      }
-
-      return { data, error: null };
     },
     [userId]
   );
@@ -119,28 +129,36 @@ export function useEmotions(options: UseEmotionsOptions = {}) {
 
       setError(null);
 
-      const { data, error: updateError } = await supabase
-        .from('emotions')
-        .update({
-          ...payload,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id)
-        .eq('user_id', userId) // RLS와 함께 이중 체크
-        .select()
-        .single();
+      try {
+        // RLS 정책에 의해 auth.uid() = user_id 조건이 자동 적용됨
+        const { data, error: updateError } = await supabase
+          .from('emotions')
+          .update({
+            ...payload,
+            // updated_at은 트리거가 자동으로 갱신하므로 명시적으로 설정하지 않아도 됨
+          })
+          .eq('id', id)
+          .eq('user_id', userId) // RLS와 함께 이중 체크
+          .select()
+          .single();
 
-      if (updateError) {
-        const error = new Error(updateError.message || '감정 기록 수정에 실패했어요.');
+        if (updateError) {
+          const error = new Error(updateError.message || '감정 기록 수정에 실패했어요.');
+          setError(error);
+          throw error;
+        }
+
+        if (data) {
+          // 상태 업데이트: 수정된 기록을 반영
+          setEmotions((prev) => prev.map((emotion) => (emotion.id === id ? data : emotion)));
+        }
+
+        return { data, error: null };
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error('감정 기록 수정에 실패했어요.');
         setError(error);
         throw error;
       }
-
-      if (data) {
-        setEmotions((prev) => prev.map((emotion) => (emotion.id === id ? data : emotion)));
-      }
-
-      return { data, error: null };
     },
     [userId]
   );
@@ -153,21 +171,28 @@ export function useEmotions(options: UseEmotionsOptions = {}) {
 
       setError(null);
 
-      const { error: deleteError } = await supabase
-        .from('emotions')
-        .delete()
-        .eq('id', id)
-        .eq('user_id', userId); // RLS와 함께 이중 체크
+      try {
+        // RLS 정책에 의해 auth.uid() = user_id 조건이 자동 적용됨
+        const { error: deleteError } = await supabase
+          .from('emotions')
+          .delete()
+          .eq('id', id)
+          .eq('user_id', userId); // RLS와 함께 이중 체크
 
-      if (deleteError) {
-        const error = new Error(deleteError.message || '감정 기록 삭제에 실패했어요.');
+        if (deleteError) {
+          const error = new Error(deleteError.message || '감정 기록 삭제에 실패했어요.');
+          setError(error);
+          throw error;
+        }
+
+        setEmotions((prev) => prev.filter((emotion) => emotion.id !== id));
+
+        return { error: null };
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error('감정 기록 삭제에 실패했어요.');
         setError(error);
         throw error;
       }
-
-      setEmotions((prev) => prev.filter((emotion) => emotion.id !== id));
-
-      return { error: null };
     },
     [userId]
   );
@@ -185,6 +210,113 @@ export function useEmotions(options: UseEmotionsOptions = {}) {
     [emotions]
   );
 
+  // 오늘 감정 존재 여부 체크 (서버 쿼리)
+  const checkTodayEmotion = useCallback(
+    async (targetDate?: string): Promise<EmotionRecord | null> => {
+      if (!userId) {
+        return null;
+      }
+
+      try {
+        const date = targetDate || new Date().toISOString().split('T')[0];
+        const startOfDay = new Date(`${date}T00:00:00Z`).toISOString();
+        const endOfDay = new Date(`${date}T23:59:59Z`).toISOString();
+
+        const { data, error } = await supabase
+          .from('emotions')
+          .select('*')
+          .eq('user_id', userId)
+          .gte('created_at', startOfDay)
+          .lte('created_at', endOfDay)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (error) {
+          console.error('오늘 감정 체크 실패:', error);
+          return null;
+        }
+
+        return data;
+      } catch (err) {
+        console.error('오늘 감정 체크 중 오류:', err);
+        return null;
+      }
+    },
+    [userId]
+  );
+
+  // 오늘 비공개 감정 존재 여부 체크
+  const checkTodayPrivateEmotion = useCallback(
+    async (targetDate?: string): Promise<boolean> => {
+      if (!userId) {
+        return false;
+      }
+
+      try {
+        const date = targetDate || new Date().toISOString().split('T')[0];
+        const startOfDay = new Date(`${date}T00:00:00Z`).toISOString();
+        const endOfDay = new Date(`${date}T23:59:59Z`).toISOString();
+
+        const { data, error } = await supabase
+          .from('emotions')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('is_public', false)
+          .gte('created_at', startOfDay)
+          .lte('created_at', endOfDay)
+          .limit(1)
+          .maybeSingle();
+
+        if (error) {
+          console.error('오늘 비공개 감정 체크 실패:', error);
+          return false;
+        }
+
+        return data !== null;
+      } catch (err) {
+        console.error('오늘 비공개 감정 체크 중 오류:', err);
+        return false;
+      }
+    },
+    [userId]
+  );
+
+  // 오늘 감정 기록 존재 여부 체크 (boolean 반환)
+  const hasTodayEmotion = useCallback(
+    async (targetDate?: string): Promise<boolean> => {
+      if (!userId) {
+        return false;
+      }
+
+      try {
+        const date = targetDate || new Date().toISOString().split('T')[0];
+        const startOfDay = new Date(`${date}T00:00:00Z`).toISOString();
+        const endOfDay = new Date(`${date}T23:59:59Z`).toISOString();
+
+        const { data, error } = await supabase
+          .from('emotions')
+          .select('id')
+          // RLS 정책에 의해 auth.uid() = user_id 조건이 자동 적용됨
+          .gte('created_at', startOfDay)
+          .lte('created_at', endOfDay)
+          .limit(1)
+          .maybeSingle();
+
+        if (error) {
+          console.error('오늘 감정 기록 체크 실패:', error);
+          return false;
+        }
+
+        return data !== null;
+      } catch (err) {
+        console.error('오늘 감정 기록 체크 중 오류:', err);
+        return false;
+      }
+    },
+    [userId]
+  );
+
   return {
     emotions,
     loading,
@@ -193,9 +325,16 @@ export function useEmotions(options: UseEmotionsOptions = {}) {
     addEmotion,
     updateEmotion,
     deleteEmotion,
-    getEmotionByDate
+    getEmotionByDate,
+    checkTodayEmotion,
+    checkTodayPrivateEmotion,
+    hasTodayEmotion
   };
 }
+
+
+
+
 
 
 

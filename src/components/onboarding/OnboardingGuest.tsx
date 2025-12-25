@@ -15,7 +15,7 @@ type OnboardingStep = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 export default function OnboardingGuest() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user, session, loading, isGuest, signInWithGoogle, signInWithApple, signInWithKakao, setGuestMode } = useAuth();
+  const { user, session, loading, isGuest, signInWithGoogle, signInWithApple, signInWithKakao, setGuestMode, refreshUserProfile } = useAuth();
   const notify = useNotify();
   
   const [step, setStep] = useState<OnboardingStep>(0);
@@ -184,7 +184,7 @@ export default function OnboardingGuest() {
   // Step 7: 완료
   const handleGoHome = async () => {
     diag.log('OnboardingGuest: handleGoHome 호출');
-    // safeStorage로 확실히 기록
+    // safeStorage로 확실히 기록 (게스트 모드용)
     safeStorage.setItem(ONBOARDING_COMPLETE_KEY, 'true');
     diag.log('OnboardingGuest: 온보딩 완료 플래그 저장', {
       onboardingComplete: safeStorage.getItem(ONBOARDING_COMPLETE_KEY)
@@ -195,18 +195,28 @@ export default function OnboardingGuest() {
       safeStorage.removeItem(GUEST_MODE_KEY);
     }
     
-    // 로그인 상태면 프로필에 온보딩 완료 상태 저장
+    // 로그인 상태면 users 테이블에 온보딩 완료 상태 저장
     if (session && user) {
       try {
-        diag.log('OnboardingGuest: 프로필 업데이트 시작');
+        diag.log('OnboardingGuest: users 테이블 업데이트 시작');
         const { supabase } = await import('@lib/supabaseClient');
-        await supabase
-          .from('profiles')
-          .update({ onboarding_complete: true })
+        const { error } = await supabase
+          .from('users')
+          .update({ 
+            onboarding_completed: true,
+            updated_at: new Date().toISOString()
+          })
           .eq('id', user.id);
-        diag.log('OnboardingGuest: 프로필 업데이트 완료');
+        
+        if (error) {
+          diag.err('OnboardingGuest: users 테이블 업데이트 실패:', error);
+        } else {
+          diag.log('OnboardingGuest: users 테이블 업데이트 완료');
+          // userProfile 갱신
+          await refreshUserProfile();
+        }
       } catch (error) {
-        diag.err('OnboardingGuest: 프로필 업데이트 실패:', error);
+        diag.err('OnboardingGuest: users 테이블 업데이트 중 오류:', error);
       }
     }
     
