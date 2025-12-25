@@ -164,7 +164,9 @@ export default function OnboardingGuest() {
   };
 
   const handleSeedNameChange = (value: string) => {
+    // 입력값을 즉시 state에 반영
     setSeedName(value);
+    // 에러가 표시된 상태에서 유효한 값이 입력되면 에러 해제
     if (seedError) {
       setSeedError(!validateSeedName(value));
     }
@@ -384,7 +386,17 @@ export default function OnboardingGuest() {
               <div className={`onboarding-error ${seedError ? 'show' : ''}`}>이름을 1~12자의 한글/영문/숫자로 입력해 주세요.</div>
             </div>
             <div className="onboarding-bottom">
-              <button className="onboarding-btn onboarding-btn-primary onboarding-btn-full" onClick={handleStep6Next}>내 정원 만들기</button>
+              <button 
+                className="onboarding-btn onboarding-btn-primary onboarding-btn-full" 
+                onClick={handleStep6Next}
+                disabled={seedName.trim().length === 0}
+                style={{
+                  opacity: seedName.trim().length === 0 ? 0.5 : 1,
+                  cursor: seedName.trim().length === 0 ? 'not-allowed' : 'pointer'
+                }}
+              >
+                내 정원 만들기
+              </button>
             </div>
           </section>
 

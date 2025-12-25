@@ -90,29 +90,93 @@ export function useEmotions(options: UseEmotionsOptions = {}) {
       setError(null);
 
       try {
+        // auth.uid() 확인
+        const { data: { user: authUser } } = await supabase.auth.getUser();
+        if (!authUser || authUser.id !== userId) {
+          console.error('[addEmotion] auth.uid() 불일치:', {
+            userId,
+            authUid: authUser?.id,
+            message: 'user_id와 auth.uid()가 일치하지 않습니다.'
+          });
+          throw new Error('인증 정보가 일치하지 않아요. 다시 로그인해주세요.');
+        }
+
+        // payload에서 undefined 값 제거 및 검증
+        const cleanPayload: Record<string, unknown> = {
+          emotion_type: payload.emotion_type,
+          content: payload.content,
+          is_public: payload.is_public
+        };
+
+        if (payload.intensity !== undefined && payload.intensity !== null) {
+          cleanPayload.intensity = payload.intensity;
+        }
+        if (payload.image_url !== undefined && payload.image_url !== null) {
+          cleanPayload.image_url = payload.image_url;
+        }
+        if (payload.category_id !== undefined && payload.category_id !== null) {
+          cleanPayload.category_id = payload.category_id;
+        }
+
+        // insert payload 준비
+        const insertPayload = {
+          user_id: userId,
+          ...cleanPayload
+        };
+
+        console.log('[addEmotion] insert 시도:', {
+          userId,
+          authUid: authUser.id,
+          payload: insertPayload,
+          payloadKeys: Object.keys(insertPayload)
+        });
+
         // RLS 정책에 의해 auth.uid() = user_id 조건이 자동 적용됨
         const { data, error: insertError } = await supabase
           .from('emotions')
-          .insert({
-            user_id: userId, // RLS 정책에서 auth.uid()와 일치해야 함
-            ...payload
-          })
+          .insert(insertPayload)
           .select()
           .single();
 
         if (insertError) {
+          console.error('[addEmotion] insert 실패:', {
+            error: insertError,
+            code: insertError.code,
+            message: insertError.message,
+            details: insertError.details,
+            hint: insertError.hint,
+            userId,
+            payload: insertPayload
+          });
           const error = new Error(insertError.message || '감정 기록 저장에 실패했어요.');
           setError(error);
           throw error;
         }
 
-        if (data) {
-          // 상태 업데이트: 최신 기록을 맨 앞에 추가
-          setEmotions((prev) => [data, ...prev]);
+        if (!data) {
+          console.error('[addEmotion] data가 null입니다:', {
+            userId,
+            payload: insertPayload
+          });
+          throw new Error('감정 기록이 저장되었지만 데이터를 받아오지 못했어요.');
         }
+
+        console.log('[addEmotion] insert 성공:', {
+          dataId: data.id,
+          userId: data.user_id,
+          emotionType: data.emotion_type
+        });
+
+        // 상태 업데이트: 최신 기록을 맨 앞에 추가
+        setEmotions((prev) => [data, ...prev]);
 
         return { data, error: null };
       } catch (err) {
+        console.error('[addEmotion] 예외 발생:', {
+          error: err,
+          userId,
+          payload
+        });
         const error = err instanceof Error ? err : new Error('감정 기록 저장에 실패했어요.');
         setError(error);
         throw error;
@@ -297,7 +361,7 @@ export function useEmotions(options: UseEmotionsOptions = {}) {
         const { data, error } = await supabase
           .from('emotions')
           .select('id')
-          // RLS 정책에 의해 auth.uid() = user_id 조건이 자동 적용됨
+          .eq('user_id', userId) // 명시적으로 user_id 필터링 (RLS 정책과 함께 이중 체크)
           .gte('created_at', startOfDay)
           .lte('created_at', endOfDay)
           .limit(1)

@@ -204,14 +204,27 @@ const isSharedToForest = isPublic && selectedCategories.length > 0;
 
       setIsUploadingImage(false);
 
-      const payload = {
+      // payload 준비 (undefined 값 제외)
+      const payload: {
+        emotion_type: string;
+        intensity?: number;
+        content: string;
+        image_url?: string | null;
+        is_public: boolean;
+        category_id?: string | null;
+      } = {
         emotion_type: selectedEmotion.label,
-        intensity: undefined, // 필요시 추가
         content: note.trim(),
-        image_url: imageUrl,
-        is_public: isPublic,
-        category_id: isPublic && selectedCategories.length > 0 ? selectedCategories[0] : null
+        is_public: isPublic
       };
+
+      // 선택적 필드만 추가
+      if (imageUrl) {
+        payload.image_url = imageUrl;
+      }
+      if (isPublic && selectedCategories.length > 0) {
+        payload.category_id = selectedCategories[0];
+      }
 
       if (isEditing && editingRecordId) {
         // 수정
@@ -230,13 +243,28 @@ const isSharedToForest = isPublic && selectedCategories.length > 0;
         }
       } else {
         // 새로 생성
-        const { data, error } = await addEmotion(payload);
-        if (error) {
-          notify.error('기록 저장에 실패했어요. 잠시 후 다시 시도해주세요.', '❌');
-          return;
-        }
+        try {
+          const { data, error } = await addEmotion(payload);
+          if (error) {
+            console.error('[Record] addEmotion 실패:', {
+              error,
+              payload,
+              userId: user?.id
+            });
+            notify.error('기록 저장에 실패했어요. 잠시 후 다시 시도해주세요.', '❌');
+            return;
+          }
 
-        if (data) {
+          if (!data) {
+            console.error('[Record] addEmotion 성공했지만 data가 null:', {
+              payload,
+              userId: user?.id
+            });
+            notify.error('기록이 저장되었지만 데이터를 불러오지 못했어요.', '❌');
+            return;
+          }
+
+          if (data) {
           const isFirstRecord = emotions.length === 0;
           await createNotification(user.id, 'record_saved', { recordId: data.id });
           if (isFirstRecord) {
@@ -269,10 +297,23 @@ const isSharedToForest = isPublic && selectedCategories.length > 0;
           setPhotos([]);
           setSelectedCategories([]);
           navigate('/');
+          }
+        } catch (addErr) {
+          console.error('[Record] addEmotion 예외:', {
+            error: addErr,
+            payload,
+            userId: user?.id
+          });
+          notify.error('기록 저장 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.', '❌');
+          return;
         }
       }
     } catch (err) {
-      console.error('저장 실패:', err);
+      console.error('[Record] 저장 실패:', {
+        error: err,
+        userId: user?.id,
+        isEditing
+      });
       notify.error('저장에 실패했어요. 잠시 후 다시 시도해 주세요.', '❌');
       } finally {
         setIsSaving(false);

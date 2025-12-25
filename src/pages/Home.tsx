@@ -188,7 +188,9 @@ export default function Home() {
   // 오늘 기록 여부 체크 (hasTodayEmotion 사용)
   useEffect(() => {
     if (guestMode || !user || checkingToday) {
-      setTodayHasEmotion(false);
+      if (guestMode || !user) {
+        setTodayHasEmotion(false);
+      }
       return;
     }
 
@@ -206,7 +208,7 @@ export default function Home() {
     };
 
     checkToday();
-  }, [user, guestMode, hasTodayEmotion, checkingToday]);
+  }, [user, guestMode, hasTodayEmotion]);
 
   // emotions가 변경되면 오늘 기록 여부 다시 체크 (debounce)
   useEffect(() => {
