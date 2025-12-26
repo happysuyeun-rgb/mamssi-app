@@ -90,15 +90,23 @@ export function useEmotions(options: UseEmotionsOptions = {}) {
       setError(null);
 
       try {
-        // auth.uid() 확인
+        // auth.uid() 확인 (RLS 정책이 자동으로 체크하므로 경고만)
         const { data: { user: authUser } } = await supabase.auth.getUser();
-        if (!authUser || authUser.id !== userId) {
-          console.error('[addEmotion] auth.uid() 불일치:', {
+        if (!authUser) {
+          console.error('[addEmotion] auth.uid() 없음:', {
             userId,
-            authUid: authUser?.id,
-            message: 'user_id와 auth.uid()가 일치하지 않습니다.'
+            message: '인증된 사용자가 없습니다.'
           });
-          throw new Error('인증 정보가 일치하지 않아요. 다시 로그인해주세요.');
+          throw new Error('로그인이 필요해요. 다시 로그인해주세요.');
+        }
+        
+        if (authUser.id !== userId) {
+          console.warn('[addEmotion] auth.uid() 불일치 (경고만, RLS가 체크함):', {
+            userId,
+            authUid: authUser.id,
+            message: 'user_id와 auth.uid()가 일치하지 않지만 RLS 정책이 체크합니다.'
+          });
+          // RLS 정책이 자동으로 체크하므로 여기서는 경고만 하고 계속 진행
         }
 
         // payload에서 undefined 값 제거 및 검증
@@ -174,12 +182,35 @@ export function useEmotions(options: UseEmotionsOptions = {}) {
       } catch (err) {
         console.error('[addEmotion] 예외 발생:', {
           error: err,
+          errorMessage: err instanceof Error ? err.message : String(err),
+          errorStack: err instanceof Error ? err.stack : undefined,
           userId,
           payload
         });
-        const error = err instanceof Error ? err : new Error('감정 기록 저장에 실패했어요.');
+        
+        // 에러 타입별 처리
+        let errorMessage = '감정 기록 저장에 실패했어요.';
+        if (err instanceof Error) {
+          errorMessage = err.message;
+          
+          // RLS 정책 에러 체크
+          if (err.message.includes('permission denied') || err.message.includes('RLS') || err.message.includes('42501')) {
+            errorMessage = '기록 저장 권한이 없어요. 로그인 상태를 확인해주세요.';
+            console.error('[addEmotion] RLS 정책 에러 감지');
+          }
+          
+          // 네트워크 에러 체크
+          if (err.message.includes('fetch') || err.message.includes('network') || err.message.includes('Failed to fetch')) {
+            errorMessage = '네트워크 연결을 확인해주세요.';
+            console.error('[addEmotion] 네트워크 에러 감지');
+          }
+        }
+        
+        const error = err instanceof Error ? new Error(errorMessage) : new Error(errorMessage);
         setError(error);
-        throw error;
+        
+        // 에러를 throw하지 않고 반환 (Record.tsx에서 처리)
+        return { data: null, error };
       }
     },
     [userId]

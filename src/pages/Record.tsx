@@ -243,70 +243,73 @@ const isSharedToForest = isPublic && selectedCategories.length > 0;
         }
       } else {
         // 새로 생성
-        try {
-          const { data, error } = await addEmotion(payload);
-          if (error) {
-            console.error('[Record] addEmotion 실패:', {
-              error,
-              payload,
-              userId: user?.id
-            });
-            notify.error('기록 저장에 실패했어요. 잠시 후 다시 시도해주세요.', '❌');
-            return;
-          }
-
-          if (!data) {
-            console.error('[Record] addEmotion 성공했지만 data가 null:', {
-              payload,
-              userId: user?.id
-            });
-            notify.error('기록이 저장되었지만 데이터를 불러오지 못했어요.', '❌');
-            return;
-          }
-
-          if (data) {
-          const isFirstRecord = emotions.length === 0;
-          await createNotification(user.id, 'record_saved', { recordId: data.id });
-          if (isFirstRecord) {
-            await createNotification(user.id, 'first_record', { recordId: data.id });
-          }
-          if (imageUrl) {
-            await createNotification(user.id, 'record_with_image', { recordId: data.id });
-          }
-          if (isPublic) {
-            await createNotification(user.id, 'record_visibility_changed', {
-              recordId: data.id,
-              isPublic: true
-            });
-          }
-
-          if (isSharedToForest) {
-            notify.success('기록이 저장되고 공감숲에도 함께 심어졌어요 💧');
-          } else if (isPublic) {
-            notify.success('기록이 저장되었습니다 💧');
-          } else {
-            notify.success('기록이 저장되었습니다 💧');
-          }
-
-          // 목록 갱신 후 폼 초기화 및 이동
-          await fetchEmotions();
-          
-          // 폼 초기화
-          setSelectedEmotion(null);
-          setNote('');
-          setPhotos([]);
-          setSelectedCategories([]);
-          navigate('/');
-          }
-        } catch (addErr) {
-          console.error('[Record] addEmotion 예외:', {
-            error: addErr,
+        console.log('[Record] addEmotion 호출 시작', {
+          payload,
+          userId: user?.id,
+          hasUser: !!user
+        });
+        
+        const { data, error } = await addEmotion(payload);
+        
+        if (error) {
+          console.error('[Record] addEmotion 실패:', {
+            error,
+            errorMessage: error.message,
             payload,
             userId: user?.id
           });
-          notify.error('기록 저장 중 오류가 발생했어요. 잠시 후 다시 시도해주세요.', '❌');
+          notify.error(error.message || '기록 저장에 실패했어요. 잠시 후 다시 시도해주세요.', '❌');
           return;
         }
+
+        if (!data) {
+          console.error('[Record] addEmotion 성공했지만 data가 null:', {
+            payload,
+            userId: user?.id,
+            error
+          });
+          notify.error('기록이 저장되었지만 데이터를 불러오지 못했어요.', '❌');
+          return;
+        }
+
+        console.log('[Record] addEmotion 성공:', {
+          recordId: data.id,
+          emotionType: data.emotion_type,
+          userId: data.user_id
+        });
+
+        const isFirstRecord = emotions.length === 0;
+        await createNotification(user.id, 'record_saved', { recordId: data.id });
+        if (isFirstRecord) {
+          await createNotification(user.id, 'first_record', { recordId: data.id });
+        }
+        if (imageUrl) {
+          await createNotification(user.id, 'record_with_image', { recordId: data.id });
+        }
+        if (isPublic) {
+          await createNotification(user.id, 'record_visibility_changed', {
+            recordId: data.id,
+            isPublic: true
+          });
+        }
+
+        if (isSharedToForest) {
+          notify.success('기록이 저장되고 공감숲에도 함께 심어졌어요 💧');
+        } else if (isPublic) {
+          notify.success('기록이 저장되었습니다 💧');
+        } else {
+          notify.success('기록이 저장되었습니다 💧');
+        }
+
+        // 목록 갱신 후 폼 초기화 및 이동
+        await fetchEmotions();
+        
+        // 폼 초기화
+        setSelectedEmotion(null);
+        setNote('');
+        setPhotos([]);
+        setSelectedCategories([]);
+        navigate('/');
       }
     } catch (err) {
       console.error('[Record] 저장 실패:', {

@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { supabase } from '@lib/supabaseClient';
 import { notify } from '@lib/notify';
 
@@ -31,6 +32,7 @@ export type FeedSummary = {
 };
 
 export function useHomeData(userId?: string | null) {
+  const location = useLocation();
   const [today, setToday] = useState<TodayRecord | null>(null);
   const [weekStats, setWeekStats] = useState<WeekStat[]>([]);
   const [flower, setFlower] = useState<FlowerData | null>(null);
@@ -40,6 +42,13 @@ export function useHomeData(userId?: string | null) {
   const [error, setError] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
+    // 온보딩 라우트에서는 데이터 조회 skip
+    if (location.pathname.startsWith('/onboarding')) {
+      console.log('[useHomeData] 온보딩 라우트 감지, 데이터 조회 skip');
+      setLoading(false);
+      return;
+    }
+
     if (!userId) {
       setLoading(false);
       return;
@@ -237,7 +246,7 @@ export function useHomeData(userId?: string | null) {
       supabase.removeChannel(flowersChannel);
       supabase.removeChannel(postsChannel);
     };
-  }, [fetchData, userId]);
+  }, [fetchData, userId, location.pathname]);
 
   return {
     today,

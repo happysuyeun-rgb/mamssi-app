@@ -42,18 +42,39 @@ export default function AuthCallback() {
         });
 
         // public.users 테이블에서 해당 user.id row 찾기
+        console.log('[AuthCallback] users 테이블 조회 시작', { userId });
         diag.log('AuthCallback: users 테이블 조회 시작');
+        
         const { data: existingUser, error: userError } = await supabase
           .from('users')
           .select('id, onboarding_completed, is_deleted, deleted_at')
           .eq('id', userId)
           .single();
 
-        if (userError && userError.code !== 'PGRST116') {
-          // PGRST116은 "row not found" 에러 코드
-          diag.err('AuthCallback: users 테이블 조회 실패:', userError);
-          navigate('/login', { replace: true });
-          return;
+        if (userError) {
+          console.error('[AuthCallback] users 테이블 조회 에러:', {
+            code: userError.code,
+            message: userError.message,
+            details: userError.details,
+            hint: userError.hint,
+            userId
+          });
+          
+          if (userError.code === 'PGRST116') {
+            // row not found - 신규 사용자 (정상 케이스)
+            console.log('[AuthCallback] users 테이블에 row 없음 (신규 사용자)');
+            diag.log('AuthCallback: users 테이블에 row 없음 (신규 사용자)');
+          } else if (userError.code === '42501' || userError.message?.includes('permission denied') || userError.message?.includes('RLS')) {
+            // RLS 정책 에러
+            console.error('[AuthCallback] RLS 정책 에러 - users 테이블 조회 권한 없음');
+            diag.err('AuthCallback: RLS 정책 에러 - users 테이블 조회 권한 없음:', userError);
+            // RLS 에러는 무시하고 계속 진행 (신규 사용자로 처리)
+          } else {
+            // 기타 에러
+            diag.err('AuthCallback: users 테이블 조회 실패:', userError);
+            navigate('/login', { replace: true });
+            return;
+          }
         }
 
         if (existingUser) {

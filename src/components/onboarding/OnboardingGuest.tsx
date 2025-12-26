@@ -23,7 +23,8 @@ export default function OnboardingGuest() {
   const [seedError, setSeedError] = useState(false);
   const [finalCopy, setFinalCopy] = useState('방금 심은 씨앗이 오늘부터 조용히 자라요.');
 
-  // URL 쿼리 파라미터에서 step 읽기 및 업데이트 (회원가입 페이지로 직접 이동 시)
+  // URL 쿼리 파라미터에서 step 읽기 및 업데이트 (외부에서 직접 URL로 접근 시에만)
+  // 내부 네비게이션(handleNext/handlePrev)은 showStep에서 URL을 업데이트하므로 여기서는 무시
   useEffect(() => {
     const stepParam = searchParams.get('step');
     console.log('[OnboardingGuest] URL 파라미터 확인', { 
@@ -44,8 +45,9 @@ export default function OnboardingGuest() {
       const stepValue = parseInt(stepParam, 10) as OnboardingStep;
       console.log('[OnboardingGuest] step 파라미터 파싱', { stepParam, stepValue, isValid: !isNaN(stepValue) && stepValue >= 0 && stepValue <= 7 });
       if (!isNaN(stepValue) && stepValue >= 0 && stepValue <= 7) {
+        // step이 다를 때만 업데이트 (외부에서 직접 URL로 접근한 경우)
         if (stepValue !== step) {
-          console.log('[OnboardingGuest] step 변경', { from: step, to: stepValue });
+          console.log('[OnboardingGuest] step 변경 (URL 파라미터에서)', { from: step, to: stepValue });
           diag.log('OnboardingGuest: step 파라미터로 step 변경', { 
             from: step, 
             to: stepValue 
@@ -58,9 +60,15 @@ export default function OnboardingGuest() {
         console.warn('[OnboardingGuest] 유효하지 않은 step 값', { stepParam, stepValue });
       }
     } else {
-      console.log('[OnboardingGuest] step 파라미터 없음');
+      // step 파라미터가 없으면 현재 step으로 URL 업데이트 (초기 로드 시)
+      if (step > 0) {
+        console.log('[OnboardingGuest] step 파라미터 없음, URL 업데이트', { currentStep: step });
+        const newSearchParams = new URLSearchParams();
+        newSearchParams.set('step', String(step));
+        navigate(`/onboarding?${newSearchParams.toString()}`, { replace: true });
+      }
     }
-  }, [searchParams, step]);
+  }, [searchParams, navigate]); // step 의존성 제거하여 무한 루프 방지
 
   // 로그인 상태이고 온보딩 완료 시 홈으로 리다이렉트
   // 단, step 파라미터가 있으면 회원가입을 위해 온보딩 페이지 접근 허용
@@ -77,6 +85,11 @@ export default function OnboardingGuest() {
 
   const showStep = (s: OnboardingStep) => {
     setStep(s);
+    // URL 파라미터도 함께 업데이트 (내부 네비게이션 시)
+    const newSearchParams = new URLSearchParams(searchParams);
+    newSearchParams.set('step', String(s));
+    navigate(`/onboarding?${newSearchParams.toString()}`, { replace: true });
+    console.log('[OnboardingGuest] showStep - step 및 URL 업데이트', { step: s, url: `/onboarding?${newSearchParams.toString()}` });
   };
 
   // Step 0: 시작화면
@@ -102,6 +115,7 @@ export default function OnboardingGuest() {
   };
 
   const handleNext = () => {
+    console.log('[Onboarding] handleNext 호출', { currentStep: step });
     if (step < 7) {
       showStep((step + 1) as OnboardingStep);
     }
@@ -211,11 +225,20 @@ export default function OnboardingGuest() {
           .eq('id', user.id);
         
         if (error) {
+          console.error('[OnboardingGuest] users 테이블 업데이트 실패:', error);
           diag.err('OnboardingGuest: users 테이블 업데이트 실패:', error);
         } else {
+          console.log('[OnboardingGuest] users 테이블 업데이트 성공 - onboarding_completed: true');
           diag.log('OnboardingGuest: users 테이블 업데이트 완료');
-          // userProfile 갱신
+          
+          // 로컬 스토리지도 업데이트
+          safeStorage.setItem(ONBOARDING_COMPLETE_KEY, 'true');
+          console.log('[OnboardingGuest] 로컬 스토리지 onboarding_completed 업데이트: true');
+          
+          // userProfile 갱신 (DB에서 최신 상태 가져오기)
           await refreshUserProfile();
+          
+          console.log('[OnboardingGuest] userProfile 갱신 완료, /home으로 이동');
         }
       } catch (error) {
         diag.err('OnboardingGuest: users 테이블 업데이트 중 오류:', error);
@@ -365,7 +388,19 @@ export default function OnboardingGuest() {
             </div>
             <div className="onboarding-bottom onboarding-row">
               <button className="onboarding-btn-ghost" onClick={handlePrev}>이전</button>
-              <button className="onboarding-btn onboarding-btn-primary onboarding-btn-wide" onClick={handleNext}>씨앗 이름 짓기</button>
+              <button 
+                className="onboarding-btn onboarding-btn-primary onboarding-btn-wide" 
+                onClick={(e) => {
+                  console.log('[Onboarding] 씨앗 이름 짓기 버튼 클릭', { step, event: e });
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleNext();
+                }}
+                type="button"
+                style={{ position: 'relative', zIndex: 10 }}
+              >
+                씨앗 이름 짓기
+              </button>
             </div>
           </section>
 

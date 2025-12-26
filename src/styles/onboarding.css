@@ -94,6 +94,9 @@
   display: grid;
   place-items: center;
   margin: 16px 0;
+  pointer-events: none; /* 버튼 클릭 방해 방지 */
+  position: relative;
+  z-index: 1;
 }
 
 .onboarding-circle {
@@ -105,6 +108,7 @@
   display: grid;
   place-items: center;
   overflow: hidden;
+  pointer-events: none; /* 버튼 클릭 방해 방지 */
 }
 
 .onboarding-orbit {
@@ -163,6 +167,9 @@
   font-size: 16px;
   cursor: pointer;
   transition: all 0.2s;
+  position: relative;
+  z-index: 10; /* 버튼이 다른 요소 위에 오도록 */
+  pointer-events: auto; /* 명시적으로 클릭 가능하게 */
 }
 
 .onboarding-btn-primary {
@@ -217,6 +224,8 @@
 
 .onboarding-bottom {
   margin-top: auto;
+  position: relative;
+  z-index: 10; /* 버튼 영역이 hero 위에 오도록 */
 }
 
 .onboarding-center {
