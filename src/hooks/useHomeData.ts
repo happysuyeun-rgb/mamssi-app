@@ -5,14 +5,14 @@ import { notify } from '@lib/notify';
 
 export type TodayRecord = {
   id: string;
-  emotion_type: string;
+  main_emotion: string; // DB 스키마: main_emotion
   content: string;
-  image_url: string | null;
+  emotion_date: string; // DB 스키마: emotion_date
   created_at: string;
 };
 
 export type WeekStat = {
-  emotion_type: string;
+  main_emotion: string; // DB 스키마: main_emotion
   count: number;
   date: string;
 };
@@ -63,38 +63,54 @@ export function useHomeData(userId?: string | null) {
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
       const sevenDaysAgoStr = sevenDaysAgo.toISOString();
 
-      // 오늘의 기록 (최신 1건)
+      // 오늘의 기록 (emotion_date 기준, 최신 1건)
       const { data: todayData, error: todayError } = await supabase
         .from('emotions')
         .select('*')
         .eq('user_id', userId)
-        .gte('created_at', `${todayStr}T00:00:00`)
-        .lt('created_at', `${todayStr}T23:59:59`)
+        .eq('emotion_date', todayStr) // DB 스키마: emotion_date 사용
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
-      if (todayError && todayError.code !== 'PGRST116') {
-        console.error('오늘 기록 조회 실패:', todayError);
+      if (todayError) {
+        console.error('[useHomeData] 오늘 기록 조회 실패:', {
+          code: todayError.code,
+          message: todayError.message,
+          details: todayError.details,
+          hint: todayError.hint,
+          userId
+        });
       }
 
-      // 주간 감정 요약 (최근 7일)
+      // 주간 감정 요약 (최근 7일, emotion_date 기준)
+      const weekStartDate = new Date();
+      weekStartDate.setDate(weekStartDate.getDate() - 7);
+      const weekStartStr = weekStartDate.toISOString().split('T')[0];
+
       const { data: weeklyData, error: weeklyError } = await supabase
         .from('emotions')
-        .select('emotion_type, created_at')
+        .select('main_emotion, emotion_date') // DB 스키마: main_emotion, emotion_date
         .eq('user_id', userId)
-        .gte('created_at', sevenDaysAgoStr)
-        .order('created_at', { ascending: false });
+        .gte('emotion_date', weekStartStr) // emotion_date 기준으로 조회
+        .lte('emotion_date', todayStr)
+        .order('emotion_date', { ascending: false });
 
       if (weeklyError) {
-        console.error('주간 데이터 조회 실패:', weeklyError);
+        console.error('[useHomeData] 주간 데이터 조회 실패:', {
+          code: weeklyError.code,
+          message: weeklyError.message,
+          details: weeklyError.details,
+          hint: weeklyError.hint,
+          userId
+        });
       }
 
-      // 주간 통계 집계
+      // 주간 통계 집계 (emotion_date 기준)
       const weekStatsMap = new Map<string, { count: number; date: string }>();
       weeklyData?.forEach((record) => {
-        const date = new Date(record.created_at).toISOString().split('T')[0];
-        const key = `${date}-${record.emotion_type}`;
+        const date = record.emotion_date || new Date().toISOString().split('T')[0]; // emotion_date 사용
+        const key = `${date}-${record.main_emotion}`; // main_emotion 사용
         const existing = weekStatsMap.get(key);
         if (existing) {
           existing.count += 1;
@@ -104,9 +120,9 @@ export function useHomeData(userId?: string | null) {
       });
 
       const weekStatsArray: WeekStat[] = Array.from(weekStatsMap.entries()).map(([key, value]) => {
-        const [, emotion_type] = key.split('-');
+        const [, main_emotion] = key.split('-');
         return {
-          emotion_type,
+          main_emotion, // DB 스키마: main_emotion
           count: value.count,
           date: value.date
         };
@@ -117,25 +133,43 @@ export function useHomeData(userId?: string | null) {
         .from('flowers')
         .select('*')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
       if (flowerError && flowerError.code !== 'PGRST116') {
-        console.error('flowers 조회 실패:', flowerError);
+        console.error('[useHomeData] flowers 조회 실패:', {
+          code: flowerError.code,
+          message: flowerError.message,
+          details: flowerError.details,
+          hint: flowerError.hint,
+          userId
+        });
       }
 
-      // flowers가 없으면 생성
+      // flowers가 없으면 생성 (fallback)
       if (!flowerData) {
-        const { error: updateError } = await supabase.rpc('update_flower_growth', { uid: userId });
-        if (updateError) {
-          console.error('flowers 생성 실패:', updateError);
-        } else {
-          // 생성 후 다시 조회
-          const { data: newFlowerData } = await supabase
-            .from('flowers')
-            .select('*')
-            .eq('user_id', userId)
-            .single();
-          setFlower(newFlowerData || null);
+        console.log('[useHomeData] flowers가 없어서 생성 시도 (fallback):', { userId });
+        try {
+          // ensureFlowerRow 사용
+          const { ensureFlowerRow } = await import('@services/flowers');
+          const newFlower = await ensureFlowerRow(userId);
+          if (newFlower) {
+            console.log('[useHomeData] flowers 생성 성공 (fallback):', {
+              userId,
+              flowerId: newFlower.id,
+              growthPercent: newFlower.growth_percent
+            });
+            setFlower(newFlower);
+          } else {
+            console.warn('[useHomeData] flowers 생성 실패 (fallback):', { userId });
+            setFlower(null);
+          }
+        } catch (fallbackError) {
+          console.error('[useHomeData] flowers 생성 중 오류 (fallback):', {
+            error: fallbackError,
+            errorMessage: fallbackError instanceof Error ? fallbackError.message : String(fallbackError),
+            userId
+          });
+          setFlower(null);
         }
       } else {
         setFlower(flowerData);
@@ -178,7 +212,12 @@ export function useHomeData(userId?: string | null) {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '데이터를 불러오는데 실패했어요.';
       setError(errorMessage);
-      console.error('홈 데이터 로드 실패:', err);
+      console.error('[useHomeData] 홈 데이터 로드 실패:', {
+        error: err,
+        errorMessage: err instanceof Error ? err.message : String(err),
+        errorStack: err instanceof Error ? err.stack : undefined,
+        userId
+      });
       notify.error('데이터를 불러오지 못했어요 🌧', '🌧');
     } finally {
       setLoading(false);

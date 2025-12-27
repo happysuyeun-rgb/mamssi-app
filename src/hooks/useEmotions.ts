@@ -5,12 +5,12 @@ import type { User } from '@supabase/supabase-js';
 export type EmotionRecord = {
   id: string;
   user_id: string;
-  emotion_type: string;
+  emotion_date: string; // YYYY-MM-DD
+  main_emotion: string; // DB 스키마: main_emotion (기존 emotion_type)
   intensity?: number;
-  content: string;
-  image_url?: string | null;
-  is_public: boolean;
-  category_id?: string | null;
+  note?: string | null; // DB 스키마: note (nullable)
+  content: string; // DB 스키마: content (최근 추가)
+  is_public?: boolean | null; // DB 스키마: is_public (nullable)
   created_at: string;
   updated_at: string;
 };
@@ -76,12 +76,12 @@ export function useEmotions(options: UseEmotionsOptions = {}) {
 
   const addEmotion = useCallback(
     async (payload: {
-      emotion_type: string;
+      emotion_type: string; // 프론트엔드에서는 emotion_type으로 받지만 DB에는 main_emotion으로 저장
       intensity?: number;
       content: string;
-      image_url?: string | null;
-      is_public: boolean;
-      category_id?: string | null;
+      note?: string | null; // DB 스키마: note (nullable)
+      is_public?: boolean | null; // DB 스키마: is_public (nullable)
+      emotion_date?: string; // YYYY-MM-DD, 없으면 오늘 날짜 사용
     }) => {
       if (!userId) {
         throw new Error('로그인이 필요해요.');
@@ -90,56 +90,108 @@ export function useEmotions(options: UseEmotionsOptions = {}) {
       setError(null);
 
       try {
-        // auth.uid() 확인 (RLS 정책이 자동으로 체크하므로 경고만)
-        const { data: { user: authUser } } = await supabase.auth.getUser();
+        // auth.uid() 확인
+        const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+        
+        if (authError) {
+          console.error('[addEmotion] auth.getUser() 실패:', {
+            error: authError,
+            userId
+          });
+          const error = new Error('인증 정보를 확인할 수 없어요. 다시 로그인해주세요.');
+          setError(error);
+          return { data: null, error };
+        }
+        
         if (!authUser) {
           console.error('[addEmotion] auth.uid() 없음:', {
             userId,
             message: '인증된 사용자가 없습니다.'
           });
-          throw new Error('로그인이 필요해요. 다시 로그인해주세요.');
+          const error = new Error('로그인이 필요해요. 다시 로그인해주세요.');
+          setError(error);
+          return { data: null, error };
         }
         
+        // user_id와 auth.uid() 일치 확인 (RLS 정책 준수를 위해)
         if (authUser.id !== userId) {
-          console.warn('[addEmotion] auth.uid() 불일치 (경고만, RLS가 체크함):', {
+          console.error('[addEmotion] auth.uid()와 userId 불일치:', {
             userId,
             authUid: authUser.id,
-            message: 'user_id와 auth.uid()가 일치하지 않지만 RLS 정책이 체크합니다.'
+            message: 'user_id와 auth.uid()가 일치하지 않습니다. RLS 정책 위반 가능성.'
           });
-          // RLS 정책이 자동으로 체크하므로 여기서는 경고만 하고 계속 진행
+          // RLS 정책이 체크하지만, 클라이언트에서도 일치시켜야 함
+          // userId를 authUser.id로 교정
+          console.warn('[addEmotion] userId를 auth.uid()로 교정:', {
+            oldUserId: userId,
+            newUserId: authUser.id
+          });
+          // userId를 authUser.id로 사용 (RLS 정책 준수)
         }
+        
+        // 최종 user_id 결정 (auth.uid() 우선)
+        const finalUserId = authUser.id;
 
-        // payload에서 undefined 값 제거 및 검증
+        // emotion_date 설정 (없으면 오늘 날짜)
+        const emotionDate = payload.emotion_date || new Date().toISOString().split('T')[0];
+
+        // DB 스키마에 맞게 payload 매핑
+        // emotion_type → main_emotion
+        // content는 그대로 사용
+        // note는 선택적
         const cleanPayload: Record<string, unknown> = {
-          emotion_type: payload.emotion_type,
-          content: payload.content,
-          is_public: payload.is_public
+          emotion_date: emotionDate, // YYYY-MM-DD
+          main_emotion: payload.emotion_type, // DB 스키마: main_emotion
+          content: payload.content // DB 스키마: content
         };
 
+        // 선택적 필드 추가
         if (payload.intensity !== undefined && payload.intensity !== null) {
           cleanPayload.intensity = payload.intensity;
         }
-        if (payload.image_url !== undefined && payload.image_url !== null) {
-          cleanPayload.image_url = payload.image_url;
+        if (payload.note !== undefined && payload.note !== null) {
+          cleanPayload.note = payload.note;
         }
-        if (payload.category_id !== undefined && payload.category_id !== null) {
-          cleanPayload.category_id = payload.category_id;
+        if (payload.is_public !== undefined && payload.is_public !== null) {
+          cleanPayload.is_public = payload.is_public;
         }
 
-        // insert payload 준비
+        // insert payload 준비 (auth.uid()를 user_id로 사용)
         const insertPayload = {
-          user_id: userId,
+          user_id: finalUserId, // auth.uid() 사용 (RLS 정책 준수)
           ...cleanPayload
         };
 
+        // payload 검증
+        if (!insertPayload.main_emotion || !insertPayload.content) {
+          const error = new Error('필수 정보가 누락되었어요. 감정과 내용을 입력해주세요.');
+          console.error('[addEmotion] payload 검증 실패:', {
+            main_emotion: insertPayload.main_emotion,
+            content: insertPayload.content,
+            payload: insertPayload
+          });
+          setError(error);
+          return { data: null, error };
+        }
+
         console.log('[addEmotion] insert 시도:', {
-          userId,
+          originalUserId: userId,
+          finalUserId: finalUserId,
           authUid: authUser.id,
+          userIdMatch: userId === authUser.id,
           payload: insertPayload,
-          payloadKeys: Object.keys(insertPayload)
+          payloadKeys: Object.keys(insertPayload),
+          payloadValues: Object.values(insertPayload),
+          payloadStringified: JSON.stringify(insertPayload, null, 2)
         });
 
         // RLS 정책에 의해 auth.uid() = user_id 조건이 자동 적용됨
+        console.log('[addEmotion] Supabase insert 호출 직전:', {
+          table: 'emotions',
+          payload: insertPayload,
+          payloadStringified: JSON.stringify(insertPayload)
+        });
+        
         const { data, error: insertError } = await supabase
           .from('emotions')
           .insert(insertPayload)
@@ -147,18 +199,49 @@ export function useEmotions(options: UseEmotionsOptions = {}) {
           .single();
 
         if (insertError) {
-          console.error('[addEmotion] insert 실패:', {
+          console.error('[addEmotion] insert 실패 - 상세 에러:', {
             error: insertError,
             code: insertError.code,
             message: insertError.message,
             details: insertError.details,
             hint: insertError.hint,
-            userId,
-            payload: insertPayload
+            originalUserId: userId,
+            finalUserId: finalUserId,
+            authUid: authUser.id,
+            payload: insertPayload,
+            payloadStringified: JSON.stringify(insertPayload, null, 2),
+            // RLS 정책 에러 체크
+            isRLSError: insertError.code === '42501' || 
+                       insertError.message?.includes('permission denied') || 
+                       insertError.message?.includes('RLS') ||
+                       insertError.message?.includes('row-level security'),
+            // 네트워크 에러 체크
+            isNetworkError: insertError.message?.includes('fetch') || 
+                          insertError.message?.includes('network') ||
+                          insertError.message?.includes('Failed to fetch')
           });
-          const error = new Error(insertError.message || '감정 기록 저장에 실패했어요.');
+          
+          // 에러 타입별 메시지
+          let errorMessage = insertError.message || '감정 기록 저장에 실패했어요.';
+          if (insertError.code === '42501' || insertError.message?.includes('permission denied') || insertError.message?.includes('RLS')) {
+            errorMessage = '기록 저장 권한이 없어요. 로그인 상태를 확인해주세요.';
+            console.error('[addEmotion] RLS 정책 에러 감지 - auth.uid()와 user_id 불일치 가능성');
+          } else if (insertError.code === '23503') {
+            errorMessage = '사용자 정보를 찾을 수 없어요. 다시 로그인해주세요.';
+            console.error('[addEmotion] Foreign Key 제약 조건 위반 - users 테이블에 user_id가 없음');
+          } else if (insertError.code === '23502') {
+            errorMessage = '필수 정보가 누락되었어요. 다시 시도해주세요.';
+            console.error('[addEmotion] NOT NULL 제약 조건 위반');
+          } else if (insertError.code === '23514') {
+            errorMessage = '입력값이 올바르지 않아요. 다시 확인해주세요.';
+            console.error('[addEmotion] CHECK 제약 조건 위반');
+          }
+          
+          const error = new Error(errorMessage);
           setError(error);
-          throw error;
+          
+          // 에러를 throw하지 않고 반환 (Record.tsx에서 처리)
+          return { data: null, error };
         }
 
         if (!data) {
@@ -172,7 +255,7 @@ export function useEmotions(options: UseEmotionsOptions = {}) {
         console.log('[addEmotion] insert 성공:', {
           dataId: data.id,
           userId: data.user_id,
-          emotionType: data.emotion_type
+          mainEmotion: data.main_emotion
         });
 
         // 상태 업데이트: 최신 기록을 맨 앞에 추가
@@ -217,7 +300,17 @@ export function useEmotions(options: UseEmotionsOptions = {}) {
   );
 
   const updateEmotion = useCallback(
-    async (id: string, payload: Partial<Omit<EmotionRecord, 'id' | 'user_id' | 'created_at'>>) => {
+    async (
+      id: string,
+      payload: {
+        emotion_type?: string; // 프론트엔드에서는 emotion_type으로 받지만 DB에는 main_emotion으로 저장
+        intensity?: number;
+        content?: string;
+        note?: string | null;
+        is_public?: boolean | null;
+        emotion_date?: string;
+      }
+    ) => {
       if (!userId) {
         throw new Error('로그인이 필요해요.');
       }
@@ -225,13 +318,33 @@ export function useEmotions(options: UseEmotionsOptions = {}) {
       setError(null);
 
       try {
+        // DB 스키마에 맞게 payload 변환
+        const updatePayload: Record<string, unknown> = {};
+        
+        if (payload.emotion_type !== undefined) {
+          updatePayload.main_emotion = payload.emotion_type; // emotion_type → main_emotion
+        }
+        if (payload.intensity !== undefined) {
+          updatePayload.intensity = payload.intensity;
+        }
+        if (payload.content !== undefined) {
+          updatePayload.content = payload.content;
+        }
+        if (payload.note !== undefined) {
+          updatePayload.note = payload.note;
+        }
+        if (payload.is_public !== undefined) {
+          updatePayload.is_public = payload.is_public;
+        }
+        if (payload.emotion_date !== undefined) {
+          updatePayload.emotion_date = payload.emotion_date;
+        }
+
         // RLS 정책에 의해 auth.uid() = user_id 조건이 자동 적용됨
         const { data, error: updateError } = await supabase
           .from('emotions')
-          .update({
-            ...payload,
-            // updated_at은 트리거가 자동으로 갱신하므로 명시적으로 설정하지 않아도 됨
-          })
+          .update(updatePayload)
+          // updated_at은 트리거가 자동으로 갱신하므로 명시적으로 설정하지 않아도 됨
           .eq('id', id)
           .eq('user_id', userId) // RLS와 함께 이중 체크
           .select()
@@ -294,10 +407,11 @@ export function useEmotions(options: UseEmotionsOptions = {}) {
 
   const getEmotionByDate = useCallback(
     (date: string): EmotionRecord | null => {
-      const targetDate = new Date(`${date}T00:00:00`).toISOString().split('T')[0];
+      const targetDate = date.split('T')[0]; // YYYY-MM-DD 형식
       return (
         emotions.find((emotion) => {
-          const emotionDate = new Date(emotion.created_at).toISOString().split('T')[0];
+          // emotion_date가 있으면 사용, 없으면 created_at에서 추출
+          const emotionDate = emotion.emotion_date || new Date(emotion.created_at).toISOString().split('T')[0];
           return emotionDate === targetDate;
         }) || null
       );
@@ -313,16 +427,14 @@ export function useEmotions(options: UseEmotionsOptions = {}) {
       }
 
       try {
-        const date = targetDate || new Date().toISOString().split('T')[0];
-        const startOfDay = new Date(`${date}T00:00:00Z`).toISOString();
-        const endOfDay = new Date(`${date}T23:59:59Z`).toISOString();
+        const date = targetDate || new Date().toISOString().split('T')[0]; // YYYY-MM-DD
 
+        // emotion_date 컬럼을 사용하여 조회 (DB 스키마에 맞게)
         const { data, error } = await supabase
           .from('emotions')
           .select('*')
           .eq('user_id', userId)
-          .gte('created_at', startOfDay)
-          .lte('created_at', endOfDay)
+          .eq('emotion_date', date) // emotion_date로 조회
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle();
@@ -349,17 +461,15 @@ export function useEmotions(options: UseEmotionsOptions = {}) {
       }
 
       try {
-        const date = targetDate || new Date().toISOString().split('T')[0];
-        const startOfDay = new Date(`${date}T00:00:00Z`).toISOString();
-        const endOfDay = new Date(`${date}T23:59:59Z`).toISOString();
+        const date = targetDate || new Date().toISOString().split('T')[0]; // YYYY-MM-DD
 
+        // emotion_date 컬럼을 사용하여 조회 (DB 스키마에 맞게)
         const { data, error } = await supabase
           .from('emotions')
           .select('id')
           .eq('user_id', userId)
+          .eq('emotion_date', date) // emotion_date로 조회
           .eq('is_public', false)
-          .gte('created_at', startOfDay)
-          .lte('created_at', endOfDay)
           .limit(1)
           .maybeSingle();
 

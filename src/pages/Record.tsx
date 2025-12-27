@@ -3,9 +3,12 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import Layout from '@components/Layout';
 import { useAuth } from '@hooks/useAuth';
 import { useEmotions } from '@hooks/useEmotions';
+import { useHomeData } from '@hooks/useHomeData';
 import { useNotify } from '@providers/NotifyProvider';
 import { useActionGuard } from '@hooks/useActionGuard';
 import { uploadEmotionImage, deleteEmotionImage } from '@utils/imageUpload';
+import { supabase } from '@lib/supabaseClient';
+import { updateFlowerGrowth } from '@services/flowers';
 import '@styles/page-hero.css';
 import '@styles/record.css';
 import { EMOTION_OPTIONS, type EmotionOption } from '@constants/emotions';
@@ -31,6 +34,7 @@ export default function Record() {
   const { emotions, addEmotion, updateEmotion, fetchEmotions, checkTodayPrivateEmotion } = useEmotions({
     userId: user?.id || null
   });
+  const { refetch: refetchHomeData } = useHomeData(user?.id || null);
 
   const goBack = useCallback(() => {
     if (window.history.length > 1) {
@@ -132,17 +136,19 @@ useEffect(() => {
         return;
       }
 
-  const emotionOpt = EMOTION_OPTIONS.find((opt) => opt.label === existing.emotion_type);
+  // DB 스키마: main_emotion (기존 emotion_type)
+  const emotionOpt = EMOTION_OPTIONS.find((opt) => opt.label === existing.main_emotion);
   setSelectedEmotion(emotionOpt ?? null);
+  // DB 스키마: content (최근 추가)
   setNote(existing.content);
-  setIsPublic(existing.is_public);
-  setSelectedCategories(existing.category_id ? [existing.category_id] : []);
-  setRecordDate(new Date(existing.created_at).toISOString().split('T')[0]);
-  if (existing.image_url) {
-    setPhotos([{ id: existing.id, file: null, url: existing.image_url }]);
-  } else {
-    setPhotos([]);
-  }
+  setIsPublic(existing.is_public ?? false);
+  // category_id는 DB에 없으므로 제거
+  setSelectedCategories([]);
+  // emotion_date가 있으면 사용, 없으면 created_at에서 추출
+  const recordDate = existing.emotion_date || new Date(existing.created_at).toISOString().split('T')[0];
+  setRecordDate(recordDate);
+  // image_url은 DB에 없으므로 제거
+  setPhotos([]);
 }, [editingRecordId, isEditing, goBack, emotions, user, fetchEmotions]);
 
 const showCategorySection = isPublic;
@@ -204,27 +210,22 @@ const isSharedToForest = isPublic && selectedCategories.length > 0;
 
       setIsUploadingImage(false);
 
-      // payload 준비 (undefined 값 제외)
+      // payload 준비 (DB 스키마에 맞게)
+      // emotion_type → main_emotion (useEmotions에서 변환)
+      // content는 그대로 사용
+      // emotion_date는 recordDate 사용
+      // image_url, category_id는 DB에 없으므로 제거
       const payload: {
         emotion_type: string;
-        intensity?: number;
         content: string;
-        image_url?: string | null;
-        is_public: boolean;
-        category_id?: string | null;
+        emotion_date?: string;
+        is_public?: boolean | null;
       } = {
         emotion_type: selectedEmotion.label,
         content: note.trim(),
-        is_public: isPublic
+        emotion_date: recordDate, // YYYY-MM-DD
+        is_public: isPublic || null
       };
-
-      // 선택적 필드만 추가
-      if (imageUrl) {
-        payload.image_url = imageUrl;
-      }
-      if (isPublic && selectedCategories.length > 0) {
-        payload.category_id = selectedCategories[0];
-      }
 
       if (isEditing && editingRecordId) {
         // 수정
@@ -235,7 +236,57 @@ const isSharedToForest = isPublic && selectedCategories.length > 0;
         }
 
         if (data) {
-          await createNotification(user.id, 'record_updated', { recordId: data.id });
+          // flowers 업데이트 (수정 모드: 성장 증가 없음) - 먼저 실행
+          let flowerUpdated = false;
+          try {
+            const emotionDate = recordDate || new Date().toISOString().split('T')[0];
+            const updatedFlower = await updateFlowerGrowth(
+              user.id,
+              emotionDate,
+              false // isNewRecord: 수정 모드 (성장 증가 없음)
+            );
+            if (updatedFlower) {
+              flowerUpdated = true;
+              console.log('[Record] 수정 후 flowers 업데이트 완료 (성장 증가 없음):', {
+                userId: user.id,
+                growthPercent: updatedFlower.growth_percent,
+                emotionDate
+              });
+            }
+          } catch (flowerError) {
+            console.error('[Record] 수정 후 flowers 업데이트 중 오류:', {
+              error: flowerError,
+              errorMessage: flowerError instanceof Error ? flowerError.message : String(flowerError),
+              userId: user.id
+            });
+          }
+
+          // 홈 데이터 refetch (flowers 업데이트 후 실행)
+          try {
+            await refetchHomeData();
+            console.log('[Record] 수정 후 홈 데이터 refetch 완료 (flowers 업데이트 후):', {
+              flowerUpdated,
+              userId: user.id
+            });
+          } catch (refetchError) {
+            console.error('[Record] 수정 후 홈 데이터 refetch 실패:', {
+              error: refetchError,
+              errorMessage: refetchError instanceof Error ? refetchError.message : String(refetchError),
+              userId: user.id
+            });
+          }
+
+          // 알림 생성
+          try {
+            await createNotification(user.id, 'record_updated', { recordId: data.id });
+          } catch (notifError) {
+            console.error('[Record] 수정 알림 생성 실패:', {
+              error: notifError,
+              errorMessage: notifError instanceof Error ? notifError.message : String(notifError),
+              userId: user.id
+            });
+          }
+
           notify.success('기록이 저장되었습니다 💧');
           // 목록 갱신 후 뒤로가기
           await fetchEmotions();
@@ -255,6 +306,9 @@ const isSharedToForest = isPublic && selectedCategories.length > 0;
           console.error('[Record] addEmotion 실패:', {
             error,
             errorMessage: error.message,
+            errorCode: (error as any)?.code,
+            errorDetails: (error as any)?.details,
+            errorHint: (error as any)?.hint,
             payload,
             userId: user?.id
           });
@@ -274,22 +328,77 @@ const isSharedToForest = isPublic && selectedCategories.length > 0;
 
         console.log('[Record] addEmotion 성공:', {
           recordId: data.id,
-          emotionType: data.emotion_type,
+          mainEmotion: data.main_emotion, // DB 스키마: main_emotion
           userId: data.user_id
         });
 
+        // flowers 성장 업데이트 (신규 기록만 성장 증가) - 먼저 실행
+        let flowerUpdated = false;
+        try {
+          const updatedFlower = await updateFlowerGrowth(
+            user.id,
+            recordDate, // YYYY-MM-DD
+            true // isNewRecord: 신규 기록
+          );
+          if (updatedFlower) {
+            flowerUpdated = true;
+            console.log('[Record] flowers 성장 업데이트 성공:', {
+              userId: user.id,
+              growthPercent: updatedFlower.growth_percent,
+              isBloomed: updatedFlower.is_bloomed,
+              emotionDate: recordDate
+            });
+          } else {
+            console.warn('[Record] flowers 성장 업데이트 실패 (null 반환):', {
+              userId: user.id,
+              emotionDate: recordDate
+            });
+          }
+        } catch (flowerError) {
+          console.error('[Record] flowers 성장 업데이트 중 오류:', {
+            error: flowerError,
+            errorMessage: flowerError instanceof Error ? flowerError.message : String(flowerError),
+            userId: user.id,
+            emotionDate: recordDate
+          });
+        }
+
+        // 홈 데이터 refetch (flowers 업데이트 후 실행하여 게이지 즉시 반영)
+        try {
+          await refetchHomeData();
+          console.log('[Record] 홈 데이터 refetch 완료 (flowers 업데이트 후):', {
+            flowerUpdated,
+            userId: user.id
+          });
+        } catch (refetchError) {
+          console.error('[Record] 홈 데이터 refetch 실패:', {
+            error: refetchError,
+            errorMessage: refetchError instanceof Error ? refetchError.message : String(refetchError),
+            userId: user.id
+          });
+        }
+
+        // 알림 생성
         const isFirstRecord = emotions.length === 0;
-        await createNotification(user.id, 'record_saved', { recordId: data.id });
-        if (isFirstRecord) {
-          await createNotification(user.id, 'first_record', { recordId: data.id });
-        }
-        if (imageUrl) {
-          await createNotification(user.id, 'record_with_image', { recordId: data.id });
-        }
-        if (isPublic) {
-          await createNotification(user.id, 'record_visibility_changed', {
-            recordId: data.id,
-            isPublic: true
+        try {
+          await createNotification(user.id, 'record_saved', { recordId: data.id });
+          if (isFirstRecord) {
+            await createNotification(user.id, 'first_record', { recordId: data.id });
+          }
+          if (imageUrl) {
+            await createNotification(user.id, 'record_with_image', { recordId: data.id });
+          }
+          if (isPublic) {
+            await createNotification(user.id, 'record_visibility_changed', {
+              recordId: data.id,
+              isPublic: true
+            });
+          }
+        } catch (notifError) {
+          console.error('[Record] 알림 생성 실패:', {
+            error: notifError,
+            errorMessage: notifError instanceof Error ? notifError.message : String(notifError),
+            userId: user.id
           });
         }
 

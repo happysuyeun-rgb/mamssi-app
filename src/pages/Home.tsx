@@ -116,13 +116,14 @@ export default function Home() {
       });
     }
 
-    // 실제 emotions 데이터로 주간 요약 생성
+    // 실제 emotions 데이터로 주간 요약 생성 (emotion_date 기준)
     const startDate = isoToDate(initialWeekStart);
     return Array.from({ length: 7 }, (_, idx) => {
       const iso = formatIso(addDays(startDate, idx));
       const dailyRecords = emotions
         .filter((e) => {
-          const emotionDate = new Date(e.created_at).toISOString().split('T')[0];
+          // DB 스키마: emotion_date 우선 사용, 없으면 created_at에서 추출
+          const emotionDate = e.emotion_date || new Date(e.created_at).toISOString().split('T')[0];
           return emotionDate === iso;
         })
         .sort((a, b) => (a.created_at > b.created_at ? -1 : 1));
@@ -138,11 +139,12 @@ export default function Home() {
       }
 
       const first = dailyRecords[0];
-      const emotionOpt = EMOTION_OPTIONS.find((opt) => opt.label === first.emotion_type);
+      // DB 스키마: main_emotion 사용
+      const emotionOpt = EMOTION_OPTIONS.find((opt) => opt.label === first.main_emotion);
       return {
         date: iso,
         emoji: emotionOpt?.emoji || '',
-        label: emotionOpt?.label || first.emotion_type,
+        label: emotionOpt?.label || first.main_emotion,
         note: first.content,
         recordId: first.id
       };
