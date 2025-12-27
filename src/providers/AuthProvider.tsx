@@ -33,6 +33,13 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const ONBOARDING_COMPLETE_KEY = 'onboardingComplete';
 const GUEST_MODE_KEY = 'isGuest';
 
+// 로딩 완료 시 배너 제거 헬퍼 함수
+const removeLoadingBanner = () => {
+  if (typeof (window as any).__removeLoadingBanner === 'function') {
+    (window as any).__removeLoadingBanner();
+  }
+};
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const location = useLocation();
   const [user, setUser] = useState<User | null>(null);
@@ -168,6 +175,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error('[AuthProvider] 10초 타임아웃 - 강제로 loading 해제');
       setSessionInitialized(true);
       setLoading(false);
+      removeLoadingBanner(); // 로딩 완료 시 배너 제거
       setUserProfile(null);
     }, 10000);
 
@@ -242,6 +250,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log('[AuthProvider] setLoading(false) 호출 - getSession 경로');
         setSessionInitialized(true);
         setLoading(false);
+        removeLoadingBanner(); // 로딩 완료 시 배너 제거
         diag.log('AuthProvider: 초기화 완료', { sessionInitialized: true, loading: false });
       })
       .catch((err) => {
@@ -253,6 +262,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log('[AuthProvider] setLoading(false) 호출 - getSession catch 경로');
         setSessionInitialized(true);
         setLoading(false);
+        removeLoadingBanner(); // 로딩 완료 시 배너 제거
         setUserProfile(null);
       });
 
@@ -326,6 +336,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log('[AuthProvider] setLoading(false) 호출 - onAuthStateChange 경로');
         setSessionInitialized(true);
         setLoading(false);
+        removeLoadingBanner(); // 로딩 완료 시 배너 제거
         diag.log('AuthProvider: onAuthStateChange 완료', { event, loading: false });
       } catch (err) {
         console.error('[AuthProvider] onAuthStateChange 예외:', err);
@@ -334,6 +345,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log('[AuthProvider] setLoading(false) 호출 - onAuthStateChange catch 경로');
         setSessionInitialized(true);
         setLoading(false);
+        removeLoadingBanner(); // 로딩 완료 시 배너 제거
         setUserProfile(null);
       }
     });

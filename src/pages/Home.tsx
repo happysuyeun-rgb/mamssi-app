@@ -51,7 +51,7 @@ export default function Home() {
   const [searchParams] = useSearchParams();
   const { isGuest, session, user } = useAuth();
   const notify = useNotify();
-  const { today, weekStats, flower, feedSummary, seedName, loading: homeDataLoading } = useHomeData(user?.id || null);
+  const { today, weekStats, flower, feedSummary, seedName, loading: homeDataLoading, refetch: refetchHomeData } = useHomeData(user?.id || null);
   const { emotions, loading: emotionsLoading, hasTodayEmotion, fetchEmotions } = useEmotions({
     userId: user?.id || null
   });
@@ -154,12 +154,41 @@ export default function Home() {
   // 성장 데이터 (flowers 테이블 또는 계산값)
   const growthPct = useMemo(() => {
     if (guestMode || !user) return 0;
-    return clampPercent(flower?.growth_pct || 0);
+    // DB 스키마: growth_percent
+    const percent = flower?.growth_percent || 0;
+    return clampPercent(percent);
   }, [flower, user, guestMode]);
+  
+  // flower state 변경 감지 (디버깅용)
+  useEffect(() => {
+    if (flower) {
+      console.log('[Home] flower state 변경:', {
+        flowerId: flower.id,
+        growthPercent: flower.growth_percent,
+        isBloomed: flower.is_bloomed,
+        calculatedGrowthPct: growthPct
+      });
+    }
+  }, [flower, growthPct]);
 
+  // 성장 단계 계산 (설계서 기준: 포인트 기반)
+  // Level 0 (씨앗): 0pt
+  // Level 1 (새싹): 10pt ~ 29pt
+  // Level 2 (줄기): 30pt ~ 49pt
+  // Level 3 (꽃봉오리): 50pt ~ 69pt
+  // Level 4 (반쯤 열린 꽃봉오리): 70pt ~ 99pt
+  // Level 5 (개화): 100pt
   const bloomLevel = useMemo(() => {
     if (guestMode || !user) return 0;
-    return flower?.bloom_level || 0;
+    
+    const percent = flower?.growth_percent || 0; // growth_percent는 포인트 값 (0-100pt)
+    
+    if (percent >= 100) return 5; // Level 5: 개화 (100pt)
+    if (percent >= 70) return 4; // Level 4: 반쯤 열린 꽃봉오리 (70pt~99pt)
+    if (percent >= 50) return 3; // Level 3: 꽃봉오리 (50pt~69pt)
+    if (percent >= 30) return 2; // Level 2: 줄기 (30pt~49pt)
+    if (percent >= 10) return 1; // Level 1: 새싹 (10pt~29pt)
+    return 0; // Level 0: 씨앗 (0pt~9pt)
   }, [flower, user, guestMode]);
 
   // 정원 상태 (30일 기준)

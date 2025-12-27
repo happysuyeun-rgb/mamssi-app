@@ -1,18 +1,20 @@
 import { Link } from 'react-router-dom';
-import { CURRENT_USER_ID } from '@constants/user';
+import { useAuth } from '@hooks/useAuth';
 import { useNotificationCenter } from '@hooks/useNotificationCenter';
 import NotificationSheet from '@components/notifications/NotificationSheet';
 import '@styles/notifications.css';
 
 export default function Header() {
+  const { user } = useAuth();
   const {
     notifications,
     badgeCount,
     isSheetOpen,
     openSheet,
     closeSheet,
-    markAll
-  } = useNotificationCenter(CURRENT_USER_ID);
+    markAll,
+    markRead
+  } = useNotificationCenter(user?.id || '');
 
   return (
     <>
@@ -67,6 +69,7 @@ export default function Header() {
         notifications={notifications}
         onClose={closeSheet}
         onMarkAllRead={markAll}
+        onMarkRead={markRead}
       />
     </>
   );

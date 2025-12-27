@@ -82,6 +82,7 @@ export function useEmotions(options: UseEmotionsOptions = {}) {
       note?: string | null; // DB 스키마: note (nullable)
       is_public?: boolean | null; // DB 스키마: is_public (nullable)
       emotion_date?: string; // YYYY-MM-DD, 없으면 오늘 날짜 사용
+      category_id?: string | null; // 공감숲 카테고리 (공유 시)
     }) => {
       if (!userId) {
         throw new Error('로그인이 필요해요.');
@@ -154,6 +155,9 @@ export function useEmotions(options: UseEmotionsOptions = {}) {
         }
         if (payload.is_public !== undefined && payload.is_public !== null) {
           cleanPayload.is_public = payload.is_public;
+        }
+        if (payload.category_id !== undefined && payload.category_id !== null) {
+          cleanPayload.category_id = payload.category_id; // 공감숲 카테고리
         }
 
         // insert payload 준비 (auth.uid()를 user_id로 사용)

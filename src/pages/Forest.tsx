@@ -19,9 +19,8 @@ const SORT_OPTIONS: { label: string; value: SortType }[] = [
 ];
 
 const REPORT_REASONS: ReportReason[] = [
-  '스팸/광고',
-  '욕설/혐오 표현',
-  '자해/위험 행동',
+  '부적절/혐오',
+  '광고/스팸',
   '개인정보 노출',
   '기타'
 ];
@@ -165,7 +164,8 @@ export default function Forest({ mode = 'all' }: ForestProps) {
         if (wasLiked) {
           notify.info('공감을 취소했어요', '💧');
         } else {
-          notify.info('공감했어요 💧', '💧');
+          // 가이드: "공감 한방울이 전해졌어요."
+          notify.success('공감 한방울이 전해졌어요.', '💧');
         }
       },
       {
@@ -181,7 +181,8 @@ export default function Forest({ mode = 'all' }: ForestProps) {
       'report_post',
       async () => {
         await reportPostCommunity(reportTargetId, reason, memo);
-        notify.success('신고가 접수되었습니다. 감사합니다.', '✅');
+        // 가이드: "신고 접수가 되었어요. 완전하게 살펴볼게요."
+        notify.success('신고 접수가 되었어요. 완전하게 살펴볼게요.', '✅');
         setReportTargetId(null);
         setReportDetails('');
       },
@@ -641,8 +642,13 @@ function ReportModal({
   return (
     <div className="forest-report-modal" role="dialog" aria-modal="true">
       <div className="forest-report-panel">
-        <h3>이 글을 신고할까요?</h3>
-        <p className="forest-report-desc">신고 사유를 선택해 주세요.</p>
+        <div className="forest-report-header">
+          <h3>이 글을 신고할까요?</h3>
+          <button type="button" className="forest-report-close" onClick={onClose} aria-label="닫기">
+            ✕
+          </button>
+        </div>
+        <p className="forest-report-desc">신고 사유를 선택해 주세요. (필수)</p>
 
         <div className="forest-report-reasons">
           {REPORT_REASONS.map(item => (

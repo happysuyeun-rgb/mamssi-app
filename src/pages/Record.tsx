@@ -214,17 +214,21 @@ const isSharedToForest = isPublic && selectedCategories.length > 0;
       // emotion_type → main_emotion (useEmotions에서 변환)
       // content는 그대로 사용
       // emotion_date는 recordDate 사용
-      // image_url, category_id는 DB에 없으므로 제거
+      // category_id는 공감숲 공유 시 첫 번째 카테고리 사용
       const payload: {
         emotion_type: string;
         content: string;
         emotion_date?: string;
         is_public?: boolean | null;
+        category_id?: string | null; // 공감숲 카테고리 (공유 시)
       } = {
         emotion_type: selectedEmotion.label,
         content: note.trim(),
         emotion_date: recordDate, // YYYY-MM-DD
-        is_public: isPublic || null
+        is_public: isPublic || null,
+        category_id: isSharedToForest && selectedCategories.length > 0 
+          ? selectedCategories[0] // 첫 번째 카테고리 사용
+          : null
       };
 
       if (isEditing && editingRecordId) {
@@ -243,7 +247,8 @@ const isSharedToForest = isPublic && selectedCategories.length > 0;
             const updatedFlower = await updateFlowerGrowth(
               user.id,
               emotionDate,
-              false // isNewRecord: 수정 모드 (성장 증가 없음)
+              false, // isNewRecord: 수정 모드 (성장 증가 없음)
+              false // isPublic: 수정 모드에서는 포인트 증가 없음
             );
             if (updatedFlower) {
               flowerUpdated = true;
@@ -276,9 +281,13 @@ const isSharedToForest = isPublic && selectedCategories.length > 0;
             });
           }
 
-          // 알림 생성
+          // 알림 생성: 기록 수정 완료
           try {
             await createNotification(user.id, 'record_updated', { recordId: data.id });
+            // 알림 센터 새로고침
+            if (typeof (window as any).__refreshNotifications === 'function') {
+              (window as any).__refreshNotifications();
+            }
           } catch (notifError) {
             console.error('[Record] 수정 알림 생성 실패:', {
               error: notifError,
@@ -287,7 +296,8 @@ const isSharedToForest = isPublic && selectedCategories.length > 0;
             });
           }
 
-          notify.success('기록이 저장되었습니다 💧');
+          // 가이드: "기록이 새로운 마음에 맞게 업데이트되었어요."
+          notify.success('기록이 새로운 마음에 맞게 업데이트되었어요.', '💧');
           // 목록 갱신 후 뒤로가기
           await fetchEmotions();
           goBack();
@@ -333,12 +343,14 @@ const isSharedToForest = isPublic && selectedCategories.length > 0;
         });
 
         // flowers 성장 업데이트 (신규 기록만 성장 증가) - 먼저 실행
+        // 설계서: 공개 기록 +10pt, 개인 기록 +5pt
         let flowerUpdated = false;
         try {
           const updatedFlower = await updateFlowerGrowth(
             user.id,
             recordDate, // YYYY-MM-DD
-            true // isNewRecord: 신규 기록
+            true, // isNewRecord: 신규 기록
+            isSharedToForest || isPublic // isPublic: 공개 기록 여부
           );
           if (updatedFlower) {
             flowerUpdated = true;
@@ -364,50 +376,103 @@ const isSharedToForest = isPublic && selectedCategories.length > 0;
         }
 
         // 홈 데이터 refetch (flowers 업데이트 후 실행하여 게이지 즉시 반영)
+        // refetchHomeData를 강제로 호출하여 홈 화면 게이지 즉시 업데이트
         try {
+          console.log('[Record] 홈 데이터 refetch 시작:', { flowerUpdated, userId: user.id });
           await refetchHomeData();
           console.log('[Record] 홈 데이터 refetch 완료 (flowers 업데이트 후):', {
             flowerUpdated,
-            userId: user.id
+            userId: user.id,
+            timestamp: new Date().toISOString()
           });
+          
+          // 추가로 약간의 지연 후 한 번 더 refetch (확실한 반영을 위해)
+          setTimeout(async () => {
+            try {
+              await refetchHomeData();
+              console.log('[Record] 홈 데이터 refetch 재시도 완료:', { userId: user.id });
+            } catch (retryError) {
+              console.error('[Record] 홈 데이터 refetch 재시도 실패:', {
+                error: retryError,
+                errorMessage: retryError instanceof Error ? retryError.message : String(retryError)
+              });
+            }
+          }, 500);
         } catch (refetchError) {
           console.error('[Record] 홈 데이터 refetch 실패:', {
             error: refetchError,
             errorMessage: refetchError instanceof Error ? refetchError.message : String(refetchError),
+            errorCode: (refetchError as any)?.code,
+            errorDetails: (refetchError as any)?.details,
+            errorHint: (refetchError as any)?.hint,
             userId: user.id
           });
         }
 
-        // 알림 생성
-        const isFirstRecord = emotions.length === 0;
+        // 알림 생성: 감정 신규 기록 (가이드에 맞게 분기)
         try {
-          await createNotification(user.id, 'record_saved', { recordId: data.id });
+          // 첫 기록 여부 확인
+          const isFirstRecord = emotions.length === 0;
+          
+          let notificationType: 'first_record' | 'record_saved';
+          let notificationMessage: string;
+          
           if (isFirstRecord) {
-            await createNotification(user.id, 'first_record', { recordId: data.id });
+            // 첫 기록: "첫 기록이 저장되었어요. 감정 정원에 씨앗이 자랐어요."
+            notificationType = 'first_record';
+            notificationMessage = '첫 기록이 저장되었어요. 감정 정원에 씨앗이 자랐어요.';
+          } else if (isSharedToForest || isPublic) {
+            // 공개 기록 (공감숲 공유): "공감숲에 기록이 저장되었어요. 다른 사람도 볼 수 있어요."
+            notificationType = 'record_saved';
+            notificationMessage = '공감숲에 기록이 저장되었어요. 다른 사람도 볼 수 있어요.';
+          } else {
+            // 비공개 기록: "오늘의 감정이 기록이 조용히 정원에 저장되었어요."
+            notificationType = 'record_saved';
+            notificationMessage = '오늘의 감정이 기록이 조용히 정원에 저장되었어요.';
           }
-          if (imageUrl) {
-            await createNotification(user.id, 'record_with_image', { recordId: data.id });
-          }
-          if (isPublic) {
-            await createNotification(user.id, 'record_visibility_changed', {
-              recordId: data.id,
-              isPublic: true
-            });
+          
+          await createNotification(
+            user.id,
+            notificationType,
+            { recordId: data.id, isPublic, isSharedToForest },
+            {
+              message: notificationMessage
+            }
+          );
+          console.log('[Record] 감정 기록 알림 생성 성공:', { 
+            userId: user.id, 
+            recordId: data.id,
+            type: notificationType,
+            isFirstRecord,
+            isPublic,
+            isSharedToForest
+          });
+          
+          // 알림 센터 새로고침 (Header에서 사용)
+          if (typeof (window as any).__refreshNotifications === 'function') {
+            (window as any).__refreshNotifications();
           }
         } catch (notifError) {
-          console.error('[Record] 알림 생성 실패:', {
+          console.error('[Record] 감정 기록 알림 생성 실패:', {
             error: notifError,
             errorMessage: notifError instanceof Error ? notifError.message : String(notifError),
+            errorCode: (notifError as any)?.code,
+            errorDetails: (notifError as any)?.details,
+            errorHint: (notifError as any)?.hint,
             userId: user.id
           });
         }
 
+        // 가이드에 맞게 토스트 메시지 분기
         if (isSharedToForest) {
-          notify.success('기록이 저장되고 공감숲에도 함께 심어졌어요 💧');
+          // 공감숲 공유: "공감숲에 기록이 저장되었어요. 다른 사람도 볼 수 있어요."
+          notify.success('공감숲에 기록이 저장되었어요. 다른 사람도 볼 수 있어요.', '💧');
         } else if (isPublic) {
-          notify.success('기록이 저장되었습니다 💧');
+          // 공개 기록: "공감숲에 기록이 저장되었어요. 다른 사람도 볼 수 있어요."
+          notify.success('공감숲에 기록이 저장되었어요. 다른 사람도 볼 수 있어요.', '💧');
         } else {
-          notify.success('기록이 저장되었습니다 💧');
+          // 비공개 기록: "오늘의 감정이 기록이 조용히 정원에 저장되었어요."
+          notify.success('오늘의 감정이 기록이 조용히 정원에 저장되었어요.', '💧');
         }
 
         // 목록 갱신 후 폼 초기화 및 이동

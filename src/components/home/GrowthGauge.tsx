@@ -5,6 +5,7 @@ type GrowthGaugeProps = {
   growthPct: number; // 0-100
   growthLevelImage?: string; // 선택적: 꽃 이미지 경로
   stageLabel?: string; // 선택적: 단계 레이블
+  bloomLevel?: number; // 선택적: 성장 단계 (0-5)
 };
 
 const growthImages: Record<number, string> = {
@@ -29,9 +30,24 @@ function clampPercent(value: number): number {
   return Math.max(0, Math.min(100, Math.round(value)));
 }
 
-function getGrowthLevel(percent: number): number {
-  if (percent >= 100) return 5;
-  return Math.min(5, Math.floor(percent / 20));
+// 성장 단계 계산 (설계서 기준: 포인트 기반)
+// Level 0 (씨앗): 0pt
+// Level 1 (새싹): 10pt ~ 29pt
+// Level 2 (줄기): 30pt ~ 49pt
+// Level 3 (꽃봉오리): 50pt ~ 69pt
+// Level 4 (반쯤 열린 꽃봉오리): 70pt ~ 99pt
+// Level 5 (개화): 100pt
+function getGrowthLevel(percent: number, bloomLevel?: number): number {
+  // bloomLevel이 전달되면 우선 사용
+  if (bloomLevel !== undefined) return bloomLevel;
+  
+  // 설계서 기준으로 계산
+  if (percent >= 100) return 5; // Level 5: 개화 (100pt)
+  if (percent >= 70) return 4; // Level 4: 반쯤 열린 꽃봉오리 (70pt~99pt)
+  if (percent >= 50) return 3; // Level 3: 꽃봉오리 (50pt~69pt)
+  if (percent >= 30) return 2; // Level 2: 줄기 (30pt~49pt)
+  if (percent >= 10) return 1; // Level 1: 새싹 (10pt~29pt)
+  return 0; // Level 0: 씨앗 (0pt~9pt)
 }
 
 function getGaugeMetrics(percent: number) {
@@ -41,9 +57,9 @@ function getGaugeMetrics(percent: number) {
   return { radius, circumference, dashOffset };
 }
 
-export default function GrowthGauge({ growthPct, growthLevelImage, stageLabel: propStageLabel }: GrowthGaugeProps) {
+export default function GrowthGauge({ growthPct, growthLevelImage, stageLabel: propStageLabel, bloomLevel }: GrowthGaugeProps) {
   const progress = clampPercent(growthPct);
-  const growthLevel = useMemo(() => getGrowthLevel(progress), [progress]);
+  const growthLevel = useMemo(() => getGrowthLevel(progress, bloomLevel), [progress, bloomLevel]);
   const stageLabel = propStageLabel || growthLevelLabels[growthLevel];
   const imagePath = growthLevelImage || growthImages[growthLevel];
   const gaugeMetrics = useMemo(() => getGaugeMetrics(progress), [progress]);

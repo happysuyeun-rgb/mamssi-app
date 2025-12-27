@@ -125,7 +125,7 @@ export default function FlowerBadge({
         </div>
         <div className="home-garden-content">
           <div className="home-garden-left">
-            <GrowthGauge growthPct={growthPct} growthLevelImage={growthLevelImage} stageLabel={stageLabel} />
+            <GrowthGauge growthPct={growthPct} growthLevelImage={growthLevelImage} stageLabel={stageLabel} bloomLevel={growthLevel} />
           </div>
           <div className="home-garden-right">
             <p className="home-garden-stage">현재 성장 단계: {stageLabel} 단계예요.</p>

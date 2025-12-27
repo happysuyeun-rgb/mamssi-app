@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useActionGuard } from '@hooks/useActionGuard';
 
 type FabMenuProps = {
   className?: string;
@@ -8,6 +9,7 @@ type FabMenuProps = {
 export default function FabMenu({ className }: FabMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
+  const { requireAuthForAction } = useActionGuard();
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {

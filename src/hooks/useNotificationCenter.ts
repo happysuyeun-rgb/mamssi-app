@@ -13,14 +13,30 @@ export function useNotificationCenter(userId: string) {
   const badgeCount = notifications.filter((notif) => !notif.isRead).length;
 
   const load = useCallback(async () => {
+    if (!userId) {
+      setNotifications([]);
+      return;
+    }
     const list = await fetchNotifications(userId);
     setNotifications(list);
   }, [userId]);
 
   useEffect(() => {
+    if (!userId) {
+      setNotifications([]);
+      return;
+    }
     load();
     const interval = window.setInterval(load, 60_000);
     return () => window.clearInterval(interval);
+  }, [load, userId]);
+
+  // 전역 함수로 알림 새로고침 가능하게 (Record.tsx에서 호출)
+  useEffect(() => {
+    (window as any).__refreshNotifications = load;
+    return () => {
+      delete (window as any).__refreshNotifications;
+    };
   }, [load]);
 
   const openSheet = () => setSheetOpen(true);

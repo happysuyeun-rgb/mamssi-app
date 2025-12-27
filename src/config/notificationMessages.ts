@@ -11,7 +11,7 @@ export const NOTIFICATION_MESSAGES: Record<NotificationType, NotificationMessage
   signup_welcome: {
     icon: '🤝',
     title: '가입을 환영해요',
-    message: '마음씨에 온 걸 환영해요! 첫 씨앗을 받아보세요.',
+    message: '마음씨에 오신 걸 환영해요! 첫 씨앗을 심어보세요.',
     category: 'onboarding'
   },
   seed_received: {
@@ -35,7 +35,7 @@ export const NOTIFICATION_MESSAGES: Record<NotificationType, NotificationMessage
   record_saved: {
     icon: '📝',
     title: '감정 기록을 저장했어요',
-    message: '오늘의 마음이 기록으로 남았어요.',
+    message: '오늘의 감정이 기록이 조용히 정원에 저장되었어요.',
     category: 'record'
   },
   record_with_image: {
@@ -47,19 +47,19 @@ export const NOTIFICATION_MESSAGES: Record<NotificationType, NotificationMessage
   first_record: {
     icon: '✨',
     title: '첫 기록을 남겼어요',
-    message: '당신의 마음씨앗이 자라기 시작했어요.',
+    message: '첫 기록이 저장되었어요. 감정 정원에 씨앗이 자랐어요.',
     category: 'record'
   },
   record_updated: {
     icon: '🖊️',
     title: '기록이 수정됐어요',
-    message: '오늘의 기록이 새롭게 업데이트됐어요.',
+    message: '기록이 새로운 마음에 맞게 업데이트되었어요.',
     category: 'record'
   },
   record_deleted: {
     icon: '🗑️',
     title: '기록을 삭제했어요',
-    message: '이 감정 기록이 삭제됐어요.',
+    message: '기록 한 장을 조용히 흘려보냈어요.',
     category: 'record'
   },
   record_visibility_changed: {
@@ -70,8 +70,8 @@ export const NOTIFICATION_MESSAGES: Record<NotificationType, NotificationMessage
   },
   report_received: {
     icon: '🚨',
-    title: '신고 내용을 접수했어요',
-    message: '더 안전한 공간을 위해 조치할게요.',
+    title: '신고 접수 안내',
+    message: '신고 접수가 되었어요. 완전하게 살펴볼게요.',
     category: 'forest'
   },
   like_received: {
@@ -118,32 +118,32 @@ export const NOTIFICATION_MESSAGES: Record<NotificationType, NotificationMessage
   },
   growth_level_1: {
     icon: '🌱',
-    title: '새싹이 자라기 시작했어요',
-    message: '성장 게이지가 20%에 도달했어요.',
+    title: '1단계 새싹',
+    message: '첫 감정의 씨앗이 자랐어요.',
     category: 'growth'
   },
   growth_level_2: {
     icon: '🌿',
-    title: '성장이 느껴져요',
-    message: '성장 게이지가 40%가 되었어요.',
+    title: '2단계 줄기',
+    message: '축하합니다, 줄기가 자라났어요.',
     category: 'growth'
   },
   growth_level_3: {
     icon: '🌿',
-    title: '곧 꽃이 피겠어요',
-    message: '성장 게이지가 60%에 도달했어요.',
+    title: '3단계 꽃봉오리',
+    message: '감정이 피어나기 직전이에요. 봉오리가 맺혔어요.',
     category: 'growth'
   },
   growth_level_4: {
     icon: '🌸',
-    title: '꽃이 피려고 해요',
-    message: '성장 게이지가 80%가 되었어요.',
+    title: '4단계 반쯤 떨린 꽃봉오리',
+    message: '이제 곧 감정의 꽃이 피어납니다.',
     category: 'growth'
   },
   growth_level_5: {
     icon: '🌸',
-    title: '꽃이 피었어요!',
-    message: '축하해요, 감정꽃이 개화됐어요.',
+    title: '5단계 개화',
+    message: '축하합니다! 감정의 꽃이 환짝 피었어요.',
     category: 'growth'
   },
   bloom_caption_saved: {
@@ -160,8 +160,8 @@ export const NOTIFICATION_MESSAGES: Record<NotificationType, NotificationMessage
   },
   routine_7days: {
     icon: '🔄',
-    title: '7일 연속 기록했어요',
-    message: '꾸준함이 당신을 더 단단하게 만들고 있어요.',
+    title: '루틴 달성 리마인드',
+    message: '7일 연속 기록 달성! 감정의 꽃이 피고 있어요.',
     category: 'routine'
   },
   routine_30days: {

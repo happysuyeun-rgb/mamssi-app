@@ -20,10 +20,12 @@ export type WeekStat = {
 export type FlowerData = {
   id: string;
   user_id: string;
-  growth_pct: number;
-  bloom_level: number;
-  last_updated: string;
+  flower_type: string;
+  growth_percent: number; // DB 스키마: growth_percent
+  is_bloomed: boolean | null;
+  bloomed_at: string | null;
   created_at: string;
+  updated_at: string;
 };
 
 export type FeedSummary = {
@@ -158,7 +160,17 @@ export function useHomeData(userId?: string | null) {
               flowerId: newFlower.id,
               growthPercent: newFlower.growth_percent
             });
-            setFlower(newFlower);
+            // DB 스키마에 맞게 매핑
+            setFlower({
+              id: newFlower.id,
+              user_id: newFlower.user_id,
+              flower_type: newFlower.flower_type,
+              growth_percent: newFlower.growth_percent,
+              is_bloomed: newFlower.is_bloomed,
+              bloomed_at: newFlower.bloomed_at,
+              created_at: newFlower.created_at,
+              updated_at: newFlower.updated_at
+            });
           } else {
             console.warn('[useHomeData] flowers 생성 실패 (fallback):', { userId });
             setFlower(null);
@@ -172,7 +184,14 @@ export function useHomeData(userId?: string | null) {
           setFlower(null);
         }
       } else {
-        setFlower(flowerData);
+        // DB에서 가져온 데이터를 그대로 사용 (컬럼명이 일치함)
+        console.log('[useHomeData] flowers 조회 성공:', {
+          userId,
+          flowerId: flowerData.id,
+          growthPercent: flowerData.growth_percent,
+          isBloomed: flowerData.is_bloomed
+        });
+        setFlower(flowerData as FlowerData);
       }
 
       // 공감수 합계 (community_posts의 like_count 합계)
@@ -209,6 +228,28 @@ export function useHomeData(userId?: string | null) {
       setWeekStats(weekStatsArray);
       setFeedSummary({ likeSum, postCount });
       setSeedName(finalSeedName);
+      
+      console.log('[useHomeData] fetchData 완료:', {
+        userId,
+        flowerData: flowerData ? {
+          id: flowerData.id,
+          growthPercent: flowerData.growth_percent,
+          isBloomed: flowerData.is_bloomed,
+          flowerType: flowerData.flower_type
+        } : null,
+        hasFlower: !!flowerData,
+        flowerStateUpdated: true
+      });
+      
+      console.log('[useHomeData] fetchData 완료:', {
+        userId,
+        flowerData: flowerData ? {
+          id: flowerData.id,
+          growthPercent: flowerData.growth_percent,
+          isBloomed: flowerData.is_bloomed
+        } : null,
+        hasFlower: !!flowerData
+      });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '데이터를 불러오는데 실패했어요.';
       setError(errorMessage);
@@ -287,6 +328,12 @@ export function useHomeData(userId?: string | null) {
     };
   }, [fetchData, userId, location.pathname]);
 
+  // refetch 함수 (로그 추가)
+  const refetch = useCallback(async () => {
+    console.log('[useHomeData] refetch 호출됨:', { userId, pathname: location.pathname });
+    await fetchData();
+  }, [fetchData, userId, location.pathname]);
+
   return {
     today,
     weekStats,
@@ -295,7 +342,7 @@ export function useHomeData(userId?: string | null) {
     seedName,
     loading,
     error,
-    refetch: fetchData
+    refetch
   };
 }
 

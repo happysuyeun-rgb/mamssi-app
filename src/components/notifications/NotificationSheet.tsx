@@ -6,13 +6,15 @@ type Props = {
   notifications: NotificationRecord[];
   onClose: () => void;
   onMarkAllRead: () => void;
+  onMarkRead?: (id: string) => void;
 };
 
 export default function NotificationSheet({
   isOpen,
   notifications,
   onClose,
-  onMarkAllRead
+  onMarkAllRead,
+  onMarkRead
 }: Props) {
   if (!isOpen) return null;
 
@@ -43,6 +45,12 @@ export default function NotificationSheet({
                   <article
                     key={notif.id}
                     className={`notif-item ${notif.isRead ? 'read' : ''}`}
+                    onClick={() => {
+                      if (!notif.isRead && onMarkRead) {
+                        onMarkRead(notif.id);
+                      }
+                    }}
+                    style={{ cursor: notif.isRead ? 'default' : 'pointer' }}
                   >
                     <div className="notif-icon" aria-hidden="true">
                       {notif.icon}

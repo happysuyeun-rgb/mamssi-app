@@ -46,7 +46,7 @@ export async function createNotification(
     meta,
   };
 
-  // Supabase에 저장 시도
+  // Supabase에 저장 시도 (DB 스키마에 맞게: id, user_id, type, title, message, is_read, created_at)
   try {
     const { data, error } = await supabase
       .from('notifications')
@@ -54,12 +54,9 @@ export async function createNotification(
         id: record.id,
         user_id: userId,
         type: type,
-        icon: record.icon,
         title: record.title,
         message: record.message,
-        category: record.category,
         is_read: false,
-        meta: meta,
         created_at: record.createdAt
       })
       .select()
@@ -119,19 +116,29 @@ export async function fetchNotifications(
       return [];
     }
 
-    // Supabase 데이터를 NotificationRecord 형식으로 변환
-    const notifications: NotificationRecord[] = (data || []).map((row: any) => ({
-      id: row.id,
-      userId: row.user_id,
-      type: row.type,
-      icon: row.icon,
-      title: row.title,
-      message: row.message,
-      category: row.category,
-      isRead: row.is_read || false,
-      createdAt: row.created_at,
-      meta: row.meta || {}
-    }));
+    // Supabase 데이터를 NotificationRecord 형식으로 변환 (DB 스키마: id, user_id, type, title, message, is_read, created_at)
+    const notifications: NotificationRecord[] = (data || []).map((row: any) => {
+      // type에 맞는 템플릿으로 icon, category 채우기
+      let template;
+      try {
+        template = templateFor(row.type as NotificationType);
+      } catch {
+        template = { icon: '🔔', category: 'operations' as const };
+      }
+      
+      return {
+        id: row.id,
+        userId: row.user_id,
+        type: row.type as NotificationType,
+        icon: template.icon,
+        title: row.title || template.title,
+        message: row.message || template.message,
+        category: template.category,
+        isRead: row.is_read || false,
+        createdAt: row.created_at,
+        meta: {} // DB에 meta 컬럼 없음
+      };
+    });
 
     // 만료된 알림 필터링
     const validNotifications = notifications.filter(
