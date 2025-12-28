@@ -10,7 +10,7 @@ export type CommunityPost = {
   content: string;
   emotion_type: string | null;
   image_url: string | null;
-  category_id: string | null;
+  category: string | null;
   like_count: number;
   created_at: string;
   updated_at: string;
@@ -93,9 +93,9 @@ export function useCommunity(userId?: string | null) {
       // 삭제된 게시글 제외 (is_deleted 컬럼이 있다면)
       // query = query.eq('is_deleted', false); // 필요시 주석 해제
 
-      // 카테고리 필터
-      if (selectedCategory) {
-        query = query.eq('category_id', selectedCategory);
+      // 카테고리 필터 (BEST 탭은 필터 금지)
+      if (selectedCategory && selectedCategory !== 'BEST') {
+        query = query.eq('category', selectedCategory);
       }
 
       // 정렬

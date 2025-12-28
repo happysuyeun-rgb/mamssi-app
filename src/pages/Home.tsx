@@ -312,8 +312,10 @@ export default function Home() {
             totalDays={garden.totalDays}
             recordedDays={garden.recordedDays}
             todayMessage={
-              bloomLevel >= 3
-                ? '축하해요! 감정꽃이 피었어요 🌸'
+              bloomLevel >= 5
+                ? '축하해요! 감정꽃이 만개했어요 🌸'
+                : bloomLevel >= 3
+                ? '감정꽃이 자라고 있어요 🌿'
                 : '오늘의 정원 소식: 오늘 내 씨앗이 작은 공감들을 모으고 있어요 🌱'
             }
           />

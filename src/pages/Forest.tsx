@@ -8,7 +8,6 @@ import { useActionGuard } from '@hooks/useActionGuard';
 import { useCommunity, type CommunityPost, type ReportReason, type SortType } from '@hooks/useCommunity';
 import { FOREST_CATEGORIES } from '@constants/forest';
 import { EMOTION_OPTIONS } from '@constants/emotions';
-import { RECORD_CATEGORY_TO_FOREST } from '@constants/forest';
 import type { ForestCategory, ForestPost, ForestReportReason } from '@domain/forest';
 import '@styles/forest.css';
 import '@styles/page-hero.css';
@@ -28,9 +27,8 @@ const REPORT_REASONS: ReportReason[] = [
 // CommunityPost를 ForestPost로 변환
 function communityPostToForestPost(post: CommunityPost): ForestPost {
   const emotionOpt = EMOTION_OPTIONS.find((opt) => opt.label === post.emotion_type);
-  const forestCategory = post.category_id
-    ? (RECORD_CATEGORY_TO_FOREST[post.category_id] as ForestCategory) || 'DAILY'
-    : 'DAILY';
+  // category는 이미 TEXT 값으로 저장되어 있음
+  const forestCategory = (post.category as ForestCategory) || '일상';
 
   return {
     id: post.id,
@@ -95,17 +93,12 @@ export default function Forest({ mode = 'all' }: ForestProps) {
   const visiblePosts = useMemo(() => {
     let filtered = posts;
 
-    // BEST 카테고리는 like_count 높은 순
-    if (selectedCategory === 'BEST') {
-      filtered = [...filtered].sort((a, b) => {
-        if (b.likeCount === a.likeCount) {
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        }
-        return b.likeCount - a.likeCount;
-      });
-    } else if (selectedCategory) {
+    // BEST 탭: category 필터 금지 (selectedCategory가 null일 때)
+    // 나머지 탭: category 값으로 필터
+    if (selectedCategory) {
       filtered = filtered.filter((post) => post.category === selectedCategory);
     }
+    // BEST 탭일 때는 필터 없이 전체 게시글 표시
 
     // 정렬
     if (sortType === 'best') {

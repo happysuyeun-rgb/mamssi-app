@@ -10,7 +10,7 @@ create table if not exists public.community_posts (
   content text not null,
   emotion_type text,
   image_url text,
-  category_id text, -- 공감숲 카테고리
+  category text, -- 공감숲 카테고리 (한글: '일상', '고민' 등)
   like_count int default 0,
   created_at timestamp with time zone default now(),
   updated_at timestamp with time zone default now()
@@ -78,7 +78,7 @@ create policy "reports insert all"
 create index if not exists idx_community_posts_user_id on public.community_posts(user_id);
 create index if not exists idx_community_posts_created_at on public.community_posts(created_at desc);
 create index if not exists idx_community_posts_like_count on public.community_posts(like_count desc);
-create index if not exists idx_community_posts_category_id on public.community_posts(category_id) where category_id is not null;
+create index if not exists idx_community_posts_category on public.community_posts(category) where category is not null;
 
 create index if not exists idx_community_likes_post_id on public.community_likes(post_id);
 create index if not exists idx_community_likes_user_id on public.community_likes(user_id);
@@ -118,36 +118,61 @@ create trigger update_community_posts_updated_at
   for each row execute function update_updated_at_column();
 
 -- emotions 테이블에서 공개 기록이 생성될 때 community_posts에 자동 생성
+-- category_id (영문: 'daily', 'worry' 등) → category (한글: '일상', '고민' 등) 변환
 create or replace function sync_community_post_from_emotion()
 returns trigger as $$
+declare
+  forest_category text;
 begin
-  if NEW.is_public = true and NEW.category_id is not null then
+  -- category_id를 한글 category로 변환하는 함수
+  forest_category := case NEW.category_id
+    when 'daily' then '일상'
+    when 'worry' then '고민'
+    when 'love' then '연애'
+    when 'work' then '회사'
+    when 'humor' then '유머'
+    when 'growth' then '성장'
+    when 'selfcare' then '자기돌봄'
+    else null
+  end;
+
+  if NEW.is_public = true and forest_category is not null then
     insert into public.community_posts (
       emotion_id,
       user_id,
       content,
       emotion_type,
       image_url,
-      category_id
+      category,
+      is_public,
+      is_hidden
     ) values (
       NEW.id,
       NEW.user_id,
       NEW.content,
       NEW.emotion_type,
       NEW.image_url,
-      NEW.category_id
-    ) on conflict do nothing;
-  elsif OLD.is_public = true and (NEW.is_public = false or NEW.category_id is null) then
+      forest_category,
+      true,
+      false
+    ) on conflict (emotion_id) do update
+    set
+      content = excluded.content,
+      emotion_type = excluded.emotion_type,
+      image_url = excluded.image_url,
+      category = excluded.category,
+      updated_at = now();
+  elsif OLD.is_public = true and (NEW.is_public = false or forest_category is null) then
     -- 공개에서 비공개로 변경되면 community_posts에서 삭제
     delete from public.community_posts where emotion_id = NEW.id;
-  elsif NEW.is_public = true and NEW.category_id is not null then
+  elsif NEW.is_public = true and forest_category is not null then
     -- 공개 기록이 업데이트되면 community_posts도 업데이트
     update public.community_posts
     set
       content = NEW.content,
       emotion_type = NEW.emotion_type,
       image_url = NEW.image_url,
-      category_id = NEW.category_id
+      category = forest_category
     where emotion_id = NEW.id;
   end if;
   return NEW;
@@ -158,6 +183,7 @@ drop trigger if exists sync_community_post_trigger on public.emotions;
 create trigger sync_community_post_trigger
   after insert or update on public.emotions
   for each row execute function sync_community_post_from_emotion();
+
 
 
 

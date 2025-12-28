@@ -7,7 +7,7 @@ export type CommunityPost = {
   content: string;
   emotion_type: string | null;
   image_url: string | null;
-  category_id: string | null;
+  category: string | null;
   like_count: number;
   is_public: boolean;
   is_hidden: boolean;
@@ -67,9 +67,9 @@ export async function fetchCommunityPosts(options: {
       .eq('is_public', true)
       .eq('is_hidden', false); // 숨김글 제외
 
-    // 카테고리 필터 (best는 제외)
-    if (category && category !== 'best') {
-      query = query.eq('category_id', category);
+    // 카테고리 필터 (BEST는 제외)
+    if (category && category !== 'best' && category !== 'BEST') {
+      query = query.eq('category', category);
     }
 
     // 정렬
@@ -212,7 +212,7 @@ export async function fetchCommunityPost(
 export async function createCommunityPost(payload: {
   user_id: string;
   content: string;
-  category_id: string;
+  category: string;
   emotion_type?: string | null;
   image_url?: string | null;
   emotion_id?: string | null;
@@ -223,7 +223,7 @@ export async function createCommunityPost(payload: {
       .insert({
         user_id: payload.user_id,
         content: payload.content,
-        category_id: payload.category_id,
+        category: payload.category,
         emotion_type: payload.emotion_type,
         image_url: payload.image_url,
         emotion_id: payload.emotion_id,
@@ -270,7 +270,7 @@ export async function updateCommunityPost(
   userId: string,
   payload: {
     content?: string;
-    category_id?: string;
+    category?: string;
     emotion_type?: string | null;
     image_url?: string | null;
   }

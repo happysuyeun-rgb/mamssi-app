@@ -385,19 +385,6 @@ const isSharedToForest = isPublic && selectedCategories.length > 0;
             userId: user.id,
             timestamp: new Date().toISOString()
           });
-          
-          // 추가로 약간의 지연 후 한 번 더 refetch (확실한 반영을 위해)
-          setTimeout(async () => {
-            try {
-              await refetchHomeData();
-              console.log('[Record] 홈 데이터 refetch 재시도 완료:', { userId: user.id });
-            } catch (retryError) {
-              console.error('[Record] 홈 데이터 refetch 재시도 실패:', {
-                error: retryError,
-                errorMessage: retryError instanceof Error ? retryError.message : String(retryError)
-              });
-            }
-          }, 500);
         } catch (refetchError) {
           console.error('[Record] 홈 데이터 refetch 실패:', {
             error: refetchError,
