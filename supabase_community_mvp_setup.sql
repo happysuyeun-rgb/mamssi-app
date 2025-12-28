@@ -113,3 +113,4 @@ create trigger trigger_auto_hide_post_on_report
   after insert on public.reports
   for each row execute function auto_hide_post_on_report();
 
+

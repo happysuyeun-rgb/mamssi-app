@@ -38,3 +38,4 @@ create index if not exists idx_flowers_user_id on public.flowers(user_id);
 create index if not exists idx_flowers_growth_percent on public.flowers(growth_percent);
 create index if not exists idx_flowers_is_bloomed on public.flowers(is_bloomed) where is_bloomed = true;
 
+

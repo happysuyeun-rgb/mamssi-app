@@ -45,3 +45,4 @@ end; $$ language plpgsql security definer;
 --   after insert or update on public.emotions
 --   for each row execute function sync_community_post_from_emotion();
 
+
