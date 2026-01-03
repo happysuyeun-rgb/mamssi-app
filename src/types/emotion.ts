@@ -38,7 +38,7 @@ export type EmotionRecord = {
   note?: string;
   imageUrl?: string;
   isPrivate: boolean;
-  categoryId?: string;
+  category?: string; // 영문키: daily/worry/love/work/humor/growth/selfcare
   createdAt: string; // ISO
   updatedAt: string; // ISO
 };

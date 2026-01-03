@@ -142,8 +142,8 @@ useEffect(() => {
   // DB 스키마: content (최근 추가)
   setNote(existing.content);
   setIsPublic(existing.is_public ?? false);
-  // category_id는 DB에 없으므로 제거
-  setSelectedCategories([]);
+  // category는 영문키로 저장되므로 그대로 사용
+  setSelectedCategories(existing.category ? [existing.category] : []);
   // emotion_date가 있으면 사용, 없으면 created_at에서 추출
   const recordDate = existing.emotion_date || new Date(existing.created_at).toISOString().split('T')[0];
   setRecordDate(recordDate);
@@ -214,20 +214,20 @@ const isSharedToForest = isPublic && selectedCategories.length > 0;
       // emotion_type → main_emotion (useEmotions에서 변환)
       // content는 그대로 사용
       // emotion_date는 recordDate 사용
-      // category_id는 공감숲 공유 시 첫 번째 카테고리 사용
+      // category는 공감숲 공유 시 첫 번째 카테고리 영문키 사용
       const payload: {
         emotion_type: string;
         content: string;
         emotion_date?: string;
         is_public?: boolean | null;
-        category_id?: string | null; // 공감숲 카테고리 (공유 시)
+        category?: string | null; // 공감숲 카테고리 영문키 (공유 시)
       } = {
         emotion_type: selectedEmotion.label,
         content: note.trim(),
         emotion_date: recordDate, // YYYY-MM-DD
         is_public: isPublic || null,
-        category_id: isSharedToForest && selectedCategories.length > 0 
-          ? selectedCategories[0] // 첫 번째 카테고리 사용
+        category: isSharedToForest && selectedCategories.length > 0 
+          ? selectedCategories[0] // 첫 번째 카테고리 영문키 (이미 id로 저장됨)
           : null
       };
 

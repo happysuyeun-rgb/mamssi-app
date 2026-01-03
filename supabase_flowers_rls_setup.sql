@@ -39,3 +39,5 @@ create index if not exists idx_flowers_growth_percent on public.flowers(growth_p
 create index if not exists idx_flowers_is_bloomed on public.flowers(is_bloomed) where is_bloomed = true;
 
 
+
+

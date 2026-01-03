@@ -425,7 +425,7 @@ export default function MyPage() {
             mood: e.emotion_type,
             text: e.content,
             public: e.is_public,
-            category: e.category_id || null,
+            category: e.category || null,
             image_url: e.image_url || null,
             created_at: e.created_at,
             updated_at: e.updated_at
@@ -456,7 +456,7 @@ export default function MyPage() {
             mood: e.emotion_type,
             text: e.content,
             public: e.is_public ? '공개' : '비공개',
-            category: e.category_id || '',
+            category: e.category || '',
             image_url: e.image_url || '',
             created_at: e.created_at,
             updated_at: e.updated_at

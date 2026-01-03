@@ -193,3 +193,5 @@ COMMUNITY_FINAL_SETUP_GUIDE.md     # 이 가이드 문서
 
 기존 파일들 (`supabase_community_setup.sql`, `supabase_community_mvp_setup.sql`, `supabase_community_category_migration.sql`)은 더 이상 사용하지 않습니다.
 
+
+

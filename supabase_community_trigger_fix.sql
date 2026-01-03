@@ -46,3 +46,5 @@ end; $$ language plpgsql security definer;
 --   for each row execute function sync_community_post_from_emotion();
 
 
+
+

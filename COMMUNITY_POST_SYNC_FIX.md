@@ -56,3 +56,5 @@
 
 3. **unique constraint**: `emotion_id`에 unique constraint가 있어야 `on conflict` 처리가 가능합니다.
 
+
+

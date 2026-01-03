@@ -114,3 +114,5 @@ create trigger trigger_auto_hide_post_on_report
   for each row execute function auto_hide_post_on_report();
 
 
+
+

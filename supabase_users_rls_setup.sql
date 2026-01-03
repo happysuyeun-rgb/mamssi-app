@@ -27,3 +27,5 @@ create policy "users update self"
   with check ( auth.uid() = id );
 
 
+
+

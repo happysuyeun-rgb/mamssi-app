@@ -45,3 +45,5 @@
 - `supabase_community_verification.sql` - 검증 SQL
 - `COMMUNITY_FINAL_EXECUTION_ORDER.md` - 실행 순서 및 체크리스트
 
+
+

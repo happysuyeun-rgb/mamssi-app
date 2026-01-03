@@ -197,3 +197,5 @@ if (selectedCategory) {
    - 기존 데이터가 있다면 category_id → category 마이그레이션 필요
    - 또는 트리거/함수에서 자동 변환 처리 필요
 
+
+

@@ -119,8 +119,8 @@ export function removeForestPostByRecord(recordId: string): void {
 }
 
 export function syncForestPostFromRecord(record: EmotionRecord): ForestPost | null {
-  if (!record.categoryId) return null;
-  const category = RECORD_CATEGORY_TO_FOREST[record.categoryId];
+  if (!record.category) return null;
+  const category = RECORD_CATEGORY_TO_FOREST[record.category];
   if (!category) return null;
 
   const profile = getCurrentUserProfile();

@@ -21,3 +21,15 @@ export const RECORD_CATEGORY_TO_FOREST: Record<string, ForestCategory> = {
   selfcare: '자기돌봄'
 };
 
+// 한글 카테고리 → 영문키 매핑 (DB 저장용)
+export const FOREST_CATEGORY_TO_RECORD: Record<ForestCategory, string> = {
+  'BEST': 'daily', // BEST는 매핑되지 않으므로 기본값
+  '일상': 'daily',
+  '고민': 'worry',
+  '연애': 'love',
+  '회사': 'work',
+  '유머': 'humor',
+  '성장': 'growth',
+  '자기돌봄': 'selfcare'
+};
+

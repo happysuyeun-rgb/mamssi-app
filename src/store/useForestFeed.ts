@@ -15,17 +15,17 @@ const DEFAULT_CATEGORY: ForestCategory = 'BEST';
 
 // EmotionRecord를 ForestPost로 변환
 function emotionToForestPost(emotion: EmotionRecord, userId?: string): ForestPost {
-  const emotionOpt = EMOTION_OPTIONS.find((opt) => opt.label === emotion.emotion_type);
-  const forestCategory = emotion.category_id
-    ? (RECORD_CATEGORY_TO_FOREST[emotion.category_id] as ForestCategory) || 'DAILY'
-    : 'DAILY';
+  const emotionOpt = EMOTION_OPTIONS.find((opt) => opt.label === emotion.main_emotion);
+  const forestCategory = emotion.category
+    ? (RECORD_CATEGORY_TO_FOREST[emotion.category] as ForestCategory) || '일상'
+    : '일상';
 
   return {
     id: emotion.id,
     userId: emotion.user_id,
     emotionCode: emotionOpt?.code || 'CALM',
     emoji: emotionOpt?.emoji || '🙂',
-    label: emotionOpt?.label || emotion.emotion_type,
+    label: emotionOpt?.label || emotion.main_emotion,
     content: emotion.content,
     imageUrl: emotion.image_url || undefined,
     category: forestCategory,

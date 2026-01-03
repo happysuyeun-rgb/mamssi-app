@@ -11,6 +11,8 @@ export type EmotionRecord = {
   note?: string | null; // DB 스키마: note (nullable)
   content: string; // DB 스키마: content (최근 추가)
   is_public?: boolean | null; // DB 스키마: is_public (nullable)
+  category?: string | null; // DB 스키마: category (영문키: daily/worry/love/work/humor/growth/selfcare)
+  image_url?: string | null; // DB 스키마: image_url (nullable)
   created_at: string;
   updated_at: string;
 };
@@ -82,7 +84,7 @@ export function useEmotions(options: UseEmotionsOptions = {}) {
       note?: string | null; // DB 스키마: note (nullable)
       is_public?: boolean | null; // DB 스키마: is_public (nullable)
       emotion_date?: string; // YYYY-MM-DD, 없으면 오늘 날짜 사용
-      category_id?: string | null; // 공감숲 카테고리 (공유 시)
+      category?: string | null; // 공감숲 카테고리 영문키 (공유 시: daily/worry/love/work/humor/growth/selfcare)
     }) => {
       if (!userId) {
         throw new Error('로그인이 필요해요.');
@@ -156,8 +158,8 @@ export function useEmotions(options: UseEmotionsOptions = {}) {
         if (payload.is_public !== undefined && payload.is_public !== null) {
           cleanPayload.is_public = payload.is_public;
         }
-        if (payload.category_id !== undefined && payload.category_id !== null) {
-          cleanPayload.category_id = payload.category_id; // 공감숲 카테고리
+        if (payload.category !== undefined && payload.category !== null) {
+          cleanPayload.category = payload.category; // 공감숲 카테고리 영문키
         }
 
         // insert payload 준비 (auth.uid()를 user_id로 사용)
@@ -313,6 +315,7 @@ export function useEmotions(options: UseEmotionsOptions = {}) {
         note?: string | null;
         is_public?: boolean | null;
         emotion_date?: string;
+        category?: string | null; // 공감숲 카테고리 영문키 (daily/worry/love/work/humor/growth/selfcare)
       }
     ) => {
       if (!userId) {
@@ -342,6 +345,9 @@ export function useEmotions(options: UseEmotionsOptions = {}) {
         }
         if (payload.emotion_date !== undefined) {
           updatePayload.emotion_date = payload.emotion_date;
+        }
+        if (payload.category !== undefined) {
+          updatePayload.category = payload.category;
         }
 
         // RLS 정책에 의해 auth.uid() = user_id 조건이 자동 적용됨
