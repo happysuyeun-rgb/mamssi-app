@@ -207,20 +207,20 @@ export function useHomeData(userId?: string | null) {
       const likeSum = postsData?.reduce((sum, post) => sum + (post.like_count || 0), 0) || 0;
       const postCount = postsData?.length || 0;
 
-      // profiles에서 seed_name 조회
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
+      // user_settings에서 seed_name 조회
+      const { data: userSettingsData, error: userSettingsError } = await supabase
+        .from('user_settings')
         .select('seed_name')
-        .eq('id', userId)
-        .single();
+        .eq('user_id', userId)
+        .maybeSingle();
 
-      if (profileError && profileError.code !== 'PGRST116') {
-        console.error('프로필 조회 실패:', profileError);
+      if (userSettingsError && userSettingsError.code !== 'PGRST116') {
+        console.error('[useHomeData] user_settings 조회 실패:', userSettingsError);
       }
 
-      // seedName 우선순위: 1. profiles.seed_name, 2. flowers.seed_name, 3. 기본값 '나의 씨앗'
+      // seedName 우선순위: 1. user_settings.seed_name, 2. flowers.seed_name, 3. 기본값 '나의 씨앗'
       const finalSeedName =
-        profileData?.seed_name ||
+        userSettingsData?.seed_name ||
         flowerData?.seed_name ||
         '나의 씨앗';
 

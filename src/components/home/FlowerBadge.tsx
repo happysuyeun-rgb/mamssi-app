@@ -1,7 +1,7 @@
 import { useState, useEffect, type MouseEvent, type CSSProperties } from 'react';
 import { useAuth } from '@hooks/useAuth';
 import { useNotify } from '@providers/NotifyProvider';
-import { supabase } from '@lib/supabaseClient';
+import { useSettings } from '@hooks/useSettings';
 import GrowthGauge from './GrowthGauge';
 import '@styles/home.css';
 
@@ -72,6 +72,7 @@ export default function FlowerBadge({
 }: FlowerBadgeProps) {
   const { user } = useAuth();
   const notify = useNotify();
+  const { updateSettings } = useSettings(user?.id || null);
   const [seedModalOpen, setSeedModalOpen] = useState(false);
   const [seedEditedThisMonth, setSeedEditedThisMonth] = useState(false);
   const [seedInput, setSeedInput] = useState(seedName);
@@ -103,20 +104,37 @@ export default function FlowerBadge({
 
     if (user) {
       try {
-        // profiles 테이블에 seed_name 업데이트
-        const { error } = await supabase
-          .from('profiles')
-          .update({ seed_name: value })
-          .eq('id', user.id);
+        console.log('[FlowerBadge] 씨앗 이름 저장 시작:', { userId: user.id, seedName: value });
+        
+        // user_settings 테이블에 seed_name upsert (user_id 기준)
+        const { data, error } = await updateSettings({ seed_name: value });
 
-        if (error) throw error;
+        if (error) {
+          console.error('[FlowerBadge] 씨앗 이름 저장 실패:', { 
+            userId: user.id, 
+            seedName: value,
+            error,
+            errorMessage: error instanceof Error ? error.message : String(error)
+          });
+          throw error;
+        }
+
+        console.log('[FlowerBadge] 씨앗 이름 저장 성공:', { 
+          userId: user.id, 
+          seedName: value,
+          data 
+        });
 
         setCurrentSeedName(value);
         setSeedEditedThisMonth(true);
         setSeedModalOpen(false);
         notify.success(`씨앗 이름이 "${value}"로 변경되었어요.`, '✨');
       } catch (err) {
-        console.error('씨앗 이름 저장 실패:', err);
+        console.error('[FlowerBadge] 씨앗 이름 저장 중 오류:', { 
+          userId: user.id,
+          error: err,
+          errorMessage: err instanceof Error ? err.message : String(err)
+        });
         notify.error('씨앗 이름 저장에 실패했어요.', '❌');
       }
     } else {

@@ -31,7 +31,7 @@ export default function Record() {
   const { user } = useAuth();
   const notify = useNotify();
   const { requireAuthForAction } = useActionGuard();
-  const { emotions, addEmotion, updateEmotion, fetchEmotions, checkTodayPrivateEmotion } = useEmotions({
+  const { emotions, addEmotion, updateEmotion, fetchEmotions, checkTodayPrivateEmotion, getEmotionById } = useEmotions({
     userId: user?.id || null
   });
   const { refetch: refetchHomeData } = useHomeData(user?.id || null);
@@ -119,37 +119,56 @@ useEffect(() => {
     }
   }
 
-// 수정 모드: 기존 기록 불러오기
+// 수정 모드: 기존 기록 불러오기 (Supabase 단건 조회)
 useEffect(() => {
   if (!isEditing || !editingRecordId || !user) return;
 
-      const existing = emotions.find((e) => e.id === editingRecordId);
+  console.log('[Record] 수정 모드 진입:', { editingRecordId, userId: user.id });
+
+  // Supabase에서 직접 조회
+  getEmotionById(editingRecordId)
+    .then((existing) => {
       if (!existing) {
-        // 기록을 찾을 수 없으면 다시 불러오기 시도
-        fetchEmotions().then(() => {
-          const retry = emotions.find((e) => e.id === editingRecordId);
-          if (!retry) {
-            notify.warning('수정할 기록을 찾을 수 없어요', '⚠️');
-            goBack();
-          }
-        });
+        console.error('[Record] 기록을 찾을 수 없음:', { editingRecordId, userId: user.id });
+        notify.warning('수정할 기록을 찾을 수 없어요', '⚠️');
+        goBack();
         return;
       }
 
-  // DB 스키마: main_emotion (기존 emotion_type)
-  const emotionOpt = EMOTION_OPTIONS.find((opt) => opt.label === existing.main_emotion);
-  setSelectedEmotion(emotionOpt ?? null);
-  // DB 스키마: content (최근 추가)
-  setNote(existing.content);
-  setIsPublic(existing.is_public ?? false);
-  // category는 영문키로 저장되므로 그대로 사용
-  setSelectedCategories(existing.category ? [existing.category] : []);
-  // emotion_date가 있으면 사용, 없으면 created_at에서 추출
-  const recordDate = existing.emotion_date || new Date(existing.created_at).toISOString().split('T')[0];
-  setRecordDate(recordDate);
-  // image_url은 DB에 없으므로 제거
-  setPhotos([]);
-}, [editingRecordId, isEditing, goBack, emotions, user, fetchEmotions]);
+      console.log('[Record] 기록 조회 성공:', { 
+        id: existing.id, 
+        mainEmotion: existing.main_emotion,
+        content: existing.content?.substring(0, 20) + '...'
+      });
+
+      // DB 스키마: main_emotion (기존 emotion_type)
+      const emotionOpt = EMOTION_OPTIONS.find((opt) => opt.label === existing.main_emotion);
+      setSelectedEmotion(emotionOpt ?? null);
+      // DB 스키마: content (최근 추가)
+      setNote(existing.content);
+      setIsPublic(existing.is_public ?? false);
+      // category는 영문키로 저장되므로 그대로 사용
+      setSelectedCategories(existing.category ? [existing.category] : []);
+      // emotion_date가 있으면 사용, 없으면 created_at에서 추출
+      const recordDate = existing.emotion_date || new Date(existing.created_at).toISOString().split('T')[0];
+      setRecordDate(recordDate);
+      // image_url 처리
+      if (existing.image_url) {
+        setPhotos([{ id: 'existing', file: null, url: existing.image_url }]);
+      } else {
+        setPhotos([]);
+      }
+    })
+    .catch((err) => {
+      console.error('[Record] 기록 조회 중 오류:', { 
+        editingRecordId, 
+        error: err, 
+        errorMessage: err instanceof Error ? err.message : String(err) 
+      });
+      notify.error('기록을 불러오는 중 오류가 발생했어요', '❌');
+      goBack();
+    });
+}, [editingRecordId, isEditing, goBack, user, getEmotionById, notify]);
 
 const showCategorySection = isPublic;
 const meetsBaseConditions = Boolean(selectedEmotion && note.trim().length >= 5);

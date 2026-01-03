@@ -16,6 +16,7 @@ type WeeklyMoodWidgetProps = {
   weekSummary?: WeekDayRecord[]; // 더미 props (7일치 배열)
   weekStart?: string; // 더미 props (ISO 형식)
   todayDate?: string; // 더미 props (ISO 형식)
+  onDeleteRecord?: (recordId: string) => Promise<void>; // 삭제 콜백
 };
 
 const weekdays = ['월', '화', '수', '목', '금', '토', '일'] as const;
@@ -44,10 +45,11 @@ function cn(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(' ');
 }
 
-export default function WeeklyMoodWidget({ weekSummary, weekStart, todayDate }: WeeklyMoodWidgetProps) {
+export default function WeeklyMoodWidget({ weekSummary, weekStart, todayDate, onDeleteRecord }: WeeklyMoodWidgetProps) {
   const navigate = useNavigate();
   const [selectedDayIndex, setSelectedDayIndex] = useState<number | null>(null);
   const [emotionModalOpen, setEmotionModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // 더미 props가 없으면 실제 데이터 생성
   const actualToday = todayDate || new Date().toISOString().split('T')[0];
@@ -97,8 +99,36 @@ export default function WeeklyMoodWidget({ weekSummary, weekStart, todayDate }: 
 
   function onEditEmotion() {
     if (!modalRecord || !modalRecord.recordId) return;
+    console.log('[WeeklyMoodWidget] 수정 버튼 클릭:', { 
+      recordId: modalRecord.recordId, 
+      date: modalRecord.date 
+    });
     setEmotionModalOpen(false);
     navigate(`/record?id=${modalRecord.recordId}&date=${modalRecord.date}`);
+  }
+
+  async function onDeleteEmotion() {
+    if (!modalRecord || !modalRecord.recordId || !onDeleteRecord) return;
+    
+    const confirmed = window.confirm('정말 이 기록을 삭제할까요?');
+    if (!confirmed) return;
+
+    setIsDeleting(true);
+    try {
+      console.log('[WeeklyMoodWidget] 삭제 시작:', { recordId: modalRecord.recordId });
+      await onDeleteRecord(modalRecord.recordId);
+      console.log('[WeeklyMoodWidget] 삭제 완료:', { recordId: modalRecord.recordId });
+      setEmotionModalOpen(false);
+    } catch (err) {
+      console.error('[WeeklyMoodWidget] 삭제 실패:', { 
+        recordId: modalRecord.recordId, 
+        error: err,
+        errorMessage: err instanceof Error ? err.message : String(err)
+      });
+      alert('기록 삭제에 실패했어요. 잠시 후 다시 시도해주세요.');
+    } finally {
+      setIsDeleting(false);
+    }
   }
 
   return (
@@ -187,9 +217,29 @@ export default function WeeklyMoodWidget({ weekSummary, weekStart, todayDate }: 
 
             {modalRecord.recordId && (
               <div className="forest-sheet-actions">
-                <button type="button" className="forest-sheet-owner-btn" onClick={onEditEmotion}>
+                <button 
+                  type="button" 
+                  className="forest-sheet-owner-btn" 
+                  onClick={onEditEmotion}
+                  disabled={isDeleting}
+                >
                   수정
                 </button>
+                {onDeleteRecord && (
+                  <button 
+                    type="button" 
+                    className="forest-sheet-owner-btn" 
+                    onClick={onDeleteEmotion}
+                    disabled={isDeleting}
+                    style={{ 
+                      color: '#ef4444',
+                      borderColor: '#fecaca',
+                      background: '#fff5f5'
+                    }}
+                  >
+                    {isDeleting ? '삭제 중...' : '삭제'}
+                  </button>
+                )}
               </div>
             )}
           </div>

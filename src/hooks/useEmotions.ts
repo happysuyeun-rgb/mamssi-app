@@ -429,6 +429,44 @@ export function useEmotions(options: UseEmotionsOptions = {}) {
     [emotions]
   );
 
+  // ID로 감정 기록 단건 조회 (Supabase 직접 조회)
+  const getEmotionById = useCallback(
+    async (id: string): Promise<EmotionRecord | null> => {
+      if (!userId) {
+        console.warn('[getEmotionById] userId가 없습니다.');
+        return null;
+      }
+
+      try {
+        console.log('[getEmotionById] 조회 시작:', { id, userId });
+        
+        const { data, error } = await supabase
+          .from('emotions')
+          .select('*')
+          .eq('id', id)
+          .eq('user_id', userId) // RLS 정책과 함께 이중 체크
+          .maybeSingle();
+
+        if (error) {
+          console.error('[getEmotionById] 조회 실패:', { id, error, errorMessage: error.message });
+          return null;
+        }
+
+        if (!data) {
+          console.warn('[getEmotionById] 기록을 찾을 수 없음:', { id, userId });
+          return null;
+        }
+
+        console.log('[getEmotionById] 조회 성공:', { id, dataId: data.id, mainEmotion: data.main_emotion });
+        return data;
+      } catch (err) {
+        console.error('[getEmotionById] 예외 발생:', { id, error: err, errorMessage: err instanceof Error ? err.message : String(err) });
+        return null;
+      }
+    },
+    [userId]
+  );
+
   // 오늘 감정 존재 여부 체크 (서버 쿼리)
   const checkTodayEmotion = useCallback(
     async (targetDate?: string): Promise<EmotionRecord | null> => {
@@ -541,6 +579,7 @@ export function useEmotions(options: UseEmotionsOptions = {}) {
     updateEmotion,
     deleteEmotion,
     getEmotionByDate,
+    getEmotionById,
     checkTodayEmotion,
     checkTodayPrivateEmotion,
     hasTodayEmotion

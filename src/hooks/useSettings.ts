@@ -6,6 +6,7 @@ export type UserSettings = {
   nickname: string | null;
   mbti: string | null;
   profile_url: string | null;
+  seed_name: string | null; // 씨앗 이름 (10자 이내)
   lock_type: 'pattern' | 'pin' | null;
   lock_value: string | null;
   updated_at: string;
@@ -109,6 +110,7 @@ export function useSettings(userId?: string | null) {
     error
   };
 }
+
 
 
 

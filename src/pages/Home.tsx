@@ -52,7 +52,7 @@ export default function Home() {
   const { isGuest, session, user } = useAuth();
   const notify = useNotify();
   const { today, weekStats, flower, feedSummary, seedName, loading: homeDataLoading, refetch: refetchHomeData } = useHomeData(user?.id || null);
-  const { emotions, loading: emotionsLoading, hasTodayEmotion, fetchEmotions } = useEmotions({
+  const { emotions, loading: emotionsLoading, hasTodayEmotion, fetchEmotions, deleteEmotion } = useEmotions({
     userId: user?.id || null
   });
   const [todayHasEmotion, setTodayHasEmotion] = useState<boolean>(false);
@@ -320,7 +320,30 @@ export default function Home() {
             }
           />
           <TodayRecordCTA todayLogged={todayLogged} todayDate={todayIso} />
-          <WeeklyMoodWidget weekSummary={weekSummary} weekStart={initialWeekStart} todayDate={todayIso} />
+          <WeeklyMoodWidget 
+            weekSummary={weekSummary} 
+            weekStart={initialWeekStart} 
+            todayDate={todayIso}
+            onDeleteRecord={async (recordId: string) => {
+              if (!user) return;
+              console.log('[Home] 기록 삭제 시작:', { recordId, userId: user.id });
+              try {
+                await deleteEmotion(recordId);
+                // 삭제 후 목록 및 홈 데이터 갱신
+                await fetchEmotions();
+                await refetchHomeData();
+                notify.success('기록이 삭제되었어요', '✅');
+                console.log('[Home] 기록 삭제 완료:', { recordId });
+              } catch (err) {
+                console.error('[Home] 기록 삭제 실패:', { 
+                  recordId, 
+                  error: err,
+                  errorMessage: err instanceof Error ? err.message : String(err)
+                });
+                throw err; // WeeklyMoodWidget에서 처리하도록 재throw
+              }
+            }}
+          />
           <FeedPreview feedCount={feedCount} likeSum={feedSummary.likeSum} />
         </>
       )}

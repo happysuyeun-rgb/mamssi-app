@@ -8,6 +8,7 @@ create table if not exists public.user_settings (
   nickname text,
   mbti text,
   profile_url text, -- Supabase Storage URL
+  seed_name text,  -- 씨앗 이름 (10자 이내)
   lock_type text,   -- 'pattern' | 'pin' | null
   lock_value text,  -- 암호화된 문자열 (해시)
   updated_at timestamp with time zone default now(),
@@ -17,10 +18,25 @@ create table if not exists public.user_settings (
 -- RLS 활성화
 alter table public.user_settings enable row level security;
 
--- 정책: 본인만 조회/수정 가능
-create policy "user_settings self only"
-  on public.user_settings for all
+-- 기존 정책 삭제 (있다면)
+drop policy if exists "user_settings self only" on public.user_settings;
+drop policy if exists "user_settings_select" on public.user_settings;
+drop policy if exists "user_settings_update" on public.user_settings;
+
+-- SELECT 정책: 본인만 조회 가능
+create policy "user_settings_select"
+  on public.user_settings for select
+  using (auth.uid() = user_id);
+
+-- UPDATE 정책: 본인만 수정 가능
+create policy "user_settings_update"
+  on public.user_settings for update
   using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+-- INSERT 정책: 본인만 생성 가능
+create policy "user_settings_insert"
+  on public.user_settings for insert
   with check (auth.uid() = user_id);
 
 -- 인덱스 추가
@@ -60,6 +76,7 @@ create trigger trigger_update_user_settings_updated_at
 -- create policy "Users can delete their own profile image"
 --   on storage.objects for delete
 --   using (bucket_id = 'profile-images' AND auth.uid()::text = (storage.foldername(name))[1]);
+
 
 
 
