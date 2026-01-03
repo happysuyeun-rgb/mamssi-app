@@ -656,8 +656,15 @@ export default function MyPage() {
           <div className="chev">›</div>
         </div>
 
-        <div className="card" onClick={() => setMAlert(true)}>
-          <div><div className="tt">알림 설정</div></div>
+        <div className="card" onClick={() => {
+          notify.info('알림 설정 기능은 준비 중이에요. 곧 만나요!', 'ℹ️');
+        }}>
+          <div>
+            <div className="tt">알림 설정</div>
+            <div className="sub" style={{ fontSize: 11, color: 'var(--ms-ink-muted)', marginTop: 2 }}>
+              준비 중
+            </div>
+          </div>
           <div className="chev">›</div>
         </div>
 
