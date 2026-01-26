@@ -1,26 +1,19 @@
-import { CURRENT_USER_ID } from '@constants/user';
 import { useNotificationCenter } from '@hooks/useNotificationCenter';
 import { useAuth } from '@hooks/useAuth';
 import NotificationSheet from '@components/notifications/NotificationSheet';
 import '@styles/notifications.css';
 
-type HomeHeaderProps = {
-  unreadCount?: number; // 더미 props (실제 연동 전까지 사용)
-};
-
-export default function HomeHeader({ unreadCount }: HomeHeaderProps) {
-  const { isGuest } = useAuth();
+export default function HomeHeader() {
+  const { user, isGuest } = useAuth();
   const {
     notifications,
     badgeCount,
     isSheetOpen,
     openSheet,
     closeSheet,
-    markAll
-  } = useNotificationCenter(CURRENT_USER_ID);
-
-  // 더미 props가 제공되면 사용, 아니면 실제 데이터 사용
-  const displayBadgeCount = unreadCount !== undefined ? unreadCount : badgeCount;
+    markAll,
+    markRead
+  } = useNotificationCenter(user?.id || '');
 
   return (
     <>
@@ -81,8 +74,8 @@ export default function HomeHeader({ unreadCount }: HomeHeaderProps) {
           </div>
           <button type="button" className="notif-bell" onClick={openSheet} aria-label="알림">
             🔔
-            {displayBadgeCount > 0 && (
-              <span className="notif-badge">{displayBadgeCount > 99 ? '99+' : displayBadgeCount}</span>
+            {badgeCount > 0 && (
+              <span className="notif-badge">{badgeCount > 99 ? '99+' : badgeCount}</span>
             )}
           </button>
         </div>
@@ -93,6 +86,7 @@ export default function HomeHeader({ unreadCount }: HomeHeaderProps) {
         notifications={notifications}
         onClose={closeSheet}
         onMarkAllRead={markAll}
+        onMarkRead={markRead}
       />
     </>
   );
