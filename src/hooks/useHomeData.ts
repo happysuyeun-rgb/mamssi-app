@@ -334,6 +334,14 @@ export function useHomeData(userId?: string | null) {
     await fetchData();
   }, [fetchData, userId, location.pathname]);
 
+  // 전역 함수로 홈 데이터 새로고침 가능하게 (FlowerBadge에서 호출)
+  useEffect(() => {
+    (window as any).__refreshHomeData = refetch;
+    return () => {
+      delete (window as any).__refreshHomeData;
+    };
+  }, [refetch]);
+
   return {
     today,
     weekStats,

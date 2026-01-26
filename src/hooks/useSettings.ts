@@ -57,12 +57,16 @@ export function useSettings(userId?: string | null) {
   const updateSettings = useCallback(
     async (payload: Partial<Omit<UserSettings, 'user_id' | 'created_at' | 'updated_at'>>) => {
       if (!userId) {
-        throw new Error('사용자 ID가 필요해요.');
+        const error = new Error('사용자 ID가 필요해요.');
+        setError(error.message);
+        return { data: null, error };
       }
 
       setError(null);
 
       try {
+        console.log('[useSettings] 설정 업데이트 시작:', { userId, payload });
+        
         const { data, error: updateError } = await supabase
           .from('user_settings')
           .upsert(
@@ -79,9 +83,20 @@ export function useSettings(userId?: string | null) {
           .single();
 
         if (updateError) {
-          console.error('설정 업데이트 실패:', updateError);
-          throw updateError;
+          console.error('[useSettings] 설정 업데이트 실패:', {
+            userId,
+            payload,
+            error: updateError,
+            code: updateError.code,
+            message: updateError.message,
+            details: updateError.details,
+            hint: updateError.hint
+          });
+          setError(updateError.message);
+          return { data: null, error: updateError };
         }
+
+        console.log('[useSettings] 설정 업데이트 성공:', { userId, data });
 
         if (data) {
           setSettings(data);
@@ -89,10 +104,16 @@ export function useSettings(userId?: string | null) {
 
         return { data, error: null };
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : '설정 업데이트에 실패했어요.';
+        const error = err instanceof Error ? err : new Error('설정 업데이트에 실패했어요.');
+        const errorMessage = error.message;
         setError(errorMessage);
-        console.error('설정 업데이트 실패:', err);
-        return { data: null, error: err };
+        console.error('[useSettings] 설정 업데이트 중 예외 발생:', {
+          userId,
+          payload,
+          error: err,
+          errorMessage
+        });
+        return { data: null, error };
       }
     },
     [userId]

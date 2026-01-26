@@ -99,8 +99,18 @@ export async function fetchCommunityPosts(options: {
 
     const posts = (data || []) as CommunityPost[];
 
+    // profiles 정보가 없는 경우 기본값 설정 (방어 로직)
+    const postsWithProfiles = posts.map((post) => ({
+      ...post,
+      profiles: post.profiles || {
+        nickname: '익명',
+        seed_name: null,
+        mbti: null
+      }
+    }));
+
     // 로그인 사용자의 공감 여부 확인
-    if (userId && posts.length > 0) {
+    if (userId && postsWithProfiles.length > 0) {
       const postIds = posts.map((p) => p.id);
       const { data: likesData, error: likesError } = await supabase
         .from('community_likes')
@@ -119,7 +129,7 @@ export async function fetchCommunityPosts(options: {
 
       const likedPostIds = new Set(likesData?.map((like) => like.post_id) || []);
 
-      const postsWithLikes = posts.map((post) => ({
+      const postsWithLikes = postsWithProfiles.map((post) => ({
         ...post,
         is_liked_by_me: likedPostIds.has(post.id),
         is_mine: post.user_id === userId
@@ -181,6 +191,15 @@ export async function fetchCommunityPost(
     if (!data) return null;
 
     const post = data as CommunityPost;
+
+    // profiles 정보가 없는 경우 기본값 설정 (방어 로직)
+    if (!post.profiles) {
+      post.profiles = {
+        nickname: '익명',
+        seed_name: null,
+        mbti: null
+      };
+    }
 
     // 로그인 사용자의 공감 여부 확인
     if (userId) {
@@ -304,7 +323,18 @@ export async function updateCommunityPost(
       throw error;
     }
 
-    return data as CommunityPost;
+    const post = data as CommunityPost;
+    
+    // profiles 정보가 없는 경우 기본값 설정 (방어 로직)
+    if (!post.profiles) {
+      post.profiles = {
+        nickname: '익명',
+        seed_name: null,
+        mbti: null
+      };
+    }
+
+    return post;
   } catch (err) {
     console.error('[updateCommunityPost] 예외 발생:', {
       error: err,

@@ -32,18 +32,59 @@ export async function uploadProfileImage(file: File, userId: string): Promise<Pr
   }
 
   try {
-    // 파일명 생성: {user_id}.jpg (항상 덮어쓰기)
+    console.log('[uploadProfileImage] 업로드 시작:', { userId, fileName: file.name, fileSize: file.size, fileType: file.type });
+    
+    // 파일명 생성: 원본 파일명 사용 (확장자 포함)
     const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-    const fileName = `${userId}.${fileExt}`;
-    const filePath = fileName;
+    const timestamp = Date.now();
+    const fileName = `profile.${timestamp}.${fileExt}`;
+    
+    // 경로 규칙: profile-images/{userId}/{filename}
+    const filePath = `${userId}/${fileName}`;
 
-    // 기존 이미지가 있으면 삭제
-    const { error: deleteError } = await supabase.storage.from(BUCKET_NAME).remove([filePath]);
-    if (deleteError && deleteError.message !== 'Object not found') {
-      console.warn('기존 이미지 삭제 실패 (무시):', deleteError);
+    console.log('[uploadProfileImage] 파일 경로:', { filePath, bucket: BUCKET_NAME, userId, fileName });
+
+    // 버킷 존재 여부 확인 (선택적)
+    const { data: buckets, error: listError } = await supabase.storage.listBuckets();
+    if (listError) {
+      console.warn('[uploadProfileImage] 버킷 목록 조회 실패 (무시):', listError);
+    } else {
+      const bucketExists = buckets?.some(b => b.name === BUCKET_NAME);
+      if (!bucketExists) {
+        const error = new Error(`Storage 버킷 '${BUCKET_NAME}'이 존재하지 않아요. 관리자에게 문의해주세요.`);
+        console.error('[uploadProfileImage] 버킷 없음:', error);
+        return { url: null, error };
+      }
+      console.log('[uploadProfileImage] 버킷 확인 완료:', { bucketName: BUCKET_NAME });
+    }
+
+    // 기존 이미지가 있으면 삭제 (해당 사용자 폴더의 모든 파일)
+    console.log('[uploadProfileImage] 기존 이미지 삭제 시작...');
+    const { data: existingFiles, error: listFilesError } = await supabase.storage
+      .from(BUCKET_NAME)
+      .list(userId, {
+        limit: 100
+      });
+
+    if (listFilesError && listFilesError.message !== 'Object not found') {
+      console.warn('[uploadProfileImage] 기존 파일 목록 조회 실패 (무시):', listFilesError);
+    } else if (existingFiles && existingFiles.length > 0) {
+      const filesToDelete = existingFiles.map(file => `${userId}/${file.name}`);
+      const { error: deleteError } = await supabase.storage
+        .from(BUCKET_NAME)
+        .remove(filesToDelete);
+      
+      if (deleteError) {
+        console.warn('[uploadProfileImage] 기존 이미지 삭제 실패 (무시):', deleteError);
+      } else {
+        console.log('[uploadProfileImage] 기존 이미지 삭제 완료:', { deletedCount: existingFiles.length });
+      }
+    } else {
+      console.log('[uploadProfileImage] 기존 이미지 없음');
     }
 
     // Storage에 업로드
+    console.log('[uploadProfileImage] 파일 업로드 시작...');
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from(BUCKET_NAME)
       .upload(filePath, file, {
@@ -52,13 +93,23 @@ export async function uploadProfileImage(file: File, userId: string): Promise<Pr
       });
 
     if (uploadError) {
+      console.error('[uploadProfileImage] 파일 업로드 실패:', {
+        error: uploadError,
+        code: uploadError.statusCode,
+        message: uploadError.message,
+        errorCode: uploadError.error
+      });
       throw uploadError;
     }
 
-    // Public URL 가져오기
+    console.log('[uploadProfileImage] 파일 업로드 성공:', { uploadData });
+
+    // Public URL 가져오기 (프로필 이미지는 Public URL 사용)
     const {
       data: { publicUrl }
     } = supabase.storage.from(BUCKET_NAME).getPublicUrl(filePath);
+
+    console.log('[uploadProfileImage] Public URL 생성 완료:', { publicUrl, filePath });
 
     return {
       url: publicUrl,
@@ -66,7 +117,12 @@ export async function uploadProfileImage(file: File, userId: string): Promise<Pr
     };
   } catch (err) {
     const error = err instanceof Error ? err : new Error('프로필 이미지 업로드에 실패했어요.');
-    console.error('프로필 이미지 업로드 실패:', error);
+    console.error('[uploadProfileImage] 업로드 중 예외 발생:', {
+      userId,
+      error: err,
+      errorMessage: error.message,
+      errorStack: error.stack
+    });
     return {
       url: null,
       error
@@ -80,17 +136,39 @@ export async function uploadProfileImage(file: File, userId: string): Promise<Pr
  */
 export async function deleteProfileImage(userId: string): Promise<void> {
   try {
-    // 모든 확장자 시도
-    const extensions = ['jpg', 'jpeg', 'png', 'webp'];
-    const filesToDelete = extensions.map((ext) => `${userId}.${ext}`);
+    console.log('[deleteProfileImage] 삭제 시작:', { userId });
+    
+    // 경로 규칙: profile-images/{userId}/* 형식으로 해당 사용자의 모든 파일 삭제
+    const { data: files, error: listError } = await supabase.storage
+      .from(BUCKET_NAME)
+      .list(userId, {
+        limit: 100,
+        sortBy: { column: 'created_at', order: 'desc' }
+      });
 
-    const { error } = await supabase.storage.from(BUCKET_NAME).remove(filesToDelete);
+    if (listError) {
+      console.error('[deleteProfileImage] 파일 목록 조회 실패:', listError);
+      return;
+    }
 
-    if (error && error.message !== 'Object not found') {
-      console.error('프로필 이미지 삭제 실패:', error);
+    if (!files || files.length === 0) {
+      console.log('[deleteProfileImage] 삭제할 파일 없음:', { userId });
+      return;
+    }
+
+    // 해당 사용자 폴더의 모든 파일 삭제
+    const filesToDelete = files.map(file => `${userId}/${file.name}`);
+    const { error: deleteError } = await supabase.storage
+      .from(BUCKET_NAME)
+      .remove(filesToDelete);
+
+    if (deleteError) {
+      console.error('[deleteProfileImage] 파일 삭제 실패:', deleteError);
+    } else {
+      console.log('[deleteProfileImage] 파일 삭제 완료:', { userId, deletedCount: files.length });
     }
   } catch (err) {
-    console.error('프로필 이미지 삭제 중 오류:', err);
+    console.error('[deleteProfileImage] 삭제 중 예외 발생:', err);
   }
 }
 

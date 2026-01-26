@@ -72,11 +72,16 @@ export default function FlowerBadge({
 }: FlowerBadgeProps) {
   const { user } = useAuth();
   const notify = useNotify();
-  const { updateSettings } = useSettings(user?.id || null);
+  const { updateSettings, fetchSettings } = useSettings(user?.id || null);
   const [seedModalOpen, setSeedModalOpen] = useState(false);
   const [seedEditedThisMonth, setSeedEditedThisMonth] = useState(false);
   const [seedInput, setSeedInput] = useState(seedName);
   const [currentSeedName, setCurrentSeedName] = useState(seedName);
+
+  // seedName prop이 변경되면 currentSeedName도 업데이트
+  useEffect(() => {
+    setCurrentSeedName(seedName);
+  }, [seedName]);
 
   const growthLevel = getGrowthLevel(growthPct, bloomLevel);
   const stageLabel = growthLevelLabels[growthLevel];
@@ -125,10 +130,18 @@ export default function FlowerBadge({
           data 
         });
 
+        // 설정을 다시 불러와서 최신 상태로 동기화
+        await fetchSettings();
+        
         setCurrentSeedName(value);
         setSeedEditedThisMonth(true);
         setSeedModalOpen(false);
         notify.success(`씨앗 이름이 "${value}"로 변경되었어요.`, '✨');
+        
+        // 홈 데이터 새로고침을 위해 전역 함수 호출 (있는 경우)
+        if ((window as any).__refreshHomeData) {
+          (window as any).__refreshHomeData();
+        }
       } catch (err) {
         console.error('[FlowerBadge] 씨앗 이름 저장 중 오류:', { 
           userId: user.id,

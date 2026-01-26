@@ -176,6 +176,8 @@ export default function MyPage() {
 
   // Profile edits
   const fileAvatarRef = useRef<HTMLInputElement | null>(null);
+  const [isUploadingProfile, setIsUploadingProfile] = useState(false);
+  
   const onUploadAvatarClick = () => {
     requireAuthForAction(
       'upload_profile_image',
@@ -187,28 +189,100 @@ export default function MyPage() {
       }
     );
   };
+  
   async function onFileAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file) {
+      // 파일이 없으면 input 초기화
+      if (fileAvatarRef.current) {
+        fileAvatarRef.current.value = '';
+      }
+      return;
+    }
     if (!user) return;
 
     requireAuthForAction(
       'upload_profile_image_file',
       async () => {
+        if (isUploadingProfile) {
+          notify.warning('이미 업로드 중이에요. 잠시만 기다려주세요.', '⏳');
+          return;
+        }
+
+        setIsUploadingProfile(true);
         try {
+          console.log('[MyPage] 프로필 이미지 업로드 시작:', { 
+            userId: user.id, 
+            fileName: file.name, 
+            fileSize: file.size,
+            fileType: file.type
+          });
+
           const result = await uploadProfileImage(file, user.id);
+          
           if (result.error) {
+            console.error('[MyPage] 프로필 이미지 업로드 실패:', {
+              userId: user.id,
+              error: result.error,
+              errorMessage: result.error.message
+            });
             notify.error(result.error.message || '프로필 이미지 업로드에 실패했어요', '❌');
+            // input 초기화
+            if (fileAvatarRef.current) {
+              fileAvatarRef.current.value = '';
+            }
             return;
           }
+          
           if (result.url) {
-            await updateSettings({ profile_url: result.url });
+            console.log('[MyPage] 프로필 이미지 업로드 성공, DB 저장 시작:', { 
+              userId: user.id, 
+              url: result.url 
+            });
+            
+            const updateResult = await updateSettings({ profile_url: result.url });
+            
+            if (updateResult.error) {
+              console.error('[MyPage] 프로필 URL DB 저장 실패:', {
+                userId: user.id,
+                error: updateResult.error
+              });
+              notify.error('프로필 이미지 URL 저장에 실패했어요', '❌');
+              // input 초기화
+              if (fileAvatarRef.current) {
+                fileAvatarRef.current.value = '';
+              }
+              return;
+            }
+            
+            console.log('[MyPage] 프로필 이미지 업로드 및 저장 완료:', { 
+              userId: user.id, 
+              url: result.url 
+            });
+            
             setProfile((prev) => ({ ...prev, img: result.url }));
             notify.success('프로필 이미지가 적용되었어요', '✅');
+          } else {
+            notify.error('프로필 이미지 URL을 가져올 수 없어요', '❌');
+          }
+          
+          // 성공/실패 관계없이 input 초기화 (같은 파일 재선택 가능하게)
+          if (fileAvatarRef.current) {
+            fileAvatarRef.current.value = '';
           }
         } catch (err) {
-          console.error('프로필 이미지 업로드 실패:', err);
+          console.error('[MyPage] 프로필 이미지 업로드 중 예외 발생:', {
+            userId: user.id,
+            error: err,
+            errorMessage: err instanceof Error ? err.message : String(err)
+          });
           notify.error('프로필 이미지 업로드에 실패했어요', '❌');
+          // input 초기화
+          if (fileAvatarRef.current) {
+            fileAvatarRef.current.value = '';
+          }
+        } finally {
+          setIsUploadingProfile(false);
         }
       },
       {
