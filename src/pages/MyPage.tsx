@@ -16,6 +16,8 @@ import type { LockSettings, LockMode } from '../types/lock';
 import { LOCK_SESSION_KEY } from '../types/lock';
 import { loadLockSettings, saveLockSettings } from '@utils/lock';
 import { EMOTION_OPTIONS } from '@constants/emotions';
+import { fetchBloomedFlowers } from '@services/flowers';
+import { supabase } from '@lib/supabaseClient';
 
 type Profile = { name: string; mbti: string; img: string | null };
 type Settings = { emp: boolean; time: string };
@@ -91,19 +93,70 @@ export default function MyPage() {
     }
   }, [user, isGuest, fetchEmotions]);
 
-  // Album
-  const [album, setAlbum] = useState<AlbumItem[]>(lsGet<AlbumItem[]>(albumKey, []));
+  // Album - 실제 DB에서 개화된 꽃 데이터 가져오기
+  const [album, setAlbum] = useState<AlbumItem[]>([]);
+  const [albumLoading, setAlbumLoading] = useState(false);
+  
   useEffect(() => {
-    if (album.length === 0) {
-      const seed: AlbumItem[] = [
-        { id: 'a1', title: '잎 너므해', date: '2025-11-05', water: 1, emoji: '🌸', message: '따뜻한 하루' },
-        { id: 'a2', title: '두번저장안됨', date: '2025-11-03', water: 1, emoji: '🌷', message: '' },
-        { id: 'a3', title: '봄비', date: '2025-10-22', water: 2, emoji: '🌼', message: '소중한 기억' }
-      ];
-      setAlbum(seed);
-      lsSet(albumKey, seed);
-    }
-  }, []);
+    const loadAlbum = async () => {
+      if (!user || isGuest) {
+        // 게스트 모드이거나 로그인하지 않은 경우 빈 배열
+        setAlbum([]);
+        return;
+      }
+
+      setAlbumLoading(true);
+      try {
+        const bloomedFlowers = await fetchBloomedFlowers(user.id);
+        
+        // user_settings에서 seed_name 가져오기
+        const { data: userSettings } = await supabase
+          .from('user_settings')
+          .select('seed_name')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        
+        const seedName = userSettings?.seed_name || '나의 씨앗';
+        
+        // 개화된 꽃들을 앨범 아이템으로 변환
+        const albumItems: AlbumItem[] = bloomedFlowers.map((flower, index) => {
+          const bloomDate = flower.bloomed_at 
+            ? new Date(flower.bloomed_at).toISOString().split('T')[0]
+            : new Date(flower.created_at).toISOString().split('T')[0];
+          
+          // 성장 포인트에 따라 이모지 결정
+          let emoji = '🌸';
+          if (flower.growth_percent >= 100) emoji = '🌸';
+          else if (flower.growth_percent >= 70) emoji = '🌺';
+          else if (flower.growth_percent >= 50) emoji = '🌷';
+          else if (flower.growth_percent >= 30) emoji = '🌿';
+          else emoji = '🌱';
+          
+          return {
+            id: flower.id,
+            title: seedName || `감정꽃 ${index + 1}`,
+            date: bloomDate,
+            water: Math.floor(flower.growth_percent / 10), // 포인트를 공감 수로 변환 (대략)
+            emoji: emoji,
+            message: ''
+          };
+        });
+        
+        setAlbum(albumItems);
+        // 로컬 스토리지에도 저장 (오프라인 대비)
+        lsSet(albumKey, albumItems);
+      } catch (error) {
+        console.error('앨범 로드 실패:', error);
+        // 실패 시 로컬 스토리지에서 불러오기
+        const localAlbum = lsGet<AlbumItem[]>(albumKey, []);
+        setAlbum(localAlbum);
+      } finally {
+        setAlbumLoading(false);
+      }
+    };
+
+    loadAlbum();
+  }, [user, isGuest]);
 
   // Modals
   const [mProfile, setMProfile] = useState(false);
@@ -494,9 +547,23 @@ export default function MyPage() {
   const [qSubj, setQSubj] = useState('');
   const [qBody, setQBody] = useState('');
   function sendSupport() {
+    if (!qBody.trim()) {
+      notify.warning('문의 내용을 입력해주세요.', '⚠️');
+      return;
+    }
     const subj = encodeURIComponent(qSubj || '마음씨 문의');
     const body = encodeURIComponent(qBody || '');
-    location.href = `mailto:${qEmail}?subject=${subj}&body=${body}`;
+    if (qEmail.trim()) {
+      location.href = `mailto:${qEmail}?subject=${subj}&body=${body}`;
+    } else {
+      // 이메일이 없으면 클립보드에 복사
+      const text = `제목: ${qSubj || '마음씨 문의'}\n\n${qBody}`;
+      navigator.clipboard.writeText(text).then(() => {
+        notify.success('문의 내용이 클립보드에 복사되었어요. 이메일 앱에서 붙여넣기 해주세요.', '✅');
+      }).catch(() => {
+        notify.info('문의 내용을 직접 복사해서 이메일로 보내주세요.', 'ℹ️');
+      });
+    }
   }
 
   const canSaveLock =
@@ -656,14 +723,10 @@ export default function MyPage() {
           <div className="chev">›</div>
         </div>
 
-        <div className="card" onClick={() => {
-          notify.info('알림 설정 기능은 준비 중이에요. 곧 만나요!', 'ℹ️');
-        }}>
+        <div className="card" onClick={() => setMAlert(true)}>
           <div>
             <div className="tt">알림 설정</div>
-            <div className="sub" style={{ fontSize: 11, color: 'var(--ms-ink-muted)', marginTop: 2 }}>
-              준비 중
-            </div>
+            <div className="sub">기록 루틴과 공감 알림 설정</div>
           </div>
           <div className="chev">›</div>
         </div>
@@ -806,19 +869,31 @@ export default function MyPage() {
       {mAlbum && (
         <Modal onClose={() => setMAlbum(false)}>
           <h3>감정꽃 앨범</h3>
-          <p className="hint">100일 동안 자란 감정꽃을 한눈에 모아볼 수 있어요.</p>
-          <div className="album" id="albumList">
-            {album.map(it => (
-              <div key={it.id} className="item" onClick={() => openFlower(it)}>
-                <div className="flower">{it.emoji}</div>
-              <div className="meta"><span>{it.title}</span></div>
-              <div className="meta" style={{ fontWeight: 600 }}><span>{it.date}</span><span /></div>
-              </div>
-            ))}
-          </div>
+          <p className="hint">개화된 감정꽃을 한눈에 모아볼 수 있어요.</p>
+          {albumLoading ? (
+            <div style={{ textAlign: 'center', padding: '40px 16px', color: 'var(--ms-ink-soft)' }}>
+              앨범을 불러오는 중...
+            </div>
+          ) : album.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '40px 16px', color: 'var(--ms-ink-soft)' }}>
+              아직 개화된 꽃이 없어요. 기록을 계속 남기면 감정꽃이 피어날 거예요 🌱
+            </div>
+          ) : (
+            <div className="album" id="albumList">
+              {album.map(it => (
+                <div key={it.id} className="item" onClick={() => openFlower(it)}>
+                  <div className="flower">{it.emoji}</div>
+                  <div className="meta"><span>{it.title}</span></div>
+                  <div className="meta" style={{ fontWeight: 600 }}><span>{it.date}</span><span /></div>
+                </div>
+              ))}
+            </div>
+          )}
           <div className="grid2" style={{ marginTop: 10 }}>
             <button className="btn" onClick={() => setMAlbum(false)}>닫기</button>
-            <button className="btn primary" onClick={() => notify.info('꽃을 탭하면 상세 보기에서 저장/공유할 수 있어요', 'ℹ️')}>도움말</button>
+            {album.length > 0 && (
+              <button className="btn primary" onClick={() => notify.info('꽃을 탭하면 상세 보기에서 저장/공유할 수 있어요', 'ℹ️')}>도움말</button>
+            )}
           </div>
         </Modal>
       )}

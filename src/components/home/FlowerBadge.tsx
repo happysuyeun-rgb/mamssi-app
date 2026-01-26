@@ -84,7 +84,7 @@ export default function FlowerBadge({
 
   function openSeedEdit() {
     if (seedEditedThisMonth) {
-      toast('이번 달에는 씨앗 이름을 이미 수정했어요.');
+      notify.warning('이번 달에는 씨앗 이름을 이미 수정했어요.', '⚠️');
       return;
     }
     setSeedInput(seedName);
@@ -149,28 +149,41 @@ export default function FlowerBadge({
   return (
     <>
       <section className="home-garden-card">
-        <div>
+        {/* 1. 상단 텍스트 영역 (좌측 정렬) */}
+        <div className="home-garden-header">
           <div className="home-garden-title">나의 정원</div>
           <p className="home-garden-caption">
-            최근 {totalDays}일 중 {recordedDays}일을 기록했어요. 감정꽃이 자라고 있어요.
+            최근 {totalDays}일 중 {recordedDays}일을 기록했어요.
+            <br />
+            감정꽃이 자라고 있어요.
           </p>
         </div>
-        <div className="home-garden-content">
-          <div className="home-garden-left">
-            <GrowthGauge growthPct={growthPct} growthLevelImage={growthLevelImage} stageLabel={stageLabel} bloomLevel={growthLevel} />
-          </div>
-          <div className="home-garden-right">
-            <p className="home-garden-stage">현재 성장 단계: {stageLabel} 단계예요.</p>
-            <div className="home-garden-seed-row">
-              <span style={{ color: 'var(--ms-ink-soft)' }}>씨앗 이름</span>
-              <span style={{ fontWeight: 600 }}>{currentSeedName}</span>
-              <button type="button" className="home-seed-edit" onClick={openSeedEdit} aria-label="씨앗 이름 수정">
-                ✏️
-              </button>
-            </div>
-          </div>
+
+        {/* 2. 게이지 영역 (중앙 정렬) */}
+        <div className="home-garden-gauge-wrapper">
+          <GrowthGauge growthPct={growthPct} growthLevelImage={growthLevelImage} stageLabel={stageLabel} bloomLevel={growthLevel} />
         </div>
-        <p className="home-garden-message">{todayMessage}</p>
+
+        {/* 3. 현재 성장 단계 섹션 (중앙 정렬, 연한 민트 배경) */}
+        <div className="home-garden-stage-box">
+          <div className="home-garden-stage-label">현재 성장 단계</div>
+          <div className="home-garden-stage-value">{stageLabel} 단계예요</div>
+        </div>
+
+        {/* 4. 씨앗 이름 섹션 (중앙 정렬) */}
+        <div className="home-garden-seed-section">
+          <span className="home-garden-seed-label">씨앗 이름</span>
+          <span className="home-garden-seed-value">{currentSeedName}</span>
+          <button type="button" className="home-seed-edit" onClick={openSeedEdit} aria-label="씨앗 이름 수정">
+            ✏️
+          </button>
+        </div>
+
+        {/* 5. 오늘의 정원 소식 (하단, 좌측 정렬) */}
+        <div className="home-garden-message-wrapper">
+          <span className="home-garden-message-icon">🌱</span>
+          <p className="home-garden-message">{todayMessage}</p>
+        </div>
       </section>
 
       {/* 씨앗 이름 수정 모달 */}

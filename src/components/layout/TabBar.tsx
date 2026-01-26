@@ -1,4 +1,8 @@
 import { NavLink } from 'react-router-dom';
+import HomeIcon from '@components/icons/HomeIcon';
+import CommunityIcon from '@components/icons/CommunityIcon';
+import CalendarIcon from '@components/icons/CalendarIcon';
+import MyProfileIcon from '@components/icons/MyProfileIcon';
 
 const linkStyle: React.CSSProperties = {
   display: 'grid',
@@ -22,14 +26,18 @@ export default function TabBar() {
         maxWidth: 720, margin: '0 auto', display: 'grid',
         gridTemplateColumns: 'repeat(4,1fr)', gap: 2, padding: '7px 8px 8px'
       }}>
-        <NavLink to="/" style={({ isActive }) => ({
+        <NavLink to="/" end style={({ isActive }) => ({
           ...linkStyle,
           color: isActive ? 'var(--ms-color-primary)' : linkStyle.color,
           background: isActive ? '#e0f7f5' : 'transparent',
           border: isActive ? '1px solid #99f6e4' : '1px solid transparent'
         })}>
-          <span style={{ fontSize: 18 }}>🏡</span>
-          <div>홈</div>
+          {({ isActive }) => (
+            <>
+              <HomeIcon isActive={isActive} size={24} />
+              <div>홈</div>
+            </>
+          )}
         </NavLink>
         <NavLink to="/forest" style={({ isActive }) => ({
           ...linkStyle,
@@ -37,8 +45,12 @@ export default function TabBar() {
           background: isActive ? '#e0f7f5' : 'transparent',
           border: isActive ? '1px solid #99f6e4' : '1px solid transparent'
         })}>
-          <span style={{ fontSize: 18 }}>🌿</span>
-          <div>공감숲</div>
+          {({ isActive }) => (
+            <>
+              <CommunityIcon isActive={isActive} size={24} />
+              <div>공감숲</div>
+            </>
+          )}
         </NavLink>
         <NavLink to="/record" style={({ isActive }) => ({
           ...linkStyle,
@@ -46,17 +58,25 @@ export default function TabBar() {
           background: isActive ? '#e0f7f5' : 'transparent',
           border: isActive ? '1px solid #99f6e4' : '1px solid transparent'
         })}>
-          <span style={{ fontSize: 18 }}>📝</span>
-          <div>기록</div>
+          {({ isActive }) => (
+            <>
+              <CalendarIcon isActive={isActive} size={24} />
+              <div>기록</div>
+            </>
+          )}
         </NavLink>
-        <NavLink to="/me" style={({ isActive }) => ({
+        <NavLink to="/mypage" style={({ isActive }) => ({
           ...linkStyle,
           color: isActive ? 'var(--ms-color-primary)' : linkStyle.color,
           background: isActive ? '#e0f7f5' : 'transparent',
           border: isActive ? '1px solid #99f6e4' : '1px solid transparent'
         })}>
-          <span style={{ fontSize: 18 }}>🌱</span>
-          <div>정원</div>
+          {({ isActive }) => (
+            <>
+              <MyProfileIcon isActive={isActive} size={24} />
+              <div>정원</div>
+            </>
+          )}
         </NavLink>
       </div>
     </nav>

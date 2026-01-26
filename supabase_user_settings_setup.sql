@@ -18,26 +18,33 @@ create table if not exists public.user_settings (
 -- RLS 활성화
 alter table public.user_settings enable row level security;
 
--- 기존 정책 삭제 (있다면)
-drop policy if exists "user_settings self only" on public.user_settings;
-drop policy if exists "user_settings_select" on public.user_settings;
-drop policy if exists "user_settings_update" on public.user_settings;
+-- 기존 정책 모두 삭제 (재생성을 위해)
+DROP POLICY IF EXISTS "user_settings self only" ON public.user_settings;
+DROP POLICY IF EXISTS "user_settings_select" ON public.user_settings;
+DROP POLICY IF EXISTS "user_settings_update" ON public.user_settings;
+DROP POLICY IF EXISTS "user_settings_insert" ON public.user_settings;
 
 -- SELECT 정책: 본인만 조회 가능
-create policy "user_settings_select"
-  on public.user_settings for select
-  using (auth.uid() = user_id);
-
--- UPDATE 정책: 본인만 수정 가능
-create policy "user_settings_update"
-  on public.user_settings for update
-  using (auth.uid() = user_id)
-  with check (auth.uid() = user_id);
+-- using: 조회할 때 조건 체크
+CREATE POLICY "user_settings_select"
+  ON public.user_settings FOR SELECT
+  USING (auth.uid() = user_id);
 
 -- INSERT 정책: 본인만 생성 가능
-create policy "user_settings_insert"
-  on public.user_settings for insert
-  with check (auth.uid() = user_id);
+-- with check: INSERT 시 새로 생성되는 row의 조건 체크
+-- upsert 사용 시 필수: 레코드가 없을 때 INSERT가 발생하므로 이 정책이 필요
+CREATE POLICY "user_settings_insert"
+  ON public.user_settings FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+-- UPDATE 정책: 본인만 수정 가능
+-- using: 기존 row를 수정할 수 있는지 체크 (WHERE 조건)
+-- with check: 수정 후 row가 만족해야 할 조건 체크
+-- upsert 사용 시 필수: 레코드가 있을 때 UPDATE가 발생하므로 이 정책이 필요
+CREATE POLICY "user_settings_update"
+  ON public.user_settings FOR UPDATE
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
 
 -- 인덱스 추가
 create index if not exists idx_user_settings_user_id on public.user_settings(user_id);

@@ -1,6 +1,6 @@
 import React, { type ReactNode } from 'react';
 import Header from './Header';
-import TabBar from './TabBar';
+import TabBar from './layout/TabBar';
 
 type LayoutProps = {
   children: ReactNode;

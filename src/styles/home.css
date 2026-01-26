@@ -6,59 +6,107 @@
   padding: 28px 20px;
   border: 1px solid rgba(36, 51, 41, 0.08);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  min-height: 240px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
-}
-
-.home-garden-content {
-  display: flex;
   gap: 24px;
-  align-items: center;
+  max-width: 720px;
+  margin: 0 auto;
 }
 
-.home-garden-left {
-  flex: 0 0 42%;
-  display: flex;
-  justify-content: center;
-}
-
-.home-garden-right {
-  flex: 0 0 60%;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+/* 1. 상단 텍스트 영역 (좌측 정렬) */
+.home-garden-header {
+  text-align: left;
 }
 
 .home-garden-title {
   font-size: 18px;
   font-weight: 700;
   color: #1a2b22;
-  margin-bottom: 2px;
+  margin-bottom: 6px;
 }
 
 .home-garden-caption {
   font-size: 12px;
   color: var(--ms-ink-muted);
+  line-height: 1.5;
 }
 
-.home-garden-stage {
-  font-size: 14px;
+/* 2. 게이지 영역 (중앙 정렬) */
+.home-garden-gauge-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 8px 0 32px;
+}
+
+/* 3. 현재 성장 단계 섹션 (중앙 정렬, 연한 민트 배경) */
+.home-garden-stage-box {
+  background: #f0faf7;
+  border-radius: 16px;
+  padding: 16px 20px;
+  text-align: center;
+  border: 1px solid rgba(44, 119, 104, 0.1);
+}
+
+.home-garden-stage-label {
+  font-size: 11px;
+  color: var(--ms-ink-muted);
+  margin-bottom: 4px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+.home-garden-stage-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a2b22;
+}
+
+/* 4. 씨앗 이름 섹션 (중앙 정렬) */
+.home-garden-seed-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 13px;
+  flex-wrap: wrap;
+}
+
+.home-garden-seed-label {
   color: var(--ms-ink-soft);
 }
 
-.home-garden-seed-row {
+.home-garden-seed-value {
+  font-weight: 600;
+  color: #1a2b22;
+}
+
+/* 5. 오늘의 정원 소식 (하단, 좌측 정렬) */
+.home-garden-message-wrapper {
   display: flex;
-  align-items: center;
-  flex-wrap: wrap;
+  align-items: flex-start;
   gap: 6px;
-  font-size: 13px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(36, 51, 41, 0.08);
+}
+
+.home-garden-message-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+  margin-top: 1px;
 }
 
 .home-garden-message {
   font-size: 12px;
   color: var(--ms-ink-soft);
+  line-height: 1.5;
+  margin: 0;
+  flex: 1;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .home-seed-edit {
@@ -267,13 +315,19 @@
   color: var(--ms-ink-soft);
 }
 
+/* 반응형: 모바일에서 패딩 조정 */
 @media (max-width: 480px) {
-  .home-garden-content {
-    flex-direction: column;
+  .home-garden-card {
+    padding: 24px 16px;
+    gap: 20px;
   }
-  .home-garden-left,
-  .home-garden-right {
-    flex: 1 1 auto;
+
+  .home-garden-gauge-wrapper {
+    margin: 4px 0 24px;
+  }
+
+  .home-garden-stage-box {
+    padding: 14px 16px;
   }
 }
 

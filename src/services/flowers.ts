@@ -377,3 +377,39 @@ export async function updateFlowerGrowth(
   }
 }
 
+/**
+ * 개화된 꽃 목록 조회 (앨범용)
+ * @param userId 유저 ID
+ * @returns 개화된 꽃 목록
+ */
+export async function fetchBloomedFlowers(userId: string): Promise<FlowerRow[]> {
+  try {
+    const { data, error } = await supabase
+      .from('flowers')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('is_bloomed', true)
+      .order('bloomed_at', { ascending: false });
+
+    if (error) {
+      console.error('[fetchBloomedFlowers] 조회 실패:', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        userId
+      });
+      return [];
+    }
+
+    return (data || []) as FlowerRow[];
+  } catch (err) {
+    console.error('[fetchBloomedFlowers] 예외 발생:', {
+      error: err,
+      errorMessage: err instanceof Error ? err.message : String(err),
+      userId
+    });
+    return [];
+  }
+}
+
