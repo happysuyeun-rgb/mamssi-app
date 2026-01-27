@@ -78,10 +78,18 @@ export default function FlowerBadge({
   const [seedInput, setSeedInput] = useState(seedName);
   const [currentSeedName, setCurrentSeedName] = useState(seedName);
 
-  // seedName prop이 변경되면 currentSeedName도 업데이트
+  // seedName prop이 변경되면 currentSeedName과 seedInput도 업데이트
   useEffect(() => {
+    console.log('[FlowerBadge] seedName prop 변경 감지:', { 
+      oldSeedName: currentSeedName, 
+      newSeedName: seedName 
+    });
     setCurrentSeedName(seedName);
-  }, [seedName]);
+    // 모달이 열려있지 않을 때만 seedInput 업데이트 (사용자가 입력 중일 때 덮어쓰지 않도록)
+    if (!seedModalOpen) {
+      setSeedInput(seedName);
+    }
+  }, [seedName, seedModalOpen]);
 
   const growthLevel = getGrowthLevel(growthPct, bloomLevel);
   const stageLabel = growthLevelLabels[growthLevel];
@@ -92,7 +100,9 @@ export default function FlowerBadge({
       notify.warning('이번 달에는 씨앗 이름을 이미 수정했어요.', '⚠️');
       return;
     }
-    setSeedInput(seedName);
+    // 모달 열 때 현재 seedName prop 값으로 초기화 (최신 값 사용)
+    console.log('[FlowerBadge] 씨앗 이름 수정 모달 열기:', { seedName, currentSeedName });
+    setSeedInput(seedName || currentSeedName);
     setSeedModalOpen(true);
   }
 
@@ -133,15 +143,19 @@ export default function FlowerBadge({
         // 설정을 다시 불러와서 최신 상태로 동기화
         await fetchSettings();
         
+        // 홈 데이터 새로고침을 위해 전역 함수 호출 (비동기로 대기)
+        if ((window as any).__refreshHomeData) {
+          console.log('[FlowerBadge] 홈 데이터 새로고침 시작');
+          await (window as any).__refreshHomeData();
+          console.log('[FlowerBadge] 홈 데이터 새로고침 완료');
+        }
+        
+        // 홈 데이터 새로고침 후 seedName prop이 업데이트되면 useEffect가 currentSeedName을 업데이트함
+        // 하지만 즉시 UI에 반영하기 위해 로컬 state도 업데이트
         setCurrentSeedName(value);
         setSeedEditedThisMonth(true);
         setSeedModalOpen(false);
         notify.success(`씨앗 이름이 "${value}"로 변경되었어요.`, '✨');
-        
-        // 홈 데이터 새로고침을 위해 전역 함수 호출 (있는 경우)
-        if ((window as any).__refreshHomeData) {
-          (window as any).__refreshHomeData();
-        }
       } catch (err) {
         console.error('[FlowerBadge] 씨앗 이름 저장 중 오류:', { 
           userId: user.id,

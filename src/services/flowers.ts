@@ -12,21 +12,24 @@ export type FlowerRow = {
 };
 
 /**
- * 유저의 flowers row가 존재하는지 확인하고, 없으면 생성
+ * 유저의 진행 중 꽃(is_bloomed=false)이 존재하는지 확인하고, 없으면 생성
+ * 설계상 유저당 진행 중 꽃은 1개만 존재해야 함
  * @param userId 유저 ID
- * @returns flowers row 데이터
+ * @returns flowers row 데이터 (진행 중 꽃만 반환)
  */
 export async function ensureFlowerRow(userId: string): Promise<FlowerRow | null> {
   try {
-    // 기존 row 조회
+    // 진행 중 꽃만 조회 (is_bloomed=false 또는 null)
+    // 설계상 유저당 진행 중 꽃은 1개만 존재해야 함
     const { data: existing, error: selectError } = await supabase
       .from('flowers')
       .select('*')
       .eq('user_id', userId)
+      .eq('is_bloomed', false) // 진행 중 꽃만 조회
       .maybeSingle();
 
     if (selectError && selectError.code !== 'PGRST116') {
-      console.error('[ensureFlowerRow] flowers 조회 실패:', {
+      console.error('[ensureFlowerRow] 진행 중 꽃 조회 실패:', {
         code: selectError.code,
         message: selectError.message,
         details: selectError.details,
@@ -36,18 +39,20 @@ export async function ensureFlowerRow(userId: string): Promise<FlowerRow | null>
       return null;
     }
 
-    // 이미 존재하면 반환
+    // 진행 중 꽃이 이미 존재하면 반환
     if (existing) {
-      console.log('[ensureFlowerRow] flowers row 존재:', {
+      console.log('[ensureFlowerRow] 진행 중 꽃 존재:', {
         userId,
         flowerId: existing.id,
-        growthPercent: existing.growth_percent
+        growthPercent: existing.growth_percent,
+        isBloomed: existing.is_bloomed
       });
       return existing as FlowerRow;
     }
 
-    // 없으면 생성
-    console.log('[ensureFlowerRow] flowers row 생성 시도:', { userId });
+    // 진행 중 꽃이 없으면 새로 생성
+    // 단, DB 레벨에서 unique index로 중복 생성 방지됨
+    console.log('[ensureFlowerRow] 진행 중 꽃 없음, 새 씨앗 생성 시도:', { userId });
     const { data: newFlower, error: insertError } = await supabase
       .from('flowers')
       .insert({
@@ -60,7 +65,40 @@ export async function ensureFlowerRow(userId: string): Promise<FlowerRow | null>
       .single();
 
     if (insertError) {
-      console.error('[ensureFlowerRow] flowers 생성 실패:', {
+      // unique constraint 위반 시 기존 row 재조회 시도
+      if (insertError.code === '23505' || insertError.message?.includes('unique') || insertError.message?.includes('duplicate')) {
+        console.warn('[ensureFlowerRow] 중복 생성 시도 감지, 기존 row 재조회:', {
+          userId,
+          error: insertError.message
+        });
+        
+        // 재조회 (동시성 문제로 인한 중복 생성 방지)
+        const { data: retryExisting, error: retryError } = await supabase
+          .from('flowers')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('is_bloomed', false)
+          .maybeSingle();
+        
+        if (retryError && retryError.code !== 'PGRST116') {
+          console.error('[ensureFlowerRow] 재조회 실패:', {
+            code: retryError.code,
+            message: retryError.message,
+            userId
+          });
+          return null;
+        }
+        
+        if (retryExisting) {
+          console.log('[ensureFlowerRow] 재조회 성공, 기존 row 반환:', {
+            userId,
+            flowerId: retryExisting.id
+          });
+          return retryExisting as FlowerRow;
+        }
+      }
+      
+      console.error('[ensureFlowerRow] 씨앗 생성 실패:', {
         code: insertError.code,
         message: insertError.message,
         details: insertError.details,
@@ -70,7 +108,7 @@ export async function ensureFlowerRow(userId: string): Promise<FlowerRow | null>
       return null;
     }
 
-    console.log('[ensureFlowerRow] flowers row 생성 성공:', {
+    console.log('[ensureFlowerRow] 새 씨앗 생성 성공:', {
       userId,
       flowerId: newFlower.id,
       growthPercent: newFlower.growth_percent

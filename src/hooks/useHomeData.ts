@@ -130,15 +130,17 @@ export function useHomeData(userId?: string | null) {
         };
       });
 
-      // flowers 데이터 조회
+      // 진행 중 꽃만 조회 (is_bloomed=false)
+      // 설계상 유저당 진행 중 꽃은 1개만 존재해야 함
       const { data: flowerData, error: flowerError } = await supabase
         .from('flowers')
         .select('*')
         .eq('user_id', userId)
+        .eq('is_bloomed', false) // 진행 중 꽃만 조회
         .maybeSingle();
 
       if (flowerError && flowerError.code !== 'PGRST116') {
-        console.error('[useHomeData] flowers 조회 실패:', {
+        console.error('[useHomeData] 진행 중 꽃 조회 실패:', {
           code: flowerError.code,
           message: flowerError.message,
           details: flowerError.details,
@@ -147,18 +149,19 @@ export function useHomeData(userId?: string | null) {
         });
       }
 
-      // flowers가 없으면 생성 (fallback)
+      // 진행 중 꽃이 없으면 생성 (fallback)
       if (!flowerData) {
-        console.log('[useHomeData] flowers가 없어서 생성 시도 (fallback):', { userId });
+        console.log('[useHomeData] 진행 중 꽃 없음, 생성 시도 (fallback):', { userId });
         try {
-          // ensureFlowerRow 사용
+          // ensureFlowerRow 사용 (진행 중 꽃만 생성/조회)
           const { ensureFlowerRow } = await import('@services/flowers');
           const newFlower = await ensureFlowerRow(userId);
           if (newFlower) {
-            console.log('[useHomeData] flowers 생성 성공 (fallback):', {
+            console.log('[useHomeData] 진행 중 꽃 생성 성공 (fallback):', {
               userId,
               flowerId: newFlower.id,
-              growthPercent: newFlower.growth_percent
+              growthPercent: newFlower.growth_percent,
+              isBloomed: newFlower.is_bloomed
             });
             // DB 스키마에 맞게 매핑
             setFlower({
@@ -172,11 +175,11 @@ export function useHomeData(userId?: string | null) {
               updated_at: newFlower.updated_at
             });
           } else {
-            console.warn('[useHomeData] flowers 생성 실패 (fallback):', { userId });
+            console.warn('[useHomeData] 진행 중 꽃 생성 실패 (fallback):', { userId });
             setFlower(null);
           }
         } catch (fallbackError) {
-          console.error('[useHomeData] flowers 생성 중 오류 (fallback):', {
+          console.error('[useHomeData] 진행 중 꽃 생성 중 오류 (fallback):', {
             error: fallbackError,
             errorMessage: fallbackError instanceof Error ? fallbackError.message : String(fallbackError),
             userId
@@ -184,8 +187,8 @@ export function useHomeData(userId?: string | null) {
           setFlower(null);
         }
       } else {
-        // DB에서 가져온 데이터를 그대로 사용 (컬럼명이 일치함)
-        console.log('[useHomeData] flowers 조회 성공:', {
+        // DB에서 가져온 진행 중 꽃 데이터를 그대로 사용
+        console.log('[useHomeData] 진행 중 꽃 조회 성공:', {
           userId,
           flowerId: flowerData.id,
           growthPercent: flowerData.growth_percent,
@@ -207,7 +210,7 @@ export function useHomeData(userId?: string | null) {
       const likeSum = postsData?.reduce((sum, post) => sum + (post.like_count || 0), 0) || 0;
       const postCount = postsData?.length || 0;
 
-      // user_settings에서 seed_name 조회
+      // user_settings에서 seed_name 조회 (캐시 무효화를 위해 명시적으로 조회)
       const { data: userSettingsData, error: userSettingsError } = await supabase
         .from('user_settings')
         .select('seed_name')
@@ -215,7 +218,13 @@ export function useHomeData(userId?: string | null) {
         .maybeSingle();
 
       if (userSettingsError && userSettingsError.code !== 'PGRST116') {
-        console.error('[useHomeData] user_settings 조회 실패:', userSettingsError);
+        console.error('[useHomeData] user_settings 조회 실패:', {
+          code: userSettingsError.code,
+          message: userSettingsError.message,
+          details: userSettingsError.details,
+          hint: userSettingsError.hint,
+          userId
+        });
       }
 
       // seedName 우선순위: 1. user_settings.seed_name, 2. flowers.seed_name, 3. 기본값 '나의 씨앗'
@@ -223,6 +232,13 @@ export function useHomeData(userId?: string | null) {
         userSettingsData?.seed_name ||
         flowerData?.seed_name ||
         '나의 씨앗';
+
+      console.log('[useHomeData] seedName 업데이트:', {
+        userId,
+        userSettingsSeedName: userSettingsData?.seed_name,
+        flowerSeedName: flowerData?.seed_name,
+        finalSeedName
+      });
 
       setToday(todayData || null);
       setWeekStats(weekStatsArray);

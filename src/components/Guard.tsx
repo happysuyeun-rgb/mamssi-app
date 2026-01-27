@@ -82,7 +82,7 @@ export default function Guard({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // 로그인 사용자의 경우 DB의 onboarding_completed 사용
+    // 로그인 사용자의 경우 DB의 onboarding_completed 사용 (우선순위 1)
     // 게스트 모드의 경우 localStorage 사용
     const guestMode = safeStorage.getItem(GUEST_MODE_KEY) === 'true';
     
@@ -92,14 +92,15 @@ export default function Guard({ children }: { children: React.ReactNode }) {
     let onboardingComplete = false;
     if (session && userProfile !== null) {
       // userProfile이 명시적으로 조회된 경우 (null이 아님) - DB 값 사용 (가장 신뢰할 수 있음)
-      onboardingComplete = userProfile.onboarding_completed;
+      onboardingComplete = userProfile.onboarding_completed === true; // 명시적으로 true인지 확인
       console.log('[Guard] userProfile에서 onboarding_completed 확인:', {
         onboarding_completed: userProfile.onboarding_completed,
-        is_deleted: userProfile.is_deleted
+        is_deleted: userProfile.is_deleted,
+        onboardingComplete
       });
       
-      // DB 값과 로컬 스토리지 동기화
-      if (userProfile.onboarding_completed) {
+      // DB 값과 로컬 스토리지 동기화 (DB 값이 우선)
+      if (userProfile.onboarding_completed === true) {
         safeStorage.setItem(ONBOARDING_COMPLETE_KEY, 'true');
       } else {
         safeStorage.removeItem(ONBOARDING_COMPLETE_KEY);
@@ -107,7 +108,7 @@ export default function Guard({ children }: { children: React.ReactNode }) {
     } else if (session && userProfile === null) {
       // session은 있지만 userProfile이 null인 경우
       // - fetchUserProfile이 실패했거나 아직 조회 중
-      // - 이 경우 로컬 스토리지를 fallback으로 사용
+      // - 이 경우 로컬 스토리지를 fallback으로 사용하되, DB 재조회 시도
       const localOnboarding = safeStorage.getItem(ONBOARDING_COMPLETE_KEY) === 'true';
       onboardingComplete = localOnboarding;
       
@@ -118,6 +119,8 @@ export default function Guard({ children }: { children: React.ReactNode }) {
       
       // userProfile이 null이면 AuthProvider에서 재조회를 시도해야 함
       // 하지만 Guard에서는 로컬 스토리지 값을 사용하여 무한 리다이렉트 방지
+      // 단, 로컬 스토리지 값이 true여도 DB 값이 false면 온보딩으로 보내야 함
+      // 이 경우는 AuthProvider에서 userProfile을 재조회한 후 다시 Guard가 실행되면 해결됨
     } else if (guestMode) {
       onboardingComplete = safeStorage.getItem(ONBOARDING_COMPLETE_KEY) === 'true';
     }
@@ -190,12 +193,29 @@ export default function Guard({ children }: { children: React.ReactNode }) {
 
     // 로그인 상태인데 onboarding_completed=false면 /home이 아니라 /onboarding으로 리다이렉트
     // 단, userProfile이 null이고 로컬 스토리지에 onboarding_completed=true가 있으면 온보딩 완료로 간주
+    // 하지만 userProfile이 명시적으로 조회된 경우 (null이 아님) DB 값을 우선 사용
     if (session && !onboardingComplete && !atOnboarding) {
+      // userProfile이 명시적으로 조회된 경우 (null이 아님) DB 값이 false면 무조건 온보딩으로
+      if (userProfile !== null && userProfile.onboarding_completed === false) {
+        console.log('[Guard] DB 값이 false, 온보딩으로 리다이렉트:', {
+          userProfileOnboardingCompleted: userProfile.onboarding_completed
+        });
+        if (redirectedRef.current !== '/onboarding') {
+          diag.log('GUARD -> to /onboarding', { 
+            reason: 'DB 값이 false (명시적 조회 완료)' 
+          });
+          redirectedRef.current = '/onboarding';
+          navigate('/onboarding?step=5', { replace: true });
+        }
+        return;
+      }
+      
       // userProfile이 null이지만 로컬 스토리지에 onboarding_completed=true가 있으면 온보딩 완료로 간주
       const localOnboardingCheck = safeStorage.getItem(ONBOARDING_COMPLETE_KEY) === 'true';
       if (userProfile === null && localOnboardingCheck) {
-        console.log('[Guard] userProfile이 null이지만 로컬 스토리지에 onboarding_completed=true 있음. 온보딩 완료로 간주');
+        console.log('[Guard] userProfile이 null이지만 로컬 스토리지에 onboarding_completed=true 있음. 온보딩 완료로 간주 (임시)');
         // 온보딩 완료로 간주하고 리다이렉트하지 않음
+        // 단, AuthProvider에서 userProfile을 재조회한 후 다시 Guard가 실행되면 DB 값으로 재확인됨
         redirectedRef.current = null;
         return;
       }
