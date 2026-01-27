@@ -57,15 +57,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     console.log('[AuthProvider] fetchUserProfile 시작', { userId, skipOnboarding, isOnboardingRoute, pathname: location.pathname });
     diag.log('AuthProvider: fetchUserProfile 시작', { userId, skipOnboarding, isOnboardingRoute });
 
-    // 온보딩 라우트에서는 fetchUserProfile skip (타임아웃 방지)
-    if (isOnboardingRoute) {
-      console.log('[AuthProvider] 온보딩 라우트 감지, fetchUserProfile skip');
-      return null; // 온보딩 중에는 null 반환하여 진행 허용
-    }
+    // 온보딩 라우트에서도 userProfile 조회는 수행 (Guard에서 온보딩 완료 여부 확인 필요)
+    // 단, 타임아웃을 짧게 설정하여 빠른 응답 보장
 
     try {
-      // 타임아웃 설정 (온보딩 라우트가 아니면 10초)
-      const timeoutMs = 10000;
+      // 타임아웃 설정 (온보딩 라우트는 3초, 그 외는 10초)
+      const timeoutMs = isOnboardingRoute ? 3000 : 10000;
       
       const timeoutPromise = new Promise<never>((_, reject) => {
         setTimeout(() => reject(new Error(`fetchUserProfile 타임아웃 (${timeoutMs}ms)`)), timeoutMs);
@@ -133,15 +130,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // userProfile 갱신 함수
   const refreshUserProfile = async () => {
     if (user?.id) {
-      console.log('[AuthProvider] refreshUserProfile 시작', { userId: user.id });
-      const profile = await fetchUserProfile(user.id);
-      console.log('[AuthProvider] refreshUserProfile 완료', { profile });
+      console.log('[AuthProvider] refreshUserProfile 시작', { userId: user.id, pathname: location.pathname });
+      
+      // 온보딩 라우트에서도 userProfile 조회 수행 (Guard에서 온보딩 완료 여부 확인 필요)
+      const profile = await fetchUserProfile(user.id, false);
+      console.log('[AuthProvider] refreshUserProfile 완료', { 
+        profile,
+        onboarding_completed: profile?.onboarding_completed 
+      });
       setUserProfile(profile);
       
-      // profile이 null이 아니고 onboarding_completed가 true면 로컬 스토리지도 업데이트
-      if (profile && profile.onboarding_completed) {
-        safeStorage.setItem(ONBOARDING_COMPLETE_KEY, 'true');
-        console.log('[AuthProvider] 로컬 스토리지 onboarding_completed 업데이트: true');
+      // profile이 조회되면 로컬 스토리지와 동기화
+      if (profile) {
+        if (profile.onboarding_completed === true) {
+          safeStorage.setItem(ONBOARDING_COMPLETE_KEY, 'true');
+          console.log('[AuthProvider] 로컬 스토리지 onboarding_completed 동기화: true');
+        } else {
+          safeStorage.removeItem(ONBOARDING_COMPLETE_KEY);
+          console.log('[AuthProvider] 로컬 스토리지 onboarding_completed 동기화: false (제거)');
+        }
+      } else {
+        // profile이 null이면 로컬 스토리지 확인 (fallback)
+        const localOnboarding = safeStorage.getItem(ONBOARDING_COMPLETE_KEY) === 'true';
+        if (localOnboarding) {
+          console.log('[AuthProvider] refreshUserProfile: profile이 null이지만 로컬 스토리지에 onboarding_completed=true 있음');
+        }
       }
     }
   };

@@ -45,13 +45,15 @@ export async function uploadProfileImage(file: File, userId: string): Promise<Pr
     console.log('[uploadProfileImage] 파일 경로:', { filePath, bucket: BUCKET_NAME, userId, fileName });
 
     // 버킷 존재 여부 확인 (선택적)
+    // 주의: 버킷 목록 조회 권한이 없을 수 있으므로, 실패해도 업로드를 시도
     const { data: buckets, error: listError } = await supabase.storage.listBuckets();
     if (listError) {
-      console.warn('[uploadProfileImage] 버킷 목록 조회 실패 (무시):', listError);
+      console.warn('[uploadProfileImage] 버킷 목록 조회 실패 (업로드 시도 계속):', listError);
+      // 버킷 목록 조회 실패해도 업로드를 시도 (실제 업로드 시 에러가 발생하면 그때 처리)
     } else {
       const bucketExists = buckets?.some(b => b.name === BUCKET_NAME);
       if (!bucketExists) {
-        const error = new Error(`Storage 버킷 '${BUCKET_NAME}'이 존재하지 않아요. 관리자에게 문의해주세요.`);
+        const error = new Error(`Storage 버킷 '${BUCKET_NAME}'이 존재하지 않아요. Supabase Dashboard에서 버킷을 생성해주세요. (create_profile_images_bucket.sql 실행)`);
         console.error('[uploadProfileImage] 버킷 없음:', error);
         return { url: null, error };
       }

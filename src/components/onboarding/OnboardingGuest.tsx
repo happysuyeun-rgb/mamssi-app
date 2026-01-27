@@ -200,6 +200,34 @@ export default function OnboardingGuest() {
   // Step 7: 완료
   const handleGoHome = async () => {
     diag.log('OnboardingGuest: handleGoHome 호출');
+    
+    // 씨앗명이 입력되었으면 user_settings에 저장
+    if (session && user && seedName.trim()) {
+      try {
+        console.log('[OnboardingGuest] 씨앗명 저장 시작:', { userId: user.id, seedName: seedName.trim() });
+        const { supabase } = await import('@lib/supabaseClient');
+        const { error: seedNameError } = await supabase
+          .from('user_settings')
+          .upsert({
+            user_id: user.id,
+            seed_name: seedName.trim(),
+            updated_at: new Date().toISOString()
+          }, {
+            onConflict: 'user_id'
+          });
+        
+        if (seedNameError) {
+          console.error('[OnboardingGuest] 씨앗명 저장 실패:', seedNameError);
+          diag.err('OnboardingGuest: 씨앗명 저장 실패:', seedNameError);
+        } else {
+          console.log('[OnboardingGuest] 씨앗명 저장 성공:', { seedName: seedName.trim() });
+        }
+      } catch (seedNameErr) {
+        console.error('[OnboardingGuest] 씨앗명 저장 중 오류:', seedNameErr);
+        diag.err('OnboardingGuest: 씨앗명 저장 중 오류:', seedNameErr);
+      }
+    }
+    
     // safeStorage로 확실히 기록 (게스트 모드용)
     safeStorage.setItem(ONBOARDING_COMPLETE_KEY, 'true');
     diag.log('OnboardingGuest: 온보딩 완료 플래그 저장', {
@@ -236,6 +264,14 @@ export default function OnboardingGuest() {
           console.log('[OnboardingGuest] 로컬 스토리지 onboarding_completed 업데이트: true');
           
           // userProfile 갱신 (DB에서 최신 상태 가져오기)
+          // 완료될 때까지 대기하여 Guard가 올바른 값을 확인할 수 있도록 함
+          console.log('[OnboardingGuest] userProfile 갱신 시작...');
+          await refreshUserProfile();
+          
+          // DB 업데이트가 반영될 때까지 잠시 대기 (Realtime 지연 고려)
+          await new Promise(resolve => setTimeout(resolve, 300));
+          
+          // 한 번 더 갱신하여 최신 상태 확인
           await refreshUserProfile();
           
           console.log('[OnboardingGuest] userProfile 갱신 완료, /home으로 이동');

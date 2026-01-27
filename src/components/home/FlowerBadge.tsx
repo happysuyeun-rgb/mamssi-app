@@ -119,7 +119,12 @@ export default function FlowerBadge({
 
     if (user) {
       try {
-        console.log('[FlowerBadge] 씨앗 이름 저장 시작:', { userId: user.id, seedName: value });
+        console.log('[FlowerBadge] 씨앗 이름 저장 시작:', { 
+          userId: user.id, 
+          seedName: value,
+          currentSeedName,
+          seedNameProp: seedName
+        });
         
         // user_settings 테이블에 seed_name upsert (user_id 기준)
         const { data, error } = await updateSettings({ seed_name: value });
@@ -129,25 +134,56 @@ export default function FlowerBadge({
             userId: user.id, 
             seedName: value,
             error,
-            errorMessage: error instanceof Error ? error.message : String(error)
+            errorCode: error.code,
+            errorMessage: error.message,
+            errorDetails: error.details,
+            errorHint: error.hint
           });
-          throw error;
+          notify.error(`씨앗 이름 저장에 실패했어요: ${error.message}`, '❌');
+          return;
+        }
+
+        if (!data) {
+          console.error('[FlowerBadge] 씨앗 이름 저장 실패: data가 null', { 
+            userId: user.id, 
+            seedName: value
+          });
+          notify.error('씨앗 이름 저장에 실패했어요. (데이터 없음)', '❌');
+          return;
         }
 
         console.log('[FlowerBadge] 씨앗 이름 저장 성공:', { 
           userId: user.id, 
           seedName: value,
-          data 
+          savedData: data,
+          savedSeedName: data.seed_name
         });
 
+        // 저장된 데이터 확인
+        if (data.seed_name !== value) {
+          console.warn('[FlowerBadge] 저장된 seed_name이 입력값과 다름:', {
+            input: value,
+            saved: data.seed_name
+          });
+        }
+
         // 설정을 다시 불러와서 최신 상태로 동기화
+        console.log('[FlowerBadge] fetchSettings 호출 시작');
         await fetchSettings();
+        console.log('[FlowerBadge] fetchSettings 호출 완료');
         
         // 홈 데이터 새로고침을 위해 전역 함수 호출 (비동기로 대기)
         if ((window as any).__refreshHomeData) {
           console.log('[FlowerBadge] 홈 데이터 새로고침 시작');
-          await (window as any).__refreshHomeData();
-          console.log('[FlowerBadge] 홈 데이터 새로고침 완료');
+          try {
+            await (window as any).__refreshHomeData();
+            console.log('[FlowerBadge] 홈 데이터 새로고침 완료');
+          } catch (refreshError) {
+            console.error('[FlowerBadge] 홈 데이터 새로고침 실패:', refreshError);
+            // 새로고침 실패해도 저장은 성공했으므로 계속 진행
+          }
+        } else {
+          console.warn('[FlowerBadge] __refreshHomeData 함수가 없음');
         }
         
         // 홈 데이터 새로고침 후 seedName prop이 업데이트되면 useEffect가 currentSeedName을 업데이트함
@@ -157,12 +193,13 @@ export default function FlowerBadge({
         setSeedModalOpen(false);
         notify.success(`씨앗 이름이 "${value}"로 변경되었어요.`, '✨');
       } catch (err) {
-        console.error('[FlowerBadge] 씨앗 이름 저장 중 오류:', { 
+        console.error('[FlowerBadge] 씨앗 이름 저장 중 예외 발생:', { 
           userId: user.id,
           error: err,
-          errorMessage: err instanceof Error ? err.message : String(err)
+          errorMessage: err instanceof Error ? err.message : String(err),
+          errorStack: err instanceof Error ? err.stack : undefined
         });
-        notify.error('씨앗 이름 저장에 실패했어요.', '❌');
+        notify.error(`씨앗 이름 저장에 실패했어요: ${err instanceof Error ? err.message : String(err)}`, '❌');
       }
     } else {
       // 게스트 모드는 로컬 상태만 업데이트

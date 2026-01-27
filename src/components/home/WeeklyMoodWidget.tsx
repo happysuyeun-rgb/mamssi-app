@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import type { MouseEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useNotify } from '@providers/NotifyProvider';
 import '@styles/home.css';
 import '@styles/forest.css';
 
@@ -47,6 +48,7 @@ function cn(...classes: Array<string | false | null | undefined>) {
 
 export default function WeeklyMoodWidget({ weekSummary, weekStart, todayDate, onDeleteRecord }: WeeklyMoodWidgetProps) {
   const navigate = useNavigate();
+  const notify = useNotify();
   const [selectedDayIndex, setSelectedDayIndex] = useState<number | null>(null);
   const [emotionModalOpen, setEmotionModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -87,12 +89,25 @@ export default function WeeklyMoodWidget({ weekSummary, weekStart, todayDate, on
   function handleWeekDayClick(index: number) {
     const dayIso = getDayIso(actualWeekStart, index);
     const entry = weekData[index];
+    
+    // 미래 날짜 체크
+    if (dayIso > actualToday) {
+      notify.warning('미래날짜는 기록할수 없어요!', '⚠️');
+      return;
+    }
+    
     if (!entry || !entry.emoji) {
+      // 기록이 없는 날짜 (과거 또는 오늘)
       if (dayIso === actualToday) {
+        navigate(`/record?date=${dayIso}`);
+      } else {
+        // 과거 날짜는 기록 페이지로 이동 (기록 가능)
         navigate(`/record?date=${dayIso}`);
       }
       return;
     }
+    
+    // 기록이 있는 날짜는 모달 표시
     setSelectedDayIndex(index);
     setEmotionModalOpen(true);
   }

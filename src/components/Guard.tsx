@@ -5,6 +5,11 @@ import { safeStorage } from '@lib/safeStorage';
 import { diag } from '@boot/diag';
 import LoadingSplash from './LoadingSplash';
 
+type UserProfile = {
+  onboarding_completed: boolean;
+  is_deleted: boolean;
+};
+
 const ONBOARDING_COMPLETE_KEY = 'onboardingComplete';
 const GUEST_MODE_KEY = 'isGuest';
 
@@ -16,9 +21,14 @@ const GUEST_MODE_KEY = 'isGuest';
 export default function Guard({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { session, loading, sessionInitialized, isGuest, userProfile } = useAuth();
+  const { session, loading, sessionInitialized, isGuest, userProfile, refreshUserProfile } = useAuth();
   const redirectedRef = useRef<string | null>(null);
   const loadingStartTimeRef = useRef<number | null>(null);
+  const lastPathRef = useRef<string>(location.pathname);
+  const refreshAttemptedRef = useRef<boolean>(false);
+  const lastUserProfileRef = useRef<UserProfile | null>(userProfile);
+  const lastRedirectTimeRef = useRef<number>(0);
+  const REDIRECT_DEBOUNCE_MS = 500; // 500ms 내 중복 리다이렉트 방지
 
   // 무한 로딩 방지: 로딩 시작 시간 추적
   useEffect(() => {
@@ -48,6 +58,29 @@ export default function Guard({ children }: { children: React.ReactNode }) {
   }, [loading, location.pathname, sessionInitialized, session]);
 
   useEffect(() => {
+    // 경로가 변경되면 redirectedRef 초기화 (새 경로에서 리다이렉트 허용)
+    if (lastPathRef.current !== location.pathname) {
+      console.log('[Guard] 경로 변경 감지, redirectedRef 초기화:', {
+        from: lastPathRef.current,
+        to: location.pathname
+      });
+      redirectedRef.current = null;
+      lastPathRef.current = location.pathname;
+    }
+
+    // userProfile이 변경되면 refreshAttemptedRef 초기화 (재조회 허용)
+    if (lastUserProfileRef.current !== userProfile) {
+      console.log('[Guard] userProfile 변경 감지:', {
+        from: lastUserProfileRef.current,
+        to: userProfile
+      });
+      lastUserProfileRef.current = userProfile;
+      // userProfile이 null에서 값으로 변경되면 재조회 시도 플래그 초기화
+      if (userProfile !== null) {
+        refreshAttemptedRef.current = false;
+      }
+    }
+
     console.log('[Guard] useEffect 진입', {
       path: location.pathname,
       loading,
@@ -56,7 +89,8 @@ export default function Guard({ children }: { children: React.ReactNode }) {
       userId: session?.user?.id,
       isGuest,
       userProfile,
-      redirected: redirectedRef.current
+      redirected: redirectedRef.current,
+      refreshAttempted: refreshAttemptedRef.current
     });
     
     diag.log('Guard: useEffect 진입', {
@@ -110,17 +144,31 @@ export default function Guard({ children }: { children: React.ReactNode }) {
       // - fetchUserProfile이 실패했거나 아직 조회 중
       // - 이 경우 로컬 스토리지를 fallback으로 사용하되, DB 재조회 시도
       const localOnboarding = safeStorage.getItem(ONBOARDING_COMPLETE_KEY) === 'true';
-      onboardingComplete = localOnboarding;
       
-      console.warn('[Guard] userProfile이 null입니다. 로컬 스토리지 fallback 사용:', {
+      console.warn('[Guard] userProfile이 null입니다. DB 재조회 시도:', {
         localOnboarding,
-        note: 'DB에서 userProfile을 다시 조회해야 합니다. AuthProvider에서 재시도 중...'
+        userId: session.user.id,
+        note: 'DB에서 userProfile을 다시 조회합니다...'
       });
       
-      // userProfile이 null이면 AuthProvider에서 재조회를 시도해야 함
-      // 하지만 Guard에서는 로컬 스토리지 값을 사용하여 무한 리다이렉트 방지
-      // 단, 로컬 스토리지 값이 true여도 DB 값이 false면 온보딩으로 보내야 함
-      // 이 경우는 AuthProvider에서 userProfile을 재조회한 후 다시 Guard가 실행되면 해결됨
+      // userProfile이 null이면 AuthProvider에서 재조회를 강제로 시도
+      // 온보딩 라우트에서도 재조회 수행 (온보딩 완료 여부 확인 필요)
+      // 단, 이미 재조회를 시도했다면 무한 루프 방지를 위해 다시 시도하지 않음
+      if (refreshUserProfile && !redirectedRef.current && !refreshAttemptedRef.current) {
+        console.log('[Guard] userProfile이 null이므로 재조회 시도 (한 번만)');
+        refreshAttemptedRef.current = true;
+        // 비동기로 재조회 시도 (결과를 기다리지 않음 - 다음 렌더링에서 확인)
+        refreshUserProfile().catch((err) => {
+          console.error('[Guard] refreshUserProfile 실패:', err);
+          refreshAttemptedRef.current = false; // 실패 시 다시 시도 가능하도록
+        });
+      } else if (refreshAttemptedRef.current) {
+        console.log('[Guard] 이미 재조회를 시도했으므로 skip (무한 루프 방지)');
+      }
+      
+      // 재조회 중이므로 로컬 스토리지 값을 임시로 사용
+      // 다음 렌더링에서 userProfile이 업데이트되면 DB 값으로 재확인됨
+      onboardingComplete = localOnboarding;
     } else if (guestMode) {
       onboardingComplete = safeStorage.getItem(ONBOARDING_COMPLETE_KEY) === 'true';
     }
@@ -149,6 +197,13 @@ export default function Guard({ children }: { children: React.ReactNode }) {
       userProfile
     });
 
+    // 특수 경로 체크 (useEffect 내부에서 계산)
+    const atOnboarding = location.pathname.startsWith('/onboarding');
+    const atDebug = location.pathname === '/debug';
+    const atAuthCallback = location.pathname.startsWith('/auth/callback');
+    const atLogin = location.pathname === '/login';
+    const atSignup = location.pathname === '/signup';
+
     // /debug, /auth/callback, /login, /signup는 항상 허용 (가드 우회)
     if (atDebug || atAuthCallback || atLogin || atSignup) {
       diag.log('Guard: 특수 경로, 가드 우회', { path: location.pathname });
@@ -156,13 +211,82 @@ export default function Guard({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // 온보딩 라우트에서는 userProfile null이어도 통과
-    // 온보딩 중에는 DB 조회 실패와 무관하게 진행 가능해야 함
+    // 주요 화면 체크를 가장 먼저 수행 (탭 내비게이션으로 접근하는 경우)
+    // 주요 화면: / (홈), /home, /record, /forest, /mypage 등
+    // 탭 내비게이션으로 주요 화면에 접근하는 경우, 온보딩 완료 여부와 관계없이 허용
+    const allowedPaths = ['/', '/home', '/record', '/forest', '/mypage'];
+    const isAllowedPath = allowedPaths.some(path => {
+      if (path === '/') {
+        // 루트 경로는 정확히 일치해야 함
+        return location.pathname === '/' || location.pathname === '';
+      }
+      return location.pathname === path || location.pathname.startsWith(path + '/');
+    });
+
+    if (isAllowedPath) {
+      console.log('[Guard] 주요 화면 접근 감지 (탭 내비게이션):', {
+        path: location.pathname,
+        userProfileIsNull: userProfile === null,
+        userProfileOnboardingCompleted: userProfile?.onboarding_completed,
+        onboardingComplete
+      });
+      // 주요 화면 접근 시에는 무조건 허용
+      // 이유: 탭 내비게이션으로 접근하는 경우, 사용자가 이미 앱을 사용 중이므로
+      // 온보딩을 완료했을 가능성이 높음. 리다이렉트하지 않고 허용
+      diag.log('Guard: 주요 화면 접근 허용 (탭 내비게이션)', { path: location.pathname });
+      redirectedRef.current = null;
+      return; // children 렌더링 허용
+    }
+
+    // 온보딩 완료 사용자는 온보딩 화면 접근 불가 (홈으로 강제 리다이렉트)
+    // userProfile이 명시적으로 조회된 경우 (null이 아님) DB 값을 우선 사용
     if (atOnboarding) {
-      console.log('[Guard] 온보딩 라우트 - userProfile 체크 완화', {
+      // 온보딩 완료 사용자는 step 파라미터와 무관하게 홈으로 리다이렉트
+      // userProfile이 null이 아니고 onboarding_completed가 true인 경우
+      if (session && userProfile !== null && userProfile.onboarding_completed === true) {
+        console.log('[Guard] 온보딩 완료 사용자가 온보딩 화면 접근 시도, 홈으로 리다이렉트:', {
+          path: location.pathname,
+          userProfileOnboardingCompleted: userProfile.onboarding_completed
+        });
+        const now = Date.now();
+        if (redirectedRef.current !== '/home' && (now - lastRedirectTimeRef.current) > REDIRECT_DEBOUNCE_MS) {
+          diag.log('GUARD -> to /home', { 
+            reason: '온보딩 완료 사용자, 온보딩 화면 접근 차단' 
+          });
+          redirectedRef.current = '/home';
+          lastRedirectTimeRef.current = now;
+          navigate('/home', { replace: true });
+        }
+        return;
+      }
+      
+      // userProfile이 null이지만 로컬 스토리지에 onboarding_completed=true가 있으면
+      // 온보딩 완료로 간주하고 홈으로 리다이렉트 (DB 조회 중이거나 실패한 경우 대비)
+      if (session && userProfile === null) {
+        const localOnboarding = safeStorage.getItem(ONBOARDING_COMPLETE_KEY) === 'true';
+        if (localOnboarding) {
+          console.log('[Guard] userProfile이 null이지만 로컬 스토리지에 onboarding_completed=true 있음. 홈으로 리다이렉트:', {
+            path: location.pathname
+          });
+          const now = Date.now();
+          if (redirectedRef.current !== '/home' && (now - lastRedirectTimeRef.current) > REDIRECT_DEBOUNCE_MS) {
+            diag.log('GUARD -> to /home', { 
+              reason: '로컬 스토리지에 onboarding_completed=true (userProfile null)' 
+            });
+            redirectedRef.current = '/home';
+            lastRedirectTimeRef.current = now;
+            navigate('/home', { replace: true });
+          }
+          return;
+        }
+      }
+      
+      // 온보딩 미완료 사용자만 온보딩 화면 접근 허용
+      console.log('[Guard] 온보딩 라우트 - 온보딩 미완료 사용자, 온보딩 진행 허용', {
         path: location.pathname,
         hasSession: !!session,
-        userProfileIsNull: userProfile === null
+        userProfileIsNull: userProfile === null,
+        onboardingCompleted: userProfile?.onboarding_completed
       });
       diag.log('Guard: 온보딩 라우트, 가드 완화', { path: location.pathname });
       redirectedRef.current = null;
@@ -172,11 +296,13 @@ export default function Guard({ children }: { children: React.ReactNode }) {
     // is_deleted=true인 경우: 기능 접근 막고 복구/온보딩으로 유도
     // (AuthCallback에서 이미 복구 처리하지만, 추가 안전장치)
     if (session && isDeleted && !atOnboarding) {
-      if (redirectedRef.current !== '/onboarding') {
+      const now = Date.now();
+      if (redirectedRef.current !== '/onboarding' && (now - lastRedirectTimeRef.current) > REDIRECT_DEBOUNCE_MS) {
         diag.log('GUARD -> to /onboarding', { 
           reason: '탈퇴된 계정, 온보딩으로 이동' 
         });
         redirectedRef.current = '/onboarding';
+        lastRedirectTimeRef.current = now;
         navigate('/onboarding?step=5', { replace: true });
       }
       return;
@@ -188,23 +314,28 @@ export default function Guard({ children }: { children: React.ReactNode }) {
       hasSession: !!session,
       isGuest,
       guestMode,
-      onboardingComplete
+      onboardingComplete,
+      isAllowedPath
     });
 
     // 로그인 상태인데 onboarding_completed=false면 /home이 아니라 /onboarding으로 리다이렉트
+    // 단, 주요 화면이 아닌 경우에만 리다이렉트 (주요 화면은 위에서 이미 처리)
     // 단, userProfile이 null이고 로컬 스토리지에 onboarding_completed=true가 있으면 온보딩 완료로 간주
     // 하지만 userProfile이 명시적으로 조회된 경우 (null이 아님) DB 값을 우선 사용
-    if (session && !onboardingComplete && !atOnboarding) {
+    if (session && !onboardingComplete && !atOnboarding && !isAllowedPath) {
       // userProfile이 명시적으로 조회된 경우 (null이 아님) DB 값이 false면 무조건 온보딩으로
       if (userProfile !== null && userProfile.onboarding_completed === false) {
         console.log('[Guard] DB 값이 false, 온보딩으로 리다이렉트:', {
-          userProfileOnboardingCompleted: userProfile.onboarding_completed
+          userProfileOnboardingCompleted: userProfile.onboarding_completed,
+          path: location.pathname
         });
-        if (redirectedRef.current !== '/onboarding') {
+        const now = Date.now();
+        if (redirectedRef.current !== '/onboarding' && (now - lastRedirectTimeRef.current) > REDIRECT_DEBOUNCE_MS) {
           diag.log('GUARD -> to /onboarding', { 
             reason: 'DB 값이 false (명시적 조회 완료)' 
           });
           redirectedRef.current = '/onboarding';
+          lastRedirectTimeRef.current = now;
           navigate('/onboarding?step=5', { replace: true });
         }
         return;
@@ -226,16 +357,19 @@ export default function Guard({ children }: { children: React.ReactNode }) {
         return;
       }
       
-      if (redirectedRef.current !== '/onboarding') {
+      const now = Date.now();
+      if (redirectedRef.current !== '/onboarding' && (now - lastRedirectTimeRef.current) > REDIRECT_DEBOUNCE_MS) {
         console.log('[Guard] -> to /onboarding', { 
           reason: '로그인 상태 + 온보딩 미완료',
           userProfileIsNull: userProfile === null,
-          localOnboarding: localOnboardingCheck
+          localOnboarding: localOnboardingCheck,
+          path: location.pathname
         });
         diag.log('GUARD -> to /onboarding', { 
           reason: '로그인 상태 + 온보딩 미완료' 
         });
         redirectedRef.current = '/onboarding';
+        lastRedirectTimeRef.current = now;
         navigate('/onboarding?step=5', { replace: true });
       }
       return;
@@ -243,48 +377,27 @@ export default function Guard({ children }: { children: React.ReactNode }) {
 
     // 온보딩 미완료 + 로그인 안됨 + 게스트 아님 → 온보딩으로
     if (!session && !guestMode && !atOnboarding && !onboardingComplete) {
-      if (redirectedRef.current !== '/onboarding') {
+      const now = Date.now();
+      if (redirectedRef.current !== '/onboarding' && (now - lastRedirectTimeRef.current) > REDIRECT_DEBOUNCE_MS) {
         diag.log('GUARD -> to /onboarding', { 
           reason: '온보딩 미완료 + 로그인 없음 + 게스트 아님' 
         });
         redirectedRef.current = '/onboarding';
+        lastRedirectTimeRef.current = now;
         navigate('/onboarding', { replace: true });
       }
       return;
     }
 
-    // onboarding_completed=true면 /home으로 이동
-    // 로그인/게스트 + 온보딩 완료 + 온보딩 화면 → 홈으로
-    // 단, step 파라미터가 있으면 회원가입을 위해 온보딩 페이지 접근 허용
-    const hasStepParam = new URLSearchParams(location.search).get('step') !== null;
-    if ((session || guestMode) && onboardingComplete && atOnboarding && !hasStepParam) {
-      if (redirectedRef.current !== '/home') {
-        diag.log('GUARD -> to /home', { 
-          reason: `${session ? '로그인' : '게스트'} + 온보딩 완료 + 온보딩 화면 (step 파라미터 없음)` 
-        });
-        redirectedRef.current = '/home';
-        navigate('/home', { replace: true });
-      }
-      return;
-    }
-    
-    // step 파라미터가 있으면 회원가입을 위해 온보딩 페이지 접근 허용
-    if (atOnboarding && hasStepParam) {
-      diag.log('Guard: step 파라미터 감지, 온보딩 페이지 접근 허용', { 
-        step: new URLSearchParams(location.search).get('step'),
-        path: location.pathname
-      });
-      redirectedRef.current = null;
-      return;
-    }
+    // 이 부분은 위에서 이미 처리됨 (온보딩 완료 사용자는 온보딩 화면 접근 불가)
+    // 제거: step 파라미터로 인한 예외 처리 제거 (온보딩 완료 사용자는 무조건 홈으로)
+
+    // 루트 경로(/)는 주요 화면 체크에서 이미 처리되므로 여기서는 제거
+    // 주요 화면 체크에서 루트 경로도 허용하므로 별도 처리 불필요
 
     // 온보딩 완료한 사용자(게스트/로그인)는 주요 화면 진입 허용
     // 주요 화면: /home, /record, /forest, /mypage 등
-    const allowedPaths = ['/home', '/', '/record', '/forest', '/mypage'];
-    const isAllowedPath = allowedPaths.some(path => 
-      location.pathname === path || location.pathname.startsWith(path + '/')
-    );
-
+    // (위에서 이미 주요 화면 체크를 수행했으므로 여기서는 중복 체크)
     if (onboardingComplete && isAllowedPath) {
       diag.log('Guard: 온보딩 완료 사용자, 주요 화면 진입 허용', { 
         path: location.pathname,
@@ -298,7 +411,7 @@ export default function Guard({ children }: { children: React.ReactNode }) {
     // 그 외는 허용
     diag.log('Guard: 경로 허용', { path: location.pathname });
     redirectedRef.current = null;
-  }, [location.pathname, navigate, session, sessionInitialized, loading, isGuest, userProfile]);
+  }, [location.pathname, navigate, session, sessionInitialized, loading, isGuest, userProfile, refreshUserProfile]);
 
   // 온보딩 라우트에서는 loading/userProfile 체크 완화
   const atOnboarding = location.pathname.startsWith('/onboarding');

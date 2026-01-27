@@ -211,9 +211,10 @@ export function useHomeData(userId?: string | null) {
       const postCount = postsData?.length || 0;
 
       // user_settings에서 seed_name 조회 (캐시 무효화를 위해 명시적으로 조회)
+      // Supabase는 기본적으로 캐싱을 하지 않지만, 명시적으로 최신 데이터를 가져오도록 함
       const { data: userSettingsData, error: userSettingsError } = await supabase
         .from('user_settings')
-        .select('seed_name')
+        .select('seed_name, updated_at')
         .eq('user_id', userId)
         .maybeSingle();
 
@@ -235,9 +236,13 @@ export function useHomeData(userId?: string | null) {
 
       console.log('[useHomeData] seedName 업데이트:', {
         userId,
-        userSettingsSeedName: userSettingsData?.seed_name,
+        userSettingsData: userSettingsData ? {
+          seed_name: userSettingsData.seed_name,
+          updated_at: userSettingsData.updated_at
+        } : null,
         flowerSeedName: flowerData?.seed_name,
-        finalSeedName
+        finalSeedName,
+        timestamp: new Date().toISOString()
       });
 
       setToday(todayData || null);
@@ -282,6 +287,12 @@ export function useHomeData(userId?: string | null) {
   }, [userId]);
 
   useEffect(() => {
+    // 온보딩 라우트에서는 데이터 조회 및 Realtime 구독 skip
+    if (location.pathname.startsWith('/onboarding')) {
+      console.log('[useHomeData] 온보딩 라우트 감지, useEffect skip');
+      return;
+    }
+
     fetchData();
 
     if (!userId) return;
@@ -337,10 +348,33 @@ export function useHomeData(userId?: string | null) {
       )
       .subscribe();
 
+    // Realtime 구독: user_settings 변경 시 자동 갱신 (seed_name 변경 감지)
+    const userSettingsChannel = supabase
+      .channel('home_user_settings_realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_settings',
+          filter: `user_id=eq.${userId}`
+        },
+        (payload) => {
+          console.log('[useHomeData] user_settings 변경 감지:', {
+            event: payload.eventType,
+            new: payload.new,
+            old: payload.old
+          });
+          fetchData();
+        }
+      )
+      .subscribe();
+
     return () => {
       supabase.removeChannel(emotionsChannel);
       supabase.removeChannel(flowersChannel);
       supabase.removeChannel(postsChannel);
+      supabase.removeChannel(userSettingsChannel);
     };
   }, [fetchData, userId, location.pathname]);
 
