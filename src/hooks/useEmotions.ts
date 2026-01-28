@@ -162,8 +162,12 @@ export function useEmotions(options: UseEmotionsOptions = {}) {
         if (payload.category !== undefined && payload.category !== null) {
           cleanPayload.category = payload.category; // 공감숲 카테고리 영문키
         }
-        if (payload.image_url !== undefined && payload.image_url !== null) {
-          cleanPayload.image_url = payload.image_url;
+        // image_url은 null이어도 포함 (DB에서 nullable이므로)
+        // 빈 문자열은 null로 변환
+        if (payload.image_url !== undefined) {
+          cleanPayload.image_url = payload.image_url && payload.image_url.trim() !== '' 
+            ? payload.image_url 
+            : null;
         }
 
         // insert payload 준비 (auth.uid()를 user_id로 사용)
@@ -196,17 +200,70 @@ export function useEmotions(options: UseEmotionsOptions = {}) {
         });
 
         // RLS 정책에 의해 auth.uid() = user_id 조건이 자동 적용됨
-        console.log('[addEmotion] Supabase insert 호출 직전:', {
+        console.log('[addEmotion] Supabase insert 호출 직전 - 최종 검증:', {
           table: 'emotions',
           payload: insertPayload,
-          payloadStringified: JSON.stringify(insertPayload)
+          payloadKeys: Object.keys(insertPayload),
+          payloadValues: Object.values(insertPayload),
+          supabaseUrl: (supabase as any).supabaseUrl || 'unknown',
+          hasAuth: !!authUser,
+          authUserId: authUser.id
         });
         
-        const { data, error: insertError } = await supabase
-          .from('emotions')
-          .insert(insertPayload)
-          .select()
-          .single();
+        let insertError: any = null;
+        let data: any = null;
+        
+        try {
+          const result = await supabase
+            .from('emotions')
+            .insert(insertPayload)
+            .select()
+            .single();
+          
+          data = result.data;
+          insertError = result.error;
+          
+          console.log('[addEmotion] Supabase insert 호출 후:', {
+            hasData: !!data,
+            hasError: !!insertError,
+            errorCode: insertError?.code,
+            errorMessage: insertError?.message,
+            errorDetails: insertError?.details,
+            errorHint: insertError?.hint
+          });
+        } catch (fetchError) {
+          // 네트워크 에러나 기타 예외 처리
+          console.error('[addEmotion] Supabase insert 호출 중 예외 발생:', {
+            fetchError,
+            errorMessage: fetchError instanceof Error ? fetchError.message : String(fetchError),
+            errorStack: fetchError instanceof Error ? fetchError.stack : undefined,
+            isNetworkError: fetchError instanceof Error && (
+              fetchError.message?.includes('fetch') || 
+              fetchError.message?.includes('network') ||
+              fetchError.message?.includes('Failed to fetch')
+            )
+          });
+          
+          // 네트워크 에러인 경우 명확한 메시지 제공
+          if (fetchError instanceof Error && (
+            fetchError.message?.includes('fetch') || 
+            fetchError.message?.includes('network') ||
+            fetchError.message?.includes('Failed to fetch')
+          )) {
+            insertError = {
+              code: 'NETWORK_ERROR',
+              message: '네트워크 연결을 확인해주세요. Supabase 서버에 연결할 수 없습니다.',
+              details: fetchError.message,
+              hint: '인터넷 연결 상태를 확인하거나 Supabase 프로젝트 설정을 확인해주세요.'
+            };
+          } else {
+            insertError = {
+              code: 'UNKNOWN_ERROR',
+              message: fetchError instanceof Error ? fetchError.message : '알 수 없는 오류가 발생했습니다.',
+              details: String(fetchError)
+            };
+          }
+        }
 
         if (insertError) {
           console.error('[addEmotion] insert 실패 - 상세 에러:', {
@@ -354,19 +411,71 @@ export function useEmotions(options: UseEmotionsOptions = {}) {
         if (payload.category !== undefined) {
           updatePayload.category = payload.category;
         }
+        // image_url은 null이어도 포함 (기존 이미지 삭제 시)
         if (payload.image_url !== undefined) {
-          updatePayload.image_url = payload.image_url;
+          // 빈 문자열은 null로 변환
+          updatePayload.image_url = payload.image_url && payload.image_url.trim() !== '' 
+            ? payload.image_url 
+            : null;
         }
 
-        // RLS 정책에 의해 auth.uid() = user_id 조건이 자동 적용됨
-        const { data, error: updateError } = await supabase
-          .from('emotions')
-          .update(updatePayload)
-          // updated_at은 트리거가 자동으로 갱신하므로 명시적으로 설정하지 않아도 됨
-          .eq('id', id)
-          .eq('user_id', userId) // RLS와 함께 이중 체크
-          .select()
-          .single();
+        console.log('[updateEmotion] Supabase update 호출 직전:', {
+          id,
+          payload: updatePayload,
+          userId
+        });
+        
+        let updateError: any = null;
+        let data: any = null;
+        
+        try {
+          const result = await supabase
+            .from('emotions')
+            .update(updatePayload)
+            // updated_at은 트리거가 자동으로 갱신하므로 명시적으로 설정하지 않아도 됨
+            .eq('id', id)
+            .eq('user_id', userId) // RLS와 함께 이중 체크
+            .select()
+            .single();
+          
+          data = result.data;
+          updateError = result.error;
+          
+          console.log('[updateEmotion] Supabase update 호출 후:', {
+            hasData: !!data,
+            hasError: !!updateError,
+            errorCode: updateError?.code,
+            errorMessage: updateError?.message
+          });
+        } catch (fetchError) {
+          // 네트워크 에러나 기타 예외 처리
+          console.error('[updateEmotion] Supabase update 호출 중 예외 발생:', {
+            fetchError,
+            errorMessage: fetchError instanceof Error ? fetchError.message : String(fetchError),
+            isNetworkError: fetchError instanceof Error && (
+              fetchError.message?.includes('fetch') || 
+              fetchError.message?.includes('network') ||
+              fetchError.message?.includes('Failed to fetch')
+            )
+          });
+          
+          if (fetchError instanceof Error && (
+            fetchError.message?.includes('fetch') || 
+            fetchError.message?.includes('network') ||
+            fetchError.message?.includes('Failed to fetch')
+          )) {
+            updateError = {
+              code: 'NETWORK_ERROR',
+              message: '네트워크 연결을 확인해주세요. Supabase 서버에 연결할 수 없습니다.',
+              details: fetchError.message
+            };
+          } else {
+            updateError = {
+              code: 'UNKNOWN_ERROR',
+              message: fetchError instanceof Error ? fetchError.message : '알 수 없는 오류가 발생했습니다.'
+            };
+          }
+        }
 
         if (updateError) {
           const error = new Error(updateError.message || '감정 기록 수정에 실패했어요.');

@@ -148,6 +148,7 @@ export default function Home() {
         emoji: emotionOpt?.emoji || '',
         label: emotionOpt?.label || first.main_emotion,
         note: first.content,
+        imageUrl: first.image_url || undefined, // 이미지 URL 추가
         recordId: first.id,
         imageUrl: first.image_url || undefined // 이미지 URL 추가
       };

@@ -232,21 +232,22 @@ export default function WeeklyMoodWidget({ weekSummary, weekStart, todayDate, on
               </div>
             )}
 
-            {modalRecord.imageUrl && (
-              <div className="forest-sheet-image" style={{ marginTop: 16 }}>
-                <img 
-                  src={modalRecord.imageUrl} 
-                  alt="감정 기록 이미지" 
-                  style={{ 
-                    width: '100%', 
-                    maxHeight: 360, 
-                    objectFit: 'cover', 
-                    borderRadius: 14, 
-                    border: '1px solid var(--ms-line)' 
-                  }} 
-                />
-              </div>
-            )}
+            {modalRecord.imageUrl && (() => {
+              // 이미지 URL 배열로 변환 (현재는 단일 이미지, 향후 확장 가능)
+              const imageUrls = modalRecord.imageUrl ? [modalRecord.imageUrl] : [];
+              
+              return imageUrls.length > 0 ? (
+                <div className="emotion-record-images">
+                  {imageUrls.map((url, idx) => (
+                    <img
+                      key={idx}
+                      src={url}
+                      alt={`감정 기록 이미지 ${idx + 1}`}
+                    />
+                  ))}
+                </div>
+              ) : null;
+            })()}
 
             {modalRecord.recordId && (
               <div className="forest-sheet-actions">

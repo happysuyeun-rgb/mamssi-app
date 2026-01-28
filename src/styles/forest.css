@@ -327,6 +327,32 @@
   line-height: 1.7;
 }
 
+/* 이미지 썸네일 스트립 - 입력 필드 형태 제거, 자연스러운 배치 */
+.emotion-record-images {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.emotion-record-images img {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 14px;
+  border: 1px solid rgba(23, 39, 32, 0.08);
+  flex-shrink: 0;
+  background: #f8f9fa;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.emotion-record-images img:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 기존 forest-sheet-image 스타일은 유지 (다른 곳에서 사용할 수 있음) */
 .forest-sheet-image {
   margin-top: 16px;
   border-radius: 18px;

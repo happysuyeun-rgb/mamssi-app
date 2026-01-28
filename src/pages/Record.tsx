@@ -231,14 +231,40 @@ const isSharedToForest = isPublic && selectedCategories.length > 0;
       // 새로 업로드할 이미지가 있으면 업로드
       const photoToUpload = photos.find((p) => p.file !== null);
       if (photoToUpload?.file) {
+        console.log('[Record] 이미지 업로드 시작:', {
+          fileName: photoToUpload.file.name,
+          fileSize: photoToUpload.file.size,
+          userId: user.id
+        });
+        
         const uploadResult = await uploadEmotionImage(photoToUpload.file, user.id);
+        
         if (uploadResult.error) {
+          console.error('[Record] 이미지 업로드 실패:', {
+            error: uploadResult.error,
+            message: uploadResult.error.message
+          });
           notify.error(uploadResult.error.message || '이미지 업로드에 실패했어요', '❌');
           setIsSaving(false);
           setIsUploadingImage(false);
           return;
         }
+        
+        if (!uploadResult.url || uploadResult.url.trim() === '') {
+          console.error('[Record] 이미지 업로드 성공했지만 URL이 없음:', {
+            uploadResult
+          });
+          notify.error('이미지 업로드는 성공했지만 URL을 가져오지 못했어요', '❌');
+          setIsSaving(false);
+          setIsUploadingImage(false);
+          return;
+        }
+        
         imageUrl = uploadResult.url;
+        console.log('[Record] 이미지 업로드 성공:', {
+          imageUrl,
+          urlLength: imageUrl.length
+        });
 
         // 기존 이미지가 있으면 삭제
         if (isEditing && editingRecordId) {
@@ -250,6 +276,16 @@ const isSharedToForest = isPublic && selectedCategories.length > 0;
       } else if (photos.length > 0 && photos[0].url && !photos[0].file) {
         // 기존 이미지 URL 유지
         imageUrl = photos[0].url;
+        console.log('[Record] 기존 이미지 URL 유지:', {
+          imageUrl,
+          urlLength: imageUrl.length
+        });
+      } else {
+        console.log('[Record] 이미지 없음:', {
+          photosLength: photos.length,
+          hasFile: photos.some(p => p.file !== null),
+          hasUrl: photos.some(p => p.url && !p.file)
+        });
       }
 
       setIsUploadingImage(false);
@@ -260,6 +296,15 @@ const isSharedToForest = isPublic && selectedCategories.length > 0;
       // emotion_date는 recordDate 사용
       // category는 공감숲 공유 시 첫 번째 카테고리 영문키 사용
       // image_url은 업로드된 이미지 URL 또는 기존 이미지 URL
+      // content 검증 (최소 5자 이상)
+      const trimmedContent = note.trim();
+      if (trimmedContent.length < 5) {
+        notify.warning('내용을 5자 이상 입력해주세요', '⚠️');
+        setIsSaving(false);
+        setIsUploadingImage(false);
+        return;
+      }
+      
       const payload: {
         emotion_type: string;
         content: string;
@@ -269,14 +314,30 @@ const isSharedToForest = isPublic && selectedCategories.length > 0;
         image_url?: string | null; // 이미지 URL
       } = {
         emotion_type: selectedEmotion.label,
-        content: note.trim(),
+        content: trimmedContent,
         emotion_date: recordDate, // YYYY-MM-DD
         is_public: isPublic || null,
         category: isSharedToForest && selectedCategories.length > 0 
           ? selectedCategories[0] // 첫 번째 카테고리 영문키 (이미 id로 저장됨)
           : null,
-        image_url: imageUrl || null // 이미지 URL 추가
+        // image_url은 빈 문자열이 아닌 경우에만 포함
+        image_url: imageUrl && imageUrl.trim() !== '' ? imageUrl : null
       };
+      
+      console.log('[Record] 저장 payload 검증:', {
+        emotion_type: payload.emotion_type,
+        emotion_type_length: payload.emotion_type?.length,
+        content: payload.content,
+        content_length: payload.content.length,
+        emotion_date: payload.emotion_date,
+        is_public: payload.is_public,
+        category: payload.category,
+        image_url: payload.image_url,
+        image_url_length: payload.image_url?.length,
+        has_image: !!payload.image_url,
+        payload_keys: Object.keys(payload),
+        payload_values: Object.values(payload)
+      });
 
       if (isEditing && editingRecordId) {
         // 수정
@@ -366,10 +427,34 @@ const isSharedToForest = isPublic && selectedCategories.length > 0;
             errorCode: (error as any)?.code,
             errorDetails: (error as any)?.details,
             errorHint: (error as any)?.hint,
-            payload,
-            userId: user?.id
+            payload: {
+              ...payload,
+              content_length: payload.content.length,
+              has_image: !!payload.image_url
+            },
+            userId: user?.id,
+            // Supabase 에러 상세 정보
+            supabaseError: (error as any)?.supabaseError,
+            statusCode: (error as any)?.statusCode
           });
+          
+          // 400 에러인 경우 더 자세한 정보 제공
+          if ((error as any)?.code === '400' || (error as any)?.statusCode === 400) {
+            console.error('[Record] 400 Bad Request 에러 - payload 검증 필요:', {
+              payload,
+              content: payload.content,
+              content_length: payload.content.length,
+              emotion_type: payload.emotion_type,
+              image_url: payload.image_url,
+              is_public: payload.is_public,
+              category: payload.category,
+              emotion_date: payload.emotion_date
+            });
+          }
+          
           notify.error(error.message || '기록 저장에 실패했어요. 잠시 후 다시 시도해주세요.', '❌');
+          setIsSaving(false);
+          setIsUploadingImage(false);
           return;
         }
 
@@ -520,12 +605,53 @@ const isSharedToForest = isPublic && selectedCategories.length > 0;
         navigate('/');
       }
     } catch (err) {
-      console.error('[Record] 저장 실패:', {
+      console.error('[Record] 저장 실패 - 상세 에러:', {
         error: err,
+        errorMessage: err instanceof Error ? err.message : String(err),
+        errorStack: err instanceof Error ? err.stack : undefined,
+        errorName: err instanceof Error ? err.name : undefined,
         userId: user?.id,
-        isEditing
+        isEditing,
+        // Supabase 에러 정보
+        supabaseError: (err as any)?.supabaseError,
+        code: (err as any)?.code,
+        statusCode: (err as any)?.statusCode,
+        details: (err as any)?.details,
+        hint: (err as any)?.hint,
+        message: (err as any)?.message,
+        // 네트워크 에러 체크
+        isNetworkError: err instanceof Error && (
+          err.message?.includes('fetch') || 
+          err.message?.includes('network') ||
+          err.message?.includes('Failed to fetch') ||
+          err.message?.includes('400')
+        ),
+        // RLS 에러 체크
+        isRLSError: (err as any)?.code === '42501' || 
+                   (err as any)?.message?.includes('permission denied') ||
+                   (err as any)?.message?.includes('RLS') ||
+                   (err as any)?.message?.includes('row-level security'),
+        // 전체 에러 객체 (직렬화 가능한 부분만)
+        errorObject: err instanceof Error ? {
+          name: err.name,
+          message: err.message,
+          stack: err.stack
+        } : err
       });
-      notify.error('저장에 실패했어요. 잠시 후 다시 시도해 주세요.', '❌');
+      
+      // 에러 타입별 사용자 메시지
+      let userMessage = '저장에 실패했어요. 잠시 후 다시 시도해 주세요.';
+      if (err instanceof Error) {
+        if (err.message?.includes('400') || (err as any)?.statusCode === 400) {
+          userMessage = '요청 형식이 올바르지 않아요. 입력 내용을 확인해주세요.';
+        } else if (err.message?.includes('network') || err.message?.includes('fetch')) {
+          userMessage = '네트워크 연결을 확인해주세요.';
+        } else if ((err as any)?.code === '42501' || err.message?.includes('permission')) {
+          userMessage = '저장 권한이 없어요. 로그인 상태를 확인해주세요.';
+        }
+      }
+      
+      notify.error(userMessage, '❌');
       } finally {
         setIsSaving(false);
         setIsUploadingImage(false);
