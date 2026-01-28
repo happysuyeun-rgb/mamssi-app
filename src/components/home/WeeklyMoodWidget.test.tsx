@@ -44,6 +44,111 @@ describe('WeeklyMoodWidget', () => {
     vi.clearAllMocks();
   });
 
+  describe('이미지 표시 (썸네일 스트립)', () => {
+    it('이미지가 있는 기록 상세 모달에서 이미지가 썸네일 스트립 형태로 표시되어야 함', () => {
+      const weekSummary = [
+        {
+          date: '2024-01-15',
+          emoji: '😊',
+          label: '기쁨',
+          note: '테스트 내용',
+          recordId: 'test-id',
+          imageUrl: 'https://example.com/image.jpg'
+        }
+      ];
+
+      renderWithProviders(
+        <WeeklyMoodWidget
+          weekSummary={weekSummary}
+          weekStart="2024-01-15"
+          todayDate="2024-01-15"
+        />
+      );
+
+      // 날짜 클릭하여 모달 열기
+      const dayButton = screen.getByText('월');
+      fireEvent.click(dayButton);
+
+      // 이미지가 표시되어야 함
+      const image = screen.getByAltText('감정 기록 이미지 1');
+      expect(image).toBeInTheDocument();
+      expect(image).toHaveAttribute('src', 'https://example.com/image.jpg');
+    });
+
+    it('이미지가 없는 기록 상세 모달에서 이미지 영역이 렌더링되지 않아야 함', () => {
+      const weekSummary = [
+        {
+          date: '2024-01-15',
+          emoji: '😊',
+          label: '기쁨',
+          note: '테스트 내용',
+          recordId: 'test-id',
+          imageUrl: undefined
+        }
+      ];
+
+      renderWithProviders(
+        <WeeklyMoodWidget
+          weekSummary={weekSummary}
+          weekStart="2024-01-15"
+          todayDate="2024-01-15"
+        />
+      );
+
+      // 날짜 클릭하여 모달 열기
+      const dayButton = screen.getByText('월');
+      fireEvent.click(dayButton);
+
+      // 이미지가 표시되지 않아야 함
+      const image = screen.queryByAltText(/감정 기록 이미지/i);
+      expect(image).not.toBeInTheDocument();
+    });
+
+    it('이미지가 썸네일 스트립 컨테이너에 표시되어야 함', () => {
+      const weekSummary = [
+        {
+          date: '2024-01-15',
+          emoji: '😊',
+          label: '기쁨',
+          note: '테스트 내용',
+          recordId: 'test-id',
+          imageUrl: 'https://example.com/image.jpg'
+        },
+        ...Array.from({ length: 6 }, (_, idx) => ({
+          date: new Date(2024, 0, 16 + idx).toISOString().split('T')[0],
+          emoji: '',
+          label: undefined,
+          note: undefined,
+          recordId: undefined,
+          imageUrl: undefined
+        }))
+      ];
+
+      renderWithProviders(
+        <WeeklyMoodWidget
+          weekSummary={weekSummary}
+          weekStart="2024-01-15"
+          todayDate="2024-01-15"
+        />
+      );
+
+      // 기록이 있는 날짜 버튼 찾기 (월요일)
+      const dayButtons = screen.getAllByRole('button');
+      const recordedDayButton = dayButtons.find(btn => btn.textContent?.includes('😊'));
+
+      if (recordedDayButton) {
+        fireEvent.click(recordedDayButton);
+
+        // emotion-record-images 클래스를 가진 컨테이너 확인
+        const container = document.querySelector('.emotion-record-images');
+        expect(container).toBeInTheDocument();
+        
+        const image = screen.getByAltText('감정 기록 이미지 1');
+        expect(container).toContainElement(image);
+      }
+    });
+  });
+
   describe('미래 날짜 체크', () => {
     it('미래 날짜 클릭 시 경고 메시지를 표시해야 함', () => {
       const today = '2024-01-15';
