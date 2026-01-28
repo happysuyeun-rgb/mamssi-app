@@ -111,7 +111,8 @@ export default function Home() {
           emoji: '',
           label: undefined,
           note: undefined,
-          recordId: undefined
+          recordId: undefined,
+          imageUrl: undefined
         };
       });
     }
@@ -134,7 +135,8 @@ export default function Home() {
           emoji: '',
           label: undefined,
           note: undefined,
-          recordId: undefined
+          recordId: undefined,
+          imageUrl: undefined
         };
       }
 
@@ -146,7 +148,8 @@ export default function Home() {
         emoji: emotionOpt?.emoji || '',
         label: emotionOpt?.label || first.main_emotion,
         note: first.content,
-        recordId: first.id
+        recordId: first.id,
+        imageUrl: first.image_url || undefined // 이미지 URL 추가
       };
     });
   }, [initialWeekStart, emotions, user, guestMode, homeDataLoading]);

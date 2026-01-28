@@ -76,8 +76,30 @@ useEffect(() => {
 
   function onPhotosChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || []);
+    const MAX_PHOTOS = 2; // 최대 이미지 개수 제한
+    
+    // 현재 이미지 개수 확인
+    const currentPhotoCount = photos.length;
+    
+    // 이미 2개가 있으면 추가 불가
+    if (currentPhotoCount >= MAX_PHOTOS) {
+      notify.warning('이미지는 최대 2개까지 첨부할 수 있어요', '⚠️');
+      e.currentTarget.value = '';
+      return;
+    }
+    
     const next: PhotoItem[] = [];
-    files.forEach((file) => {
+    const remainingSlots = MAX_PHOTOS - currentPhotoCount; // 남은 슬롯 개수
+    
+    files.forEach((file, index) => {
+      // 남은 슬롯 개수만큼만 추가
+      if (next.length >= remainingSlots) {
+        if (index === remainingSlots) {
+          notify.warning(`이미지는 최대 ${MAX_PHOTOS}개까지 첨부할 수 있어요. ${remainingSlots}개만 추가되었어요.`, '⚠️');
+        }
+        return;
+      }
+      
       if (!file.type.startsWith('image/')) return;
       if (file.size > 10 * 1024 * 1024) {
         notify.warning('10MB 이하의 이미지만 첨부할 수 있어요', '⚠️');
@@ -86,7 +108,10 @@ useEffect(() => {
       const url = URL.createObjectURL(file);
       next.push({ id: `${file.name}-${file.size}-${Date.now()}` , file, url });
     });
-    if (next.length) setPhotos((prev) => [...prev, ...next]);
+    
+    if (next.length) {
+      setPhotos((prev) => [...prev, ...next]);
+    }
     e.currentTarget.value = '';
   }
 
@@ -234,12 +259,14 @@ const isSharedToForest = isPublic && selectedCategories.length > 0;
       // content는 그대로 사용
       // emotion_date는 recordDate 사용
       // category는 공감숲 공유 시 첫 번째 카테고리 영문키 사용
+      // image_url은 업로드된 이미지 URL 또는 기존 이미지 URL
       const payload: {
         emotion_type: string;
         content: string;
         emotion_date?: string;
         is_public?: boolean | null;
         category?: string | null; // 공감숲 카테고리 영문키 (공유 시)
+        image_url?: string | null; // 이미지 URL
       } = {
         emotion_type: selectedEmotion.label,
         content: note.trim(),
@@ -247,7 +274,8 @@ const isSharedToForest = isPublic && selectedCategories.length > 0;
         is_public: isPublic || null,
         category: isSharedToForest && selectedCategories.length > 0 
           ? selectedCategories[0] // 첫 번째 카테고리 영문키 (이미 id로 저장됨)
-          : null
+          : null,
+        image_url: imageUrl || null // 이미지 URL 추가
       };
 
       if (isEditing && editingRecordId) {
@@ -586,7 +614,7 @@ const isSharedToForest = isPublic && selectedCategories.length > 0;
               <div className="ms-photo-text">
                 <div className="ms-photo-title">사진 첨부 (선택)</div>
                 <div className="ms-photo-helper">
-                  오늘을 떠올리게 하는 사진이 있다면 함께 남겨보세요. (JPG, PNG / 10MB 이하)
+                  오늘을 떠올리게 하는 사진이 있다면 함께 남겨보세요. (JPG, PNG / 10MB 이하 / 최대 2개)
                 </div>
               </div>
               <label className="ms-photo-upload">

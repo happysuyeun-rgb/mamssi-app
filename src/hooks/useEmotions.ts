@@ -85,6 +85,7 @@ export function useEmotions(options: UseEmotionsOptions = {}) {
       is_public?: boolean | null; // DB 스키마: is_public (nullable)
       emotion_date?: string; // YYYY-MM-DD, 없으면 오늘 날짜 사용
       category?: string | null; // 공감숲 카테고리 영문키 (공유 시: daily/worry/love/work/humor/growth/selfcare)
+      image_url?: string | null; // DB 스키마: image_url (nullable)
     }) => {
       if (!userId) {
         throw new Error('로그인이 필요해요.');
@@ -160,6 +161,9 @@ export function useEmotions(options: UseEmotionsOptions = {}) {
         }
         if (payload.category !== undefined && payload.category !== null) {
           cleanPayload.category = payload.category; // 공감숲 카테고리 영문키
+        }
+        if (payload.image_url !== undefined && payload.image_url !== null) {
+          cleanPayload.image_url = payload.image_url;
         }
 
         // insert payload 준비 (auth.uid()를 user_id로 사용)
@@ -316,6 +320,7 @@ export function useEmotions(options: UseEmotionsOptions = {}) {
         is_public?: boolean | null;
         emotion_date?: string;
         category?: string | null; // 공감숲 카테고리 영문키 (daily/worry/love/work/humor/growth/selfcare)
+        image_url?: string | null; // DB 스키마: image_url (nullable)
       }
     ) => {
       if (!userId) {
@@ -348,6 +353,9 @@ export function useEmotions(options: UseEmotionsOptions = {}) {
         }
         if (payload.category !== undefined) {
           updatePayload.category = payload.category;
+        }
+        if (payload.image_url !== undefined) {
+          updatePayload.image_url = payload.image_url;
         }
 
         // RLS 정책에 의해 auth.uid() = user_id 조건이 자동 적용됨

@@ -11,6 +11,7 @@ type WeekDayRecord = {
   label?: string;
   note?: string;
   recordId?: string;
+  imageUrl?: string; // 이미지 URL (감정 기록 이미지)
 };
 
 type WeeklyMoodWidgetProps = {
@@ -77,7 +78,8 @@ export default function WeeklyMoodWidget({ weekSummary, weekStart, todayDate, on
       emoji: '',
       label: undefined,
       note: undefined,
-      recordId: undefined
+      recordId: undefined,
+      imageUrl: undefined
     }));
   }, [weekSummary, actualWeekStart]);
 
@@ -227,6 +229,22 @@ export default function WeeklyMoodWidget({ weekSummary, weekStart, todayDate, on
             {modalRecord.note && (
               <div className="forest-sheet-body">
                 <p>{modalRecord.note}</p>
+              </div>
+            )}
+
+            {modalRecord.imageUrl && (
+              <div className="forest-sheet-image" style={{ marginTop: 16 }}>
+                <img 
+                  src={modalRecord.imageUrl} 
+                  alt="감정 기록 이미지" 
+                  style={{ 
+                    width: '100%', 
+                    maxHeight: 360, 
+                    objectFit: 'cover', 
+                    borderRadius: 14, 
+                    border: '1px solid var(--ms-line)' 
+                  }} 
+                />
               </div>
             )}
 
