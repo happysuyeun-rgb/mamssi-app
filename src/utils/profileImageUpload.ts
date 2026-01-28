@@ -44,21 +44,10 @@ export async function uploadProfileImage(file: File, userId: string): Promise<Pr
 
     console.log('[uploadProfileImage] 파일 경로:', { filePath, bucket: BUCKET_NAME, userId, fileName });
 
-    // 버킷 존재 여부 확인 (선택적)
-    // 주의: 버킷 목록 조회 권한이 없을 수 있으므로, 실패해도 업로드를 시도
-    const { data: buckets, error: listError } = await supabase.storage.listBuckets();
-    if (listError) {
-      console.warn('[uploadProfileImage] 버킷 목록 조회 실패 (업로드 시도 계속):', listError);
-      // 버킷 목록 조회 실패해도 업로드를 시도 (실제 업로드 시 에러가 발생하면 그때 처리)
-    } else {
-      const bucketExists = buckets?.some(b => b.name === BUCKET_NAME);
-      if (!bucketExists) {
-        const error = new Error(`Storage 버킷 '${BUCKET_NAME}'이 존재하지 않아요. Supabase Dashboard에서 버킷을 생성해주세요. (create_profile_images_bucket.sql 실행)`);
-        console.error('[uploadProfileImage] 버킷 없음:', error);
-        return { url: null, error };
-      }
-      console.log('[uploadProfileImage] 버킷 확인 완료:', { bucketName: BUCKET_NAME });
-    }
+    // 버킷 존재 여부 확인은 제거하고 직접 업로드를 시도
+    // 이유: listBuckets() API가 권한 문제로 실패할 수 있고,
+    // 실제 업로드 시도 시 버킷이 없으면 명확한 에러 메시지가 반환됨
+    // 버킷 체크는 실제 업로드 시 에러로 확인하는 것이 더 안정적
 
     // 기존 이미지가 있으면 삭제 (해당 사용자 폴더의 모든 파일)
     console.log('[uploadProfileImage] 기존 이미지 삭제 시작...');
@@ -101,7 +90,26 @@ export async function uploadProfileImage(file: File, userId: string): Promise<Pr
         message: uploadError.message,
         errorCode: uploadError.error
       });
-      throw uploadError;
+      
+      // 버킷 관련 에러인 경우 더 명확한 메시지 제공
+      let errorMessage = uploadError.message || '프로필 이미지 업로드에 실패했어요.';
+      if (uploadError.message?.includes('bucket') || uploadError.message?.includes('버킷') || uploadError.statusCode === 404) {
+        errorMessage = `Storage 버킷 '${BUCKET_NAME}'이 존재하지 않거나 접근할 수 없어요. Supabase Dashboard에서 버킷을 확인해주세요.`;
+        console.error('[uploadProfileImage] 버킷 관련 에러 감지:', {
+          error: uploadError.message,
+          statusCode: uploadError.statusCode,
+          hint: 'Supabase Dashboard > Storage에서 profile-images 버킷 확인 필요'
+        });
+      } else if (uploadError.statusCode === 403 || uploadError.message?.includes('permission') || uploadError.message?.includes('권한')) {
+        errorMessage = '프로필 이미지 업로드 권한이 없어요. 로그인 상태를 확인해주세요.';
+        console.error('[uploadProfileImage] 권한 관련 에러 감지:', {
+          error: uploadError.message,
+          statusCode: uploadError.statusCode
+        });
+      }
+      
+      const error = new Error(errorMessage);
+      throw error;
     }
 
     console.log('[uploadProfileImage] 파일 업로드 성공:', { uploadData });

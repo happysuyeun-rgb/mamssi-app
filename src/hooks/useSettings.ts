@@ -152,14 +152,15 @@ export function useSettings(userId?: string | null) {
           console.warn('[useSettings] SELECT 실패했지만 upsert는 성공했을 수 있음. upsertPayload 반환');
           
           // 기존 settings가 있으면 그것을 기반으로 업데이트, 없으면 새로 생성
+          // upsertPayload의 값들을 우선적으로 사용 (업데이트된 값 반영)
           const fallbackData: UserSettings = {
             user_id: userId,
-            nickname: settings?.nickname || null,
-            mbti: settings?.mbti || null,
-            profile_url: settings?.profile_url || null,
-            seed_name: (upsertPayload as any).seed_name || settings?.seed_name || null,
-            lock_type: settings?.lock_type || null,
-            lock_value: settings?.lock_value || null,
+            nickname: (upsertPayload as any).nickname !== undefined ? (upsertPayload as any).nickname : (settings?.nickname || null),
+            mbti: (upsertPayload as any).mbti !== undefined ? (upsertPayload as any).mbti : (settings?.mbti || null),
+            profile_url: (upsertPayload as any).profile_url !== undefined ? (upsertPayload as any).profile_url : (settings?.profile_url || null),
+            seed_name: (upsertPayload as any).seed_name !== undefined ? (upsertPayload as any).seed_name : (settings?.seed_name || null),
+            lock_type: (upsertPayload as any).lock_type !== undefined ? (upsertPayload as any).lock_type : (settings?.lock_type || null),
+            lock_value: (upsertPayload as any).lock_value !== undefined ? (upsertPayload as any).lock_value : (settings?.lock_value || null),
             updated_at: upsertPayload.updated_at,
             created_at: settings?.created_at || new Date().toISOString()
           };
@@ -177,14 +178,15 @@ export function useSettings(userId?: string | null) {
           
           // upsert는 성공했지만 SELECT 결과가 null인 경우
           // 기존 settings가 있으면 그것을 기반으로 업데이트, 없으면 새로 생성
+          // upsertPayload의 값들을 우선적으로 사용 (업데이트된 값 반영)
           const fallbackData: UserSettings = {
             user_id: userId,
-            nickname: settings?.nickname || null,
-            mbti: settings?.mbti || null,
-            profile_url: settings?.profile_url || null,
-            seed_name: (upsertPayload as any).seed_name || settings?.seed_name || null,
-            lock_type: settings?.lock_type || null,
-            lock_value: settings?.lock_value || null,
+            nickname: (upsertPayload as any).nickname !== undefined ? (upsertPayload as any).nickname : (settings?.nickname || null),
+            mbti: (upsertPayload as any).mbti !== undefined ? (upsertPayload as any).mbti : (settings?.mbti || null),
+            profile_url: (upsertPayload as any).profile_url !== undefined ? (upsertPayload as any).profile_url : (settings?.profile_url || null),
+            seed_name: (upsertPayload as any).seed_name !== undefined ? (upsertPayload as any).seed_name : (settings?.seed_name || null),
+            lock_type: (upsertPayload as any).lock_type !== undefined ? (upsertPayload as any).lock_type : (settings?.lock_type || null),
+            lock_value: (upsertPayload as any).lock_value !== undefined ? (upsertPayload as any).lock_value : (settings?.lock_value || null),
             updated_at: upsertPayload.updated_at,
             created_at: settings?.created_at || new Date().toISOString()
           };

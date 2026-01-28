@@ -33,7 +33,8 @@ begin
   -- ============================================
   -- 1. emotion_type/main_emotion COALESCE 처리
   -- ============================================
-  emotion_type_value := coalesce(NEW.main_emotion, NEW.emotion_type, '감정');
+  -- DB 스키마: main_emotion만 사용 (emotion_type 컬럼은 존재하지 않음)
+  emotion_type_value := coalesce(NEW.main_emotion, '감정');
 
   -- ============================================
   -- 2. emotions.category (영문)를 한글 category로 변환
