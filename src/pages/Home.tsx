@@ -149,8 +149,7 @@ export default function Home() {
         label: emotionOpt?.label || first.main_emotion,
         note: first.content,
         imageUrl: first.image_url || undefined, // 이미지 URL 추가
-        recordId: first.id,
-        imageUrl: first.image_url || undefined // 이미지 URL 추가
+        recordId: first.id
       };
     });
   }, [initialWeekStart, emotions, user, guestMode, homeDataLoading]);
