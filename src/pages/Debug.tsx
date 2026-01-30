@@ -14,7 +14,7 @@ export default function Debug() {
   const [storageTest, setStorageTest] = useState(safeStorage.test());
   const [envStatus, setEnvStatus] = useState({
     hasUrl: !!import.meta.env.VITE_SUPABASE_URL,
-    hasKey: !!import.meta.env.VITE_SUPABASE_ANON_KEY
+    hasKey: !!import.meta.env.VITE_SUPABASE_ANON_KEY,
   });
 
   useEffect(() => {
@@ -73,12 +73,18 @@ export default function Debug() {
               borderCollapse: 'collapse',
               background: 'var(--ms-surface)',
               borderRadius: 12,
-              overflow: 'hidden'
+              overflow: 'hidden',
             }}
           >
             <tbody>
               <tr>
-                <td style={{ padding: '12px', borderBottom: '1px solid var(--ms-line)', fontWeight: 600 }}>
+                <td
+                  style={{
+                    padding: '12px',
+                    borderBottom: '1px solid var(--ms-line)',
+                    fontWeight: 600,
+                  }}
+                >
                   VITE_SUPABASE_URL
                 </td>
                 <td style={{ padding: '12px', borderBottom: '1px solid var(--ms-line)' }}>
@@ -86,7 +92,13 @@ export default function Debug() {
                 </td>
               </tr>
               <tr>
-                <td style={{ padding: '12px', borderBottom: '1px solid var(--ms-line)', fontWeight: 600 }}>
+                <td
+                  style={{
+                    padding: '12px',
+                    borderBottom: '1px solid var(--ms-line)',
+                    fontWeight: 600,
+                  }}
+                >
                   VITE_SUPABASE_ANON_KEY
                 </td>
                 <td style={{ padding: '12px', borderBottom: '1px solid var(--ms-line)' }}>
@@ -105,12 +117,18 @@ export default function Debug() {
               borderCollapse: 'collapse',
               background: 'var(--ms-surface)',
               borderRadius: 12,
-              overflow: 'hidden'
+              overflow: 'hidden',
             }}
           >
             <tbody>
               <tr>
-                <td style={{ padding: '12px', borderBottom: '1px solid var(--ms-line)', fontWeight: 600 }}>
+                <td
+                  style={{
+                    padding: '12px',
+                    borderBottom: '1px solid var(--ms-line)',
+                    fontWeight: 600,
+                  }}
+                >
                   로딩 중
                 </td>
                 <td style={{ padding: '12px', borderBottom: '1px solid var(--ms-line)' }}>
@@ -118,7 +136,13 @@ export default function Debug() {
                 </td>
               </tr>
               <tr>
-                <td style={{ padding: '12px', borderBottom: '1px solid var(--ms-line)', fontWeight: 600 }}>
+                <td
+                  style={{
+                    padding: '12px',
+                    borderBottom: '1px solid var(--ms-line)',
+                    fontWeight: 600,
+                  }}
+                >
                   세션 초기화
                 </td>
                 <td style={{ padding: '12px', borderBottom: '1px solid var(--ms-line)' }}>
@@ -126,7 +150,13 @@ export default function Debug() {
                 </td>
               </tr>
               <tr>
-                <td style={{ padding: '12px', borderBottom: '1px solid var(--ms-line)', fontWeight: 600 }}>
+                <td
+                  style={{
+                    padding: '12px',
+                    borderBottom: '1px solid var(--ms-line)',
+                    fontWeight: 600,
+                  }}
+                >
                   세션 존재
                 </td>
                 <td style={{ padding: '12px', borderBottom: '1px solid var(--ms-line)' }}>
@@ -134,15 +164,34 @@ export default function Debug() {
                 </td>
               </tr>
               <tr>
-                <td style={{ padding: '12px', borderBottom: '1px solid var(--ms-line)', fontWeight: 600 }}>
+                <td
+                  style={{
+                    padding: '12px',
+                    borderBottom: '1px solid var(--ms-line)',
+                    fontWeight: 600,
+                  }}
+                >
                   사용자 ID
                 </td>
-                <td style={{ padding: '12px', borderBottom: '1px solid var(--ms-line)', fontFamily: 'monospace', fontSize: 12 }}>
+                <td
+                  style={{
+                    padding: '12px',
+                    borderBottom: '1px solid var(--ms-line)',
+                    fontFamily: 'monospace',
+                    fontSize: 12,
+                  }}
+                >
                   {user?.id || '-'}
                 </td>
               </tr>
               <tr>
-                <td style={{ padding: '12px', borderBottom: '1px solid var(--ms-line)', fontWeight: 600 }}>
+                <td
+                  style={{
+                    padding: '12px',
+                    borderBottom: '1px solid var(--ms-line)',
+                    fontWeight: 600,
+                  }}
+                >
                   게스트 모드
                 </td>
                 <td style={{ padding: '12px', borderBottom: '1px solid var(--ms-line)' }}>
@@ -162,12 +211,18 @@ export default function Debug() {
               background: 'var(--ms-surface)',
               borderRadius: 12,
               overflow: 'hidden',
-              marginBottom: 12
+              marginBottom: 12,
             }}
           >
             <tbody>
               <tr>
-                <td style={{ padding: '12px', borderBottom: '1px solid var(--ms-line)', fontWeight: 600 }}>
+                <td
+                  style={{
+                    padding: '12px',
+                    borderBottom: '1px solid var(--ms-line)',
+                    fontWeight: 600,
+                  }}
+                >
                   Storage 타입
                 </td>
                 <td style={{ padding: '12px', borderBottom: '1px solid var(--ms-line)' }}>
@@ -175,7 +230,13 @@ export default function Debug() {
                 </td>
               </tr>
               <tr>
-                <td style={{ padding: '12px', borderBottom: '1px solid var(--ms-line)', fontWeight: 600 }}>
+                <td
+                  style={{
+                    padding: '12px',
+                    borderBottom: '1px solid var(--ms-line)',
+                    fontWeight: 600,
+                  }}
+                >
                   게스트 모드 플래그
                 </td>
                 <td style={{ padding: '12px', borderBottom: '1px solid var(--ms-line)' }}>
@@ -183,7 +244,13 @@ export default function Debug() {
                 </td>
               </tr>
               <tr>
-                <td style={{ padding: '12px', borderBottom: '1px solid var(--ms-line)', fontWeight: 600 }}>
+                <td
+                  style={{
+                    padding: '12px',
+                    borderBottom: '1px solid var(--ms-line)',
+                    fontWeight: 600,
+                  }}
+                >
                   온보딩 완료 플래그
                 </td>
                 <td style={{ padding: '12px', borderBottom: '1px solid var(--ms-line)' }}>
@@ -200,7 +267,7 @@ export default function Debug() {
               border: '1px solid var(--ms-line)',
               background: 'var(--ms-surface)',
               cursor: 'pointer',
-              fontSize: 14
+              fontSize: 14,
             }}
           >
             🔄 스토리지 새로고침
@@ -215,7 +282,7 @@ export default function Debug() {
               background: 'var(--ms-surface)',
               borderRadius: 12,
               fontFamily: 'monospace',
-              fontSize: 14
+              fontSize: 14,
             }}
           >
             {window.location.pathname}
@@ -235,7 +302,7 @@ export default function Debug() {
                 color: '#fff',
                 cursor: 'pointer',
                 fontSize: 14,
-                fontWeight: 600
+                fontWeight: 600,
               }}
             >
               게스트 모드 설정
@@ -248,7 +315,7 @@ export default function Debug() {
                 border: '1px solid var(--ms-line)',
                 background: 'var(--ms-surface)',
                 cursor: 'pointer',
-                fontSize: 14
+                fontSize: 14,
               }}
             >
               게스트 모드 해제
@@ -263,7 +330,7 @@ export default function Debug() {
                 color: '#fff',
                 cursor: 'pointer',
                 fontSize: 14,
-                fontWeight: 600
+                fontWeight: 600,
               }}
             >
               온보딩 완료 설정
@@ -276,7 +343,7 @@ export default function Debug() {
                 border: '1px solid var(--ms-line)',
                 background: 'var(--ms-surface)',
                 cursor: 'pointer',
-                fontSize: 14
+                fontSize: 14,
               }}
             >
               온보딩 완료 해제
@@ -291,7 +358,7 @@ export default function Debug() {
                 color: '#ef4444',
                 cursor: 'pointer',
                 fontSize: 14,
-                fontWeight: 600
+                fontWeight: 600,
               }}
             >
               모든 플래그 초기화
@@ -304,7 +371,7 @@ export default function Debug() {
                 border: '1px solid var(--ms-line)',
                 background: 'var(--ms-surface)',
                 cursor: 'pointer',
-                fontSize: 14
+                fontSize: 14,
               }}
             >
               홈으로 이동
@@ -317,7 +384,7 @@ export default function Debug() {
                 border: '1px solid var(--ms-line)',
                 background: 'var(--ms-surface)',
                 cursor: 'pointer',
-                fontSize: 14
+                fontSize: 14,
               }}
             >
               온보딩으로 이동
@@ -328,4 +395,3 @@ export default function Debug() {
     </Layout>
   );
 }
-

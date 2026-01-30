@@ -112,7 +112,7 @@
   color: var(--ms-text-main, #16352f);
 }
 
-.policy-item input[type="checkbox"] {
+.policy-item input[type='checkbox'] {
   margin-top: 2px;
   transform: scale(1.15);
   cursor: pointer;
@@ -144,7 +144,9 @@
   cursor: pointer;
   background: #ffffff;
   justify-content: center;
-  transition: opacity 0.2s, transform 0.1s;
+  transition:
+    opacity 0.2s,
+    transform 0.1s;
   color: var(--ms-text-main, #16352f);
 }
 
@@ -255,4 +257,3 @@
     height: 96px;
   }
 }
-

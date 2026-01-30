@@ -10,11 +10,11 @@ vi.mock('@lib/supabaseClient', () => ({
         upload: vi.fn(),
         getPublicUrl: vi.fn(),
         list: vi.fn(),
-        remove: vi.fn()
+        remove: vi.fn(),
       })),
-      listBuckets: vi.fn()
-    }
-  }
+      listBuckets: vi.fn(),
+    },
+  },
 }));
 
 describe('profileImageUpload', () => {
@@ -24,7 +24,9 @@ describe('profileImageUpload', () => {
 
   describe('uploadProfileImage', () => {
     it('파일 크기가 5MB를 초과하면 에러를 반환해야 함', async () => {
-      const largeFile = new File(['x'.repeat(6 * 1024 * 1024)], 'large.jpg', { type: 'image/jpeg' });
+      const largeFile = new File(['x'.repeat(6 * 1024 * 1024)], 'large.jpg', {
+        type: 'image/jpeg',
+      });
       const userId = 'test-user-id';
 
       const result = await uploadProfileImage(largeFile, userId);
@@ -51,10 +53,12 @@ describe('profileImageUpload', () => {
       const mockPublicUrl = 'https://example.com/profile.jpg';
 
       const mockStorage = {
-        upload: vi.fn().mockResolvedValue({ data: { path: `${userId}/profile.123.jpg` }, error: null }),
+        upload: vi
+          .fn()
+          .mockResolvedValue({ data: { path: `${userId}/profile.123.jpg` }, error: null }),
         getPublicUrl: vi.fn().mockReturnValue({ data: { publicUrl: mockPublicUrl } }),
         list: vi.fn().mockResolvedValue({ data: [], error: null }),
-        remove: vi.fn().mockResolvedValue({ error: null })
+        remove: vi.fn().mockResolvedValue({ error: null }),
       };
 
       vi.mocked(supabase.storage.from).mockReturnValue(mockStorage as any);
@@ -75,7 +79,7 @@ describe('profileImageUpload', () => {
         upload: vi.fn().mockRejectedValue(uploadError),
         getPublicUrl: vi.fn(),
         list: vi.fn().mockResolvedValue({ data: [], error: null }),
-        remove: vi.fn()
+        remove: vi.fn(),
       };
 
       vi.mocked(supabase.storage.from).mockReturnValue(mockStorage as any);
@@ -95,7 +99,7 @@ describe('profileImageUpload', () => {
         upload: vi.fn().mockRejectedValue(bucketError),
         getPublicUrl: vi.fn(),
         list: vi.fn().mockResolvedValue({ data: [], error: null }),
-        remove: vi.fn()
+        remove: vi.fn(),
       };
 
       vi.mocked(supabase.storage.from).mockReturnValue(mockStorage as any);
@@ -112,23 +116,20 @@ describe('profileImageUpload', () => {
   describe('deleteProfileImage', () => {
     it('기존 이미지가 있으면 삭제를 시도해야 함', async () => {
       const userId = 'test-user-id';
-      const existingFiles = [
-        { name: 'profile.123.jpg' },
-        { name: 'profile.456.jpg' }
-      ];
+      const existingFiles = [{ name: 'profile.123.jpg' }, { name: 'profile.456.jpg' }];
 
       const mockStorage = {
         list: vi.fn().mockResolvedValue({ data: existingFiles, error: null }),
-        remove: vi.fn().mockResolvedValue({ error: null })
+        remove: vi.fn().mockResolvedValue({ error: null }),
       };
 
       vi.mocked(supabase.storage.from).mockReturnValue(mockStorage as any);
 
       await deleteProfileImage(userId);
 
-      expect(mockStorage.list).toHaveBeenCalledWith(userId, { 
+      expect(mockStorage.list).toHaveBeenCalledWith(userId, {
         limit: 100,
-        sortBy: { column: 'created_at', order: 'desc' }
+        sortBy: { column: 'created_at', order: 'desc' },
       });
       expect(mockStorage.remove).toHaveBeenCalled();
     });
@@ -138,7 +139,7 @@ describe('profileImageUpload', () => {
 
       const mockStorage = {
         list: vi.fn().mockResolvedValue({ data: [], error: null }),
-        remove: vi.fn()
+        remove: vi.fn(),
       };
 
       vi.mocked(supabase.storage.from).mockReturnValue(mockStorage as any);

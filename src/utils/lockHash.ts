@@ -19,20 +19,10 @@ export async function hashLockValue(value: number[] | string): Promise<string> {
  * @param storedHash 저장된 해시
  * @returns 일치 여부
  */
-export async function verifyLockValue(input: number[] | string, storedHash: string): Promise<boolean> {
+export async function verifyLockValue(
+  input: number[] | string,
+  storedHash: string
+): Promise<boolean> {
   const inputHash = await hashLockValue(input);
   return inputHash === storedHash;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

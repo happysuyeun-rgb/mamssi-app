@@ -14,7 +14,7 @@ const growthImages: Record<number, string> = {
   2: '/assets/garden/level-2-stem.svg',
   3: '/assets/garden/level-3-bud.svg',
   4: '/assets/garden/level-4-half-bloom.svg',
-  5: '/assets/garden/level-5-bloom.svg'
+  5: '/assets/garden/level-5-bloom.svg',
 };
 
 const growthLevelLabels: Record<number, string> = {
@@ -23,7 +23,7 @@ const growthLevelLabels: Record<number, string> = {
   2: '줄기',
   3: '봉오리',
   4: '반개화',
-  5: '만개'
+  5: '만개',
 };
 
 function clampPercent(value: number): number {
@@ -40,7 +40,7 @@ function clampPercent(value: number): number {
 function getGrowthLevel(percent: number, bloomLevel?: number): number {
   // bloomLevel이 전달되면 우선 사용
   if (bloomLevel !== undefined) return bloomLevel;
-  
+
   // 설계서 기준으로 계산
   if (percent >= 100) return 5; // Level 5: 개화 (100pt)
   if (percent >= 70) return 4; // Level 4: 반쯤 열린 꽃봉오리 (70pt~99pt)
@@ -57,7 +57,12 @@ function getGaugeMetrics(percent: number) {
   return { radius, circumference, dashOffset };
 }
 
-export default function GrowthGauge({ growthPct, growthLevelImage, stageLabel: propStageLabel, bloomLevel }: GrowthGaugeProps) {
+export default function GrowthGauge({
+  growthPct,
+  growthLevelImage,
+  stageLabel: propStageLabel,
+  bloomLevel,
+}: GrowthGaugeProps) {
   const progress = clampPercent(growthPct);
   const growthLevel = useMemo(() => getGrowthLevel(progress, bloomLevel), [progress, bloomLevel]);
   const stageLabel = propStageLabel || growthLevelLabels[growthLevel];
@@ -92,4 +97,3 @@ export default function GrowthGauge({ growthPct, growthLevelImage, stageLabel: p
     </div>
   );
 }
-

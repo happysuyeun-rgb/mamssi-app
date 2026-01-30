@@ -9,12 +9,12 @@ vi.mock('@lib/supabaseClient', () => ({
       from: vi.fn(() => ({
         upload: vi.fn(),
         getPublicUrl: vi.fn(() => ({
-          data: { publicUrl: 'https://example.com/image.jpg' }
+          data: { publicUrl: 'https://example.com/image.jpg' },
         })),
-        remove: vi.fn()
-      }))
-    }
-  }
+        remove: vi.fn(),
+      })),
+    },
+  },
 }));
 
 describe('imageUpload', () => {
@@ -24,7 +24,9 @@ describe('imageUpload', () => {
 
   describe('uploadEmotionImage', () => {
     it('파일 크기가 10MB를 초과하면 에러를 반환해야 함', async () => {
-      const largeFile = new File(['x'.repeat(11 * 1024 * 1024)], 'large.jpg', { type: 'image/jpeg' });
+      const largeFile = new File(['x'.repeat(11 * 1024 * 1024)], 'large.jpg', {
+        type: 'image/jpeg',
+      });
       const userId = 'test-user-id';
 
       const result = await uploadEmotionImage(largeFile, userId);
@@ -51,14 +53,14 @@ describe('imageUpload', () => {
 
       const mockUpload = vi.fn().mockResolvedValue({
         data: { path: 'test-user-id/uuid.jpg' },
-        error: null
+        error: null,
       });
 
       (supabase.storage.from as any).mockReturnValue({
         upload: mockUpload,
         getPublicUrl: vi.fn(() => ({
-          data: { publicUrl: 'https://example.com/image.jpg' }
-        }))
+          data: { publicUrl: 'https://example.com/image.jpg' },
+        })),
       });
 
       const result = await uploadEmotionImage(imageFile, userId);
@@ -74,12 +76,12 @@ describe('imageUpload', () => {
 
       const mockUpload = vi.fn().mockResolvedValue({
         data: null,
-        error: { message: 'Upload failed', statusCode: 500 }
+        error: { message: 'Upload failed', statusCode: 500 },
       });
 
       (supabase.storage.from as any).mockReturnValue({
         upload: mockUpload,
-        getPublicUrl: vi.fn()
+        getPublicUrl: vi.fn(),
       });
 
       const result = await uploadEmotionImage(imageFile, userId);
@@ -94,12 +96,12 @@ describe('imageUpload', () => {
 
       const mockUpload = vi.fn().mockResolvedValue({
         data: null,
-        error: { message: 'bucket not found', statusCode: 404 }
+        error: { message: 'bucket not found', statusCode: 404 },
       });
 
       (supabase.storage.from as any).mockReturnValue({
         upload: mockUpload,
-        getPublicUrl: vi.fn()
+        getPublicUrl: vi.fn(),
       });
 
       const result = await uploadEmotionImage(imageFile, userId);
@@ -115,12 +117,12 @@ describe('imageUpload', () => {
 
       const mockUpload = vi.fn().mockResolvedValue({
         data: null,
-        error: { message: 'permission denied', statusCode: 403 }
+        error: { message: 'permission denied', statusCode: 403 },
       });
 
       (supabase.storage.from as any).mockReturnValue({
         upload: mockUpload,
-        getPublicUrl: vi.fn()
+        getPublicUrl: vi.fn(),
       });
 
       const result = await uploadEmotionImage(imageFile, userId);
@@ -132,11 +134,12 @@ describe('imageUpload', () => {
 
   describe('deleteEmotionImage', () => {
     it('유효한 URL에서 파일 경로를 추출하여 삭제해야 함', async () => {
-      const imageUrl = 'https://example.com/storage/v1/object/public/emotion-images/user-id/file.jpg';
+      const imageUrl =
+        'https://example.com/storage/v1/object/public/emotion-images/user-id/file.jpg';
       const mockRemove = vi.fn().mockResolvedValue({ error: null });
 
       (supabase.storage.from as any).mockReturnValue({
-        remove: mockRemove
+        remove: mockRemove,
       });
 
       await deleteEmotionImage(imageUrl);
@@ -149,7 +152,7 @@ describe('imageUpload', () => {
       const mockRemove = vi.fn();
 
       (supabase.storage.from as any).mockReturnValue({
-        remove: mockRemove
+        remove: mockRemove,
       });
 
       const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
@@ -166,13 +169,14 @@ describe('imageUpload', () => {
     });
 
     it('삭제 실패 시 에러를 로깅해야 함', async () => {
-      const imageUrl = 'https://example.com/storage/v1/object/public/emotion-images/user-id/file.jpg';
+      const imageUrl =
+        'https://example.com/storage/v1/object/public/emotion-images/user-id/file.jpg';
       const mockRemove = vi.fn().mockResolvedValue({
-        error: { message: 'Delete failed' }
+        error: { message: 'Delete failed' },
       });
 
       (supabase.storage.from as any).mockReturnValue({
-        remove: mockRemove
+        remove: mockRemove,
       });
 
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});

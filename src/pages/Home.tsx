@@ -51,9 +51,23 @@ export default function Home() {
   const [searchParams] = useSearchParams();
   const { isGuest, session, user } = useAuth();
   const notify = useNotify();
-  const { today, weekStats, flower, feedSummary, seedName, loading: homeDataLoading, refetch: refetchHomeData } = useHomeData(user?.id || null);
-  const { emotions, loading: emotionsLoading, hasTodayEmotion, fetchEmotions, deleteEmotion } = useEmotions({
-    userId: user?.id || null
+  const {
+    today,
+    weekStats,
+    flower,
+    feedSummary,
+    seedName,
+    loading: homeDataLoading,
+    refetch: refetchHomeData,
+  } = useHomeData(user?.id || null);
+  const {
+    emotions,
+    loading: emotionsLoading,
+    hasTodayEmotion,
+    fetchEmotions,
+    deleteEmotion,
+  } = useEmotions({
+    userId: user?.id || null,
   });
   const [todayHasEmotion, setTodayHasEmotion] = useState<boolean>(false);
   const [checkingToday, setCheckingToday] = useState<boolean>(false);
@@ -67,7 +81,7 @@ export default function Home() {
       notify.banner({
         level: 'info',
         message: '게스트 모드입니다. 기록/공감 작성은 로그인 후 이용 가능해요.',
-        dismissible: true
+        dismissible: true,
       });
     } else {
       // 로그인 시 배너 자동 숨김
@@ -82,13 +96,13 @@ export default function Home() {
     const authFlowType = safeStorage.getItem(AUTH_FLOW_KEY);
     if (authFlowType) {
       diag.log('Home: 로그인/가입 피드백 표시', { authFlowType });
-      
+
       if (authFlowType === 'SIGNUP') {
         notify.success('처음 오셨네요, 씨앗을 받아볼까요? 🌱', '✨');
       } else if (authFlowType === 'LOGIN') {
         notify.success('다시 오셨네요! 오늘도 따뜻한 하루 되세요 🌿', '👋');
       }
-      
+
       // 메시지 표시 후 플래그 제거
       safeStorage.removeItem(AUTH_FLOW_KEY);
     }
@@ -112,7 +126,7 @@ export default function Home() {
           label: undefined,
           note: undefined,
           recordId: undefined,
-          imageUrl: undefined
+          imageUrl: undefined,
         };
       });
     }
@@ -136,7 +150,7 @@ export default function Home() {
           label: undefined,
           note: undefined,
           recordId: undefined,
-          imageUrl: undefined
+          imageUrl: undefined,
         };
       }
 
@@ -149,7 +163,7 @@ export default function Home() {
         label: emotionOpt?.label || first.main_emotion,
         note: first.content,
         imageUrl: first.image_url || undefined, // 이미지 URL 추가
-        recordId: first.id
+        recordId: first.id,
       };
     });
   }, [initialWeekStart, emotions, user, guestMode, homeDataLoading]);
@@ -161,7 +175,7 @@ export default function Home() {
     const percent = flower?.growth_percent || 0;
     return clampPercent(percent);
   }, [flower, user, guestMode]);
-  
+
   // flower state 변경 감지 (디버깅용)
   useEffect(() => {
     if (flower) {
@@ -169,7 +183,7 @@ export default function Home() {
         flowerId: flower.id,
         growthPercent: flower.growth_percent,
         isBloomed: flower.is_bloomed,
-        calculatedGrowthPct: growthPct
+        calculatedGrowthPct: growthPct,
       });
     }
   }, [flower, growthPct]);
@@ -183,9 +197,9 @@ export default function Home() {
   // Level 5 (개화): 100pt
   const bloomLevel = useMemo(() => {
     if (guestMode || !user) return 0;
-    
+
     const percent = flower?.growth_percent || 0; // growth_percent는 포인트 값 (0-100pt)
-    
+
     if (percent >= 100) return 5; // Level 5: 개화 (100pt)
     if (percent >= 70) return 4; // Level 4: 반쯤 열린 꽃봉오리 (70pt~99pt)
     if (percent >= 50) return 3; // Level 3: 꽃봉오리 (50pt~69pt)
@@ -215,7 +229,7 @@ export default function Home() {
 
     return {
       totalDays: 30,
-      recordedDays: uniqueDates.size
+      recordedDays: uniqueDates.size,
     };
   }, [emotions, user, guestMode, emotionsLoading]);
 
@@ -247,7 +261,7 @@ export default function Home() {
   // emotions가 변경되면 오늘 기록 여부 다시 체크 (debounce)
   useEffect(() => {
     if (guestMode || !user || checkingToday) return;
-    
+
     const timer = setTimeout(async () => {
       try {
         const hasEmotion = await hasTodayEmotion();
@@ -285,7 +299,7 @@ export default function Home() {
             marginBottom: 16,
             fontSize: 13,
             color: '#144E43',
-            textAlign: 'center'
+            textAlign: 'center',
           }}
         >
           👤 게스트 모드: 기록과 공감 작성은 로그인 후 이용할 수 있어요.
@@ -299,10 +313,12 @@ export default function Home() {
             justifyContent: 'center',
             padding: '40px 16px',
             fontSize: 14,
-            color: 'var(--ms-ink-soft)'
+            color: 'var(--ms-ink-soft)',
           }}
         >
-          <span style={{ fontSize: 24, marginRight: 8, animation: 'spin 1s linear infinite' }}>🌱</span>
+          <span style={{ fontSize: 24, marginRight: 8, animation: 'spin 1s linear infinite' }}>
+            🌱
+          </span>
           정원을 불러오는 중...
         </div>
       )}
@@ -318,14 +334,14 @@ export default function Home() {
               bloomLevel >= 5
                 ? '축하해요! 감정꽃이 만개했어요 🌸'
                 : bloomLevel >= 3
-                ? '감정꽃이 자라고 있어요 🌿'
-                : '오늘의 정원 소식: 오늘 내 씨앗이 작은 공감들을 모으고 있어요 🌱'
+                  ? '감정꽃이 자라고 있어요 🌿'
+                  : '오늘의 정원 소식: 오늘 내 씨앗이 작은 공감들을 모으고 있어요 🌱'
             }
           />
           <TodayRecordCTA todayLogged={todayLogged} todayDate={todayIso} />
-          <WeeklyMoodWidget 
-            weekSummary={weekSummary} 
-            weekStart={initialWeekStart} 
+          <WeeklyMoodWidget
+            weekSummary={weekSummary}
+            weekStart={initialWeekStart}
             todayDate={todayIso}
             onDeleteRecord={async (recordId: string) => {
               if (!user) return;
@@ -338,10 +354,10 @@ export default function Home() {
                 notify.success('기록이 삭제되었어요', '✅');
                 console.log('[Home] 기록 삭제 완료:', { recordId });
               } catch (err) {
-                console.error('[Home] 기록 삭제 실패:', { 
-                  recordId, 
+                console.error('[Home] 기록 삭제 실패:', {
+                  recordId,
                   error: err,
-                  errorMessage: err instanceof Error ? err.message : String(err)
+                  errorMessage: err instanceof Error ? err.message : String(err),
                 });
                 throw err; // WeeklyMoodWidget에서 처리하도록 재throw
               }

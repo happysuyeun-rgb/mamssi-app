@@ -17,8 +17,11 @@ export default function AuthCallback() {
       try {
         // 세션 확인
         diag.log('AuthCallback: getSession 호출');
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession();
+
         if (sessionError) {
           diag.err('AuthCallback: 세션 확인 실패:', sessionError);
           navigate('/login', { replace: true });
@@ -34,17 +37,17 @@ export default function AuthCallback() {
         const userId = session.user.id;
         const userEmail = session.user.email;
         const userProvider = session.user.app_metadata?.provider || 'unknown';
-        
-        diag.log('AuthCallback: 세션 확인 완료', { 
-          userId, 
+
+        diag.log('AuthCallback: 세션 확인 완료', {
+          userId,
           email: userEmail,
-          provider: userProvider
+          provider: userProvider,
         });
 
         // public.users 테이블에서 해당 user.id row 찾기
         console.log('[AuthCallback] users 테이블 조회 시작', { userId });
         diag.log('AuthCallback: users 테이블 조회 시작');
-        
+
         const { data: existingUser, error: userError } = await supabase
           .from('users')
           .select('id, onboarding_completed, is_deleted, deleted_at')
@@ -57,14 +60,18 @@ export default function AuthCallback() {
             message: userError.message,
             details: userError.details,
             hint: userError.hint,
-            userId
+            userId,
           });
-          
+
           if (userError.code === 'PGRST116') {
             // row not found - 신규 사용자 (정상 케이스)
             console.log('[AuthCallback] users 테이블에 row 없음 (신규 사용자)');
             diag.log('AuthCallback: users 테이블에 row 없음 (신규 사용자)');
-          } else if (userError.code === '42501' || userError.message?.includes('permission denied') || userError.message?.includes('RLS')) {
+          } else if (
+            userError.code === '42501' ||
+            userError.message?.includes('permission denied') ||
+            userError.message?.includes('RLS')
+          ) {
             // RLS 정책 에러
             console.error('[AuthCallback] RLS 정책 에러 - users 테이블 조회 권한 없음');
             diag.err('AuthCallback: RLS 정책 에러 - users 테이블 조회 권한 없음:', userError);
@@ -84,13 +91,13 @@ export default function AuthCallback() {
 
           if (isDeleted) {
             // 탈퇴 후 재가입 사용자: 계정 재활성화
-            diag.log('AuthCallback: 탈퇴 후 재가입 사용자 확인, 계정 재활성화', { 
+            diag.log('AuthCallback: 탈퇴 후 재가입 사용자 확인, 계정 재활성화', {
               userId,
-              deletedAt: existingUser.deleted_at
+              deletedAt: existingUser.deleted_at,
             });
-            
+
             safeStorage.setItem(AUTH_FLOW_KEY, 'SIGNUP');
-            
+
             // 계정 재활성화: is_deleted=false, deleted_at=null, onboarding_completed=false
             const { error: updateError } = await supabase
               .from('users')
@@ -98,7 +105,7 @@ export default function AuthCallback() {
                 is_deleted: false,
                 deleted_at: null,
                 onboarding_completed: false,
-                updated_at: new Date().toISOString()
+                updated_at: new Date().toISOString(),
               })
               .eq('id', userId);
 
@@ -114,13 +121,13 @@ export default function AuthCallback() {
           }
 
           // 일반 기존 유저: 로그인으로 판단
-          diag.log('AuthCallback: 기존 유저 확인 (LOGIN)', { 
-            userId, 
-            onboardingCompleted
+          diag.log('AuthCallback: 기존 유저 확인 (LOGIN)', {
+            userId,
+            onboardingCompleted,
           });
-          
+
           safeStorage.setItem(AUTH_FLOW_KEY, 'LOGIN');
-          
+
           // 온보딩 상태에 따라 라우팅
           if (onboardingCompleted) {
             diag.log('AuthCallback: 온보딩 완료 유저, /home으로 이동');
@@ -132,24 +139,25 @@ export default function AuthCallback() {
         } else {
           // 신규 유저: 가입으로 판단
           diag.log('AuthCallback: 신규 유저 확인 (SIGNUP)', { userId });
-          
+
           safeStorage.setItem(AUTH_FLOW_KEY, 'SIGNUP');
-          
+
           // users 테이블에 row 생성 (upsert 보장)
           diag.log('AuthCallback: users 테이블에 row 생성 시작');
-          const { error: upsertError } = await supabase
-            .from('users')
-            .upsert({
+          const { error: upsertError } = await supabase.from('users').upsert(
+            {
               id: userId,
               email: userEmail,
               onboarding_completed: false,
               is_deleted: false,
               deleted_at: null,
               created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
-            }, {
-              onConflict: 'id'
-            });
+              updated_at: new Date().toISOString(),
+            },
+            {
+              onConflict: 'id',
+            }
+          );
 
           if (upsertError) {
             diag.err('AuthCallback: users 테이블 upsert 실패:', upsertError);
@@ -170,16 +178,17 @@ export default function AuthCallback() {
   }, [navigate]);
 
   return (
-    <div style={{ 
-      display: 'flex', 
-      alignItems: 'center', 
-      justifyContent: 'center', 
-      minHeight: '100vh',
-      fontSize: 14,
-      color: 'var(--ms-ink-soft)'
-    }}>
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
+        fontSize: 14,
+        color: 'var(--ms-ink-soft)',
+      }}
+    >
       로그인 처리 중...
     </div>
   );
 }
-

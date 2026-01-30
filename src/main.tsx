@@ -97,7 +97,7 @@ setTimeout(() => {
       초기 로딩 지연 감지 — 새로고침 또는 <a href="/debug" style="color: #d97706; font-weight: 600;">/debug</a> 진입해 진단을 확인하세요
     `;
     document.body.appendChild(loadingBanner);
-    
+
     // 10초 후 자동 제거 (사용자가 무시할 수 있도록)
     setTimeout(() => {
       removeLoadingBanner();

@@ -29,7 +29,7 @@ export default function Toast({ notification, onDismiss }: ToastProps) {
     success: { bg: 'var(--mint-500, #39C6A5)', text: '#fff' },
     info: { bg: 'var(--mint-600, #24B89D)', text: '#fff' },
     warning: { bg: '#F59E0B', text: '#fff' },
-    error: { bg: '#EF4444', text: '#fff' }
+    error: { bg: '#EF4444', text: '#fff' },
   };
 
   const colors = typeColors[notification.type];
@@ -44,7 +44,9 @@ export default function Toast({ notification, onDismiss }: ToastProps) {
         position: 'fixed',
         bottom: 'calc(16px + var(--tabbar-height, 72px))',
         left: '50%',
-        transform: 'translateX(-50%)',
+        transform: isVisible
+          ? 'translateX(-50%) translateY(0)'
+          : 'translateX(-50%) translateY(20px)',
         zIndex: 1000,
         maxWidth: 'calc(100vw - 32px)',
         width: 'max-content',
@@ -61,9 +63,6 @@ export default function Toast({ notification, onDismiss }: ToastProps) {
         fontWeight: 500,
         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         opacity: isVisible ? 1 : 0,
-        ...(isVisible
-          ? { transform: 'translateX(-50%) translateY(0)' }
-          : { transform: 'translateX(-50%) translateY(20px)' })
       }}
     >
       {notification.icon && (
@@ -85,7 +84,7 @@ export default function Toast({ notification, onDismiss }: ToastProps) {
             fontSize: 13,
             fontWeight: 600,
             cursor: 'pointer',
-            transition: 'background 0.2s'
+            transition: 'background 0.2s',
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.background = 'rgba(255,255,255,0.3)';
@@ -100,4 +99,3 @@ export default function Toast({ notification, onDismiss }: ToastProps) {
     </div>
   );
 }
-

@@ -13,18 +13,3 @@ export type UserStats = {
   totalFlowersBloomed: number;
   streakDays: number;
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

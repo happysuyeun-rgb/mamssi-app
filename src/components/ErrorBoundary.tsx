@@ -41,7 +41,7 @@ class ErrorBoundaryClass extends Component<ErrorBoundaryProps, ErrorBoundaryStat
             minHeight: '100vh',
             padding: '24px',
             textAlign: 'center',
-            color: 'var(--ms-ink)'
+            color: 'var(--ms-ink)',
           }}
         >
           <div style={{ fontSize: 48, marginBottom: 16 }}>🌧</div>
@@ -61,7 +61,7 @@ class ErrorBoundaryClass extends Component<ErrorBoundaryProps, ErrorBoundaryStat
               color: '#fff',
               fontSize: 15,
               fontWeight: 600,
-              cursor: 'pointer'
+              cursor: 'pointer',
             }}
           >
             새로고침
@@ -75,7 +75,7 @@ class ErrorBoundaryClass extends Component<ErrorBoundaryProps, ErrorBoundaryStat
                   padding: 12,
                   borderRadius: 8,
                   fontSize: 12,
-                  overflow: 'auto'
+                  overflow: 'auto',
                 }}
               >
                 {this.state.error.toString()}
@@ -94,4 +94,3 @@ class ErrorBoundaryClass extends Component<ErrorBoundaryProps, ErrorBoundaryStat
 export default function ErrorBoundary({ children, fallback }: ErrorBoundaryProps) {
   return <ErrorBoundaryClass fallback={fallback}>{children}</ErrorBoundaryClass>;
 }
-

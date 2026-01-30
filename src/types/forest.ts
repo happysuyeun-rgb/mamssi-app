@@ -2,13 +2,17 @@ export type ForestPost = {
   id: string;
   recordId?: string;
   userId: string;
-  nickname: string;
+  nickname?: string;
   mbti?: string;
   category: string;
-  emotionEmoji: string;
+  emotionEmoji?: string;
+  emoji?: string;
   emotionLabel?: string;
+  label?: string;
+  emotionCode?: string;
   content: string;
-  createdAt: string;
+  createdAt: string; // ISO date string
+  updatedAt?: string;
   likeCount: number;
   isLikedByMe: boolean;
   isMine: boolean;
@@ -48,5 +52,3 @@ export type Post = {
   _liked?: boolean;
   _reported?: boolean;
 };
-
-

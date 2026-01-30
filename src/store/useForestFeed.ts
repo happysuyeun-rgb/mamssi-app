@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@hooks/useAuth';
 import { useEmotions, type EmotionRecord } from '@hooks/useEmotions';
 import { FOREST_CATEGORIES } from '@constants/forest';
@@ -8,7 +8,7 @@ import type {
   ForestCategory,
   ForestPost,
   ForestReportReason,
-  ForestSortType
+  ForestSortType,
 } from '@domain/forest';
 
 const DEFAULT_CATEGORY: ForestCategory = 'BEST';
@@ -34,19 +34,34 @@ function emotionToForestPost(emotion: EmotionRecord, userId?: string): ForestPos
     isMine: userId === emotion.user_id,
     isReported: false,
     createdAt: emotion.created_at,
-    updatedAt: emotion.updated_at
+    updatedAt: emotion.updated_at,
   };
 }
 
 export function useForestFeed() {
   const { user } = useAuth();
-  const { emotions: publicEmotions, loading: emotionsLoading, fetchEmotions } = useEmotions({
-    publicOnly: true
+  const {
+    emotions: publicEmotions,
+    loading: emotionsLoading,
+    fetchEmotions,
+  } = useEmotions({
+    publicOnly: true,
   });
 
   const [selectedCategory, setSelectedCategory] = useState<ForestCategory>(DEFAULT_CATEGORY);
   const [sortType, setSortType] = useState<ForestSortType>('latest');
   const [error, setError] = useState<string | null>(null);
+
+  // 공개 기록을 ForestPost로 변환 (로컬 상태로 관리하여 toggleLike 등 업데이트 가능)
+  const basePosts = useMemo(
+    () => publicEmotions.map((emotion) => emotionToForestPost(emotion, user?.id)),
+    [publicEmotions, user?.id]
+  );
+  const [posts, setPosts] = useState<ForestPost[]>(basePosts);
+
+  useEffect(() => {
+    setPosts(basePosts);
+  }, [basePosts]);
 
   const loadPosts = useCallback(async () => {
     setError(null);
@@ -58,14 +73,9 @@ export function useForestFeed() {
     }
   }, [fetchEmotions]);
 
-  // 공개 기록만 ForestPost로 변환
-  const posts = useMemo(() => {
-    return publicEmotions.map((emotion) => emotionToForestPost(emotion, user?.id));
-  }, [publicEmotions, user?.id]);
-
   const toggleLike = useCallback((postId: string) => {
-    setPosts(prev =>
-      prev.map(post => {
+    setPosts((prev: ForestPost[]) =>
+      prev.map((post: ForestPost) => {
         if (post.id !== postId) return post;
         if (post.isMine) return post;
         const isLikedByMe = !post.isLikedByMe;
@@ -76,15 +86,18 @@ export function useForestFeed() {
     // TODO: API 요청 실패 시 롤백 처리
   }, []);
 
-  const reportPost = useCallback((postId: string, _reason: ForestReportReason, _details?: string) => {
-    setPosts(prev =>
-      prev.map(post => (post.id === postId ? { ...post, isReported: true } : post))
-    );
-    // TODO: 신고 API 연동
-  }, []);
+  const reportPost = useCallback(
+    (postId: string, _reason: ForestReportReason, _details?: string) => {
+      setPosts((prev: ForestPost[]) =>
+        prev.map((post: ForestPost) => (post.id === postId ? { ...post, isReported: true } : post))
+      );
+      // TODO: 신고 API 연동
+    },
+    []
+  );
 
   const deleteMyPost = useCallback((postId: string) => {
-    setPosts(prev => prev.filter(post => post.id !== postId));
+    setPosts((prev: ForestPost[]) => prev.filter((post: ForestPost) => post.id !== postId));
     // TODO: 삭제 API 연동 + growthStore 포인트 재계산 연결
   }, []);
 
@@ -100,23 +113,25 @@ export function useForestFeed() {
     if (selectedCategory === 'BEST') {
       return [...posts].sort((a, b) => {
         if (b.likeCount === a.likeCount) {
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          return new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime();
         }
         return b.likeCount - a.likeCount;
       });
     }
 
     const filtered =
-      selectedCategory === DEFAULT_CATEGORY ? posts : posts.filter(post => post.category === selectedCategory);
+      selectedCategory === DEFAULT_CATEGORY
+        ? posts
+        : posts.filter((post) => post.category === selectedCategory);
 
     const sorted = [...filtered].sort((a, b) => {
       if (sortType === 'best') {
         if (b.likeCount === a.likeCount) {
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          return new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime();
         }
         return b.likeCount - a.likeCount;
       }
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      return new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime();
     });
 
     return sorted;
@@ -134,7 +149,6 @@ export function useForestFeed() {
     toggleLike,
     reportPost,
     deleteMyPost,
-    visiblePosts
+    visiblePosts,
   };
 }
-

@@ -9,7 +9,7 @@ const isTest = import.meta.env.MODE === 'test';
 type LogLevel = 'log' | 'warn' | 'error' | 'info' | 'debug';
 
 interface LogContext {
-  userId?: string;
+  userId?: string | null;
   operation?: string;
   resourceId?: string;
   [key: string]: unknown;

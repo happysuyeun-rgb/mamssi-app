@@ -21,7 +21,14 @@ import { supabase } from '@lib/supabaseClient';
 
 type Profile = { name: string; mbti: string; img: string | null };
 type Settings = { emp: boolean; time: string };
-type AlbumItem = { id: string; title: string; date: string; water: number; emoji: string; message?: string };
+type AlbumItem = {
+  id: string;
+  title: string;
+  date: string;
+  water: number;
+  emoji: string;
+  message?: string;
+};
 
 const profileKey = 'ms_profile';
 const setKey = 'ms_settings';
@@ -30,7 +37,7 @@ const albumKey = 'ms_album';
 const PATTERN_GRID = [
   [1, 2, 3],
   [4, 5, 6],
-  [7, 8, 9]
+  [7, 8, 9],
 ];
 
 export default function MyPage() {
@@ -38,10 +45,18 @@ export default function MyPage() {
   const { user, isGuest, session, signOut } = useAuth();
   const notify = useNotify();
   const { requireAuthForAction } = useActionGuard();
-  const { emotions, loading: emotionsLoading, fetchEmotions } = useEmotions({
-    userId: user?.id || null
+  const {
+    emotions,
+    loading: emotionsLoading,
+    fetchEmotions,
+  } = useEmotions({
+    userId: user?.id || null,
   });
-  const { settings: dbSettings, updateSettings, loading: settingsLoading } = useSettings(user?.id || null);
+  const {
+    settings: dbSettings,
+    updateSettings,
+    loading: settingsLoading,
+  } = useSettings(user?.id || null);
 
   // Profile/Settings/Lock (로컬 상태 + DB 동기화)
   const [profile, setProfile] = useState<Profile>(() => {
@@ -49,12 +64,14 @@ export default function MyPage() {
       return {
         name: dbSettings.nickname || '수연',
         mbti: dbSettings.mbti || 'ENFJ',
-        img: dbSettings.profile_url || null
+        img: dbSettings.profile_url || null,
       };
     }
     return lsGet<Profile>(profileKey, { name: '수연', mbti: 'ENFJ', img: null });
   });
-  const [settings, setSettings] = useState<Settings>(lsGet<Settings>(setKey, { emp: true, time: '21:00' }));
+  const [settings, setSettings] = useState<Settings>(
+    lsGet<Settings>(setKey, { emp: true, time: '21:00' })
+  );
   const [lock, setLock] = useState<LockSettings>(() => {
     if (dbSettings && dbSettings.lock_type) {
       return {
@@ -62,7 +79,7 @@ export default function MyPage() {
         mode: dbSettings.lock_type,
         pattern: [],
         pin: '',
-        biometricEnabled: false
+        biometricEnabled: false,
       };
     }
     return loadLockSettings();
@@ -74,13 +91,13 @@ export default function MyPage() {
       setProfile({
         name: dbSettings.nickname || '수연',
         mbti: dbSettings.mbti || 'ENFJ',
-        img: dbSettings.profile_url || null
+        img: dbSettings.profile_url || null,
       });
       if (dbSettings.lock_type) {
         setLock((prev) => ({
           ...prev,
           enabled: true,
-          mode: dbSettings.lock_type as LockMode
+          mode: dbSettings.lock_type as LockMode,
         }));
       }
     }
@@ -96,7 +113,7 @@ export default function MyPage() {
   // Album - 실제 DB에서 개화된 꽃 데이터 가져오기
   const [album, setAlbum] = useState<AlbumItem[]>([]);
   const [albumLoading, setAlbumLoading] = useState(false);
-  
+
   useEffect(() => {
     const loadAlbum = async () => {
       if (!user || isGuest) {
@@ -107,23 +124,24 @@ export default function MyPage() {
 
       setAlbumLoading(true);
       try {
-        const bloomedFlowers = await fetchBloomedFlowers(user.id);
-        
+        const bloomedResult = await fetchBloomedFlowers(user.id);
+        const bloomedFlowers = bloomedResult.error ? [] : bloomedResult.data;
+
         // user_settings에서 seed_name 가져오기
         const { data: userSettings } = await supabase
           .from('user_settings')
           .select('seed_name')
           .eq('user_id', user.id)
           .maybeSingle();
-        
+
         const seedName = userSettings?.seed_name || '나의 씨앗';
-        
+
         // 개화된 꽃들을 앨범 아이템으로 변환
         const albumItems: AlbumItem[] = bloomedFlowers.map((flower, index) => {
-          const bloomDate = flower.bloomed_at 
+          const bloomDate = flower.bloomed_at
             ? new Date(flower.bloomed_at).toISOString().split('T')[0]
             : new Date(flower.created_at).toISOString().split('T')[0];
-          
+
           // 성장 포인트에 따라 이모지 결정
           let emoji = '🌸';
           if (flower.growth_percent >= 100) emoji = '🌸';
@@ -131,17 +149,17 @@ export default function MyPage() {
           else if (flower.growth_percent >= 50) emoji = '🌷';
           else if (flower.growth_percent >= 30) emoji = '🌿';
           else emoji = '🌱';
-          
+
           return {
             id: flower.id,
             title: seedName || `감정꽃 ${index + 1}`,
             date: bloomDate,
             water: Math.floor(flower.growth_percent / 10), // 포인트를 공감 수로 변환 (대략)
             emoji: emoji,
-            message: ''
+            message: '',
           };
         });
-        
+
         setAlbum(albumItems);
         // 로컬 스토리지에도 저장 (오프라인 대비)
         lsSet(albumKey, albumItems);
@@ -168,16 +186,23 @@ export default function MyPage() {
   const [mSupport, setMSupport] = useState(false);
 
   // Persist
-  useEffect(() => { lsSet(profileKey, profile); }, [profile]);
-  useEffect(() => { lsSet(setKey, settings); }, [settings]);
-  useEffect(() => { saveLockSettings(lock); }, [lock]);
-  useEffect(() => { lsSet(albumKey, album); }, [album]);
-
+  useEffect(() => {
+    lsSet(profileKey, profile);
+  }, [profile]);
+  useEffect(() => {
+    lsSet(setKey, settings);
+  }, [settings]);
+  useEffect(() => {
+    saveLockSettings(lock);
+  }, [lock]);
+  useEffect(() => {
+    lsSet(albumKey, album);
+  }, [album]);
 
   // Profile edits
   const fileAvatarRef = useRef<HTMLInputElement | null>(null);
   const [isUploadingProfile, setIsUploadingProfile] = useState(false);
-  
+
   const onUploadAvatarClick = () => {
     requireAuthForAction(
       'upload_profile_image',
@@ -185,11 +210,11 @@ export default function MyPage() {
         fileAvatarRef.current?.click();
       },
       {
-        customMessage: '프로필 사진을 업로드하려면 로그인 또는 가입이 필요해요.'
+        customMessage: '프로필 사진을 업로드하려면 로그인 또는 가입이 필요해요.',
       }
     );
   };
-  
+
   async function onFileAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) {
@@ -211,20 +236,20 @@ export default function MyPage() {
 
         setIsUploadingProfile(true);
         try {
-          console.log('[MyPage] 프로필 이미지 업로드 시작:', { 
-            userId: user.id, 
-            fileName: file.name, 
+          console.log('[MyPage] 프로필 이미지 업로드 시작:', {
+            userId: user.id,
+            fileName: file.name,
             fileSize: file.size,
-            fileType: file.type
+            fileType: file.type,
           });
 
           const result = await uploadProfileImage(file, user.id);
-          
+
           if (result.error) {
             console.error('[MyPage] 프로필 이미지 업로드 실패:', {
               userId: user.id,
               error: result.error,
-              errorMessage: result.error.message
+              errorMessage: result.error.message,
             });
             notify.error(result.error.message || '프로필 이미지 업로드에 실패했어요', '❌');
             // input 초기화
@@ -233,19 +258,19 @@ export default function MyPage() {
             }
             return;
           }
-          
+
           if (result.url) {
-            console.log('[MyPage] 프로필 이미지 업로드 성공, DB 저장 시작:', { 
-              userId: user.id, 
-              url: result.url 
+            console.log('[MyPage] 프로필 이미지 업로드 성공, DB 저장 시작:', {
+              userId: user.id,
+              url: result.url,
             });
-            
+
             const updateResult = await updateSettings({ profile_url: result.url });
-            
+
             if (updateResult.error) {
               console.error('[MyPage] 프로필 URL DB 저장 실패:', {
                 userId: user.id,
-                error: updateResult.error
+                error: updateResult.error,
               });
               notify.error('프로필 이미지 URL 저장에 실패했어요', '❌');
               // input 초기화
@@ -254,18 +279,18 @@ export default function MyPage() {
               }
               return;
             }
-            
-            console.log('[MyPage] 프로필 이미지 업로드 및 저장 완료:', { 
-              userId: user.id, 
-              url: result.url 
+
+            console.log('[MyPage] 프로필 이미지 업로드 및 저장 완료:', {
+              userId: user.id,
+              url: result.url,
             });
-            
+
             setProfile((prev) => ({ ...prev, img: result.url }));
             notify.success('프로필 이미지가 적용되었어요', '✅');
           } else {
             notify.error('프로필 이미지 URL을 가져올 수 없어요', '❌');
           }
-          
+
           // 성공/실패 관계없이 input 초기화 (같은 파일 재선택 가능하게)
           if (fileAvatarRef.current) {
             fileAvatarRef.current.value = '';
@@ -274,7 +299,7 @@ export default function MyPage() {
           console.error('[MyPage] 프로필 이미지 업로드 중 예외 발생:', {
             userId: user.id,
             error: err,
-            errorMessage: err instanceof Error ? err.message : String(err)
+            errorMessage: err instanceof Error ? err.message : String(err),
           });
           notify.error('프로필 이미지 업로드에 실패했어요', '❌');
           // input 초기화
@@ -286,7 +311,7 @@ export default function MyPage() {
         }
       },
       {
-        customMessage: '프로필 사진을 업로드하려면 로그인 또는 가입이 필요해요.'
+        customMessage: '프로필 사진을 업로드하려면 로그인 또는 가입이 필요해요.',
       }
     );
   }
@@ -307,7 +332,7 @@ export default function MyPage() {
         }
       },
       {
-        customMessage: '기본 이모티콘으로 변경하려면 로그인 또는 가입이 필요해요.'
+        customMessage: '기본 이모티콘으로 변경하려면 로그인 또는 가입이 필요해요.',
       }
     );
   }
@@ -335,7 +360,7 @@ export default function MyPage() {
         }
       },
       {
-        customMessage: '닉네임을 수정하려면 로그인 또는 가입이 필요해요.'
+        customMessage: '닉네임을 수정하려면 로그인 또는 가입이 필요해요.',
       }
     );
   }
@@ -343,18 +368,18 @@ export default function MyPage() {
     requireAuthForAction(
       'change_mbti',
       async () => {
-    try {
-      await updateSettings({ mbti });
-      setProfile((prev) => ({ ...prev, mbti }));
-    } catch (err) {
-      console.error('MBTI 업데이트 실패:', err);
-      notify.error('MBTI 업데이트에 실패했어요', '❌');
+        try {
+          await updateSettings({ mbti });
+          setProfile((prev) => ({ ...prev, mbti }));
+        } catch (err) {
+          console.error('MBTI 업데이트 실패:', err);
+          notify.error('MBTI 업데이트에 실패했어요', '❌');
+        }
+      },
+      {
+        customMessage: 'MBTI를 변경하려면 로그인 또는 가입이 필요해요.',
       }
-    },
-    {
-      customMessage: 'MBTI를 변경하려면 로그인 또는 가입이 필요해요.'
-    }
-  );
+    );
   }
 
   // Alert save
@@ -391,7 +416,7 @@ export default function MyPage() {
 
   const handlePatternNode = (point: number) => {
     setPatternError('');
-    setPatternDraft(prev => {
+    setPatternDraft((prev) => {
       if (!prev.length) return [point];
       if (prev[prev.length - 1] === point) {
         return prev.slice(0, -1);
@@ -416,66 +441,68 @@ export default function MyPage() {
     requireAuthForAction(
       'save_lock_settings',
       async () => {
-
-    if (lockEnabledDraft) {
-      if (lockModeDraft === 'pattern' && patternDraft.length < 4) {
-        setPatternError('패턴은 최소 4개의 점을 연결해야 해요.');
-        return;
-      }
-      if (lockModeDraft === 'pin' && pinDraft.length !== 4) {
-        setPinError('PIN은 4자리 숫자여야 해요.');
-        return;
-      }
-    }
-
-    try {
-      let lockType: 'pattern' | 'pin' | null = null;
-      let lockValue: string | null = null;
-
-      if (lockEnabledDraft) {
-        lockType = lockModeDraft;
-        if (lockModeDraft === 'pattern') {
-          lockValue = await hashLockValue(patternDraft);
-        } else {
-          lockValue = await hashLockValue(pinDraft);
+        if (lockEnabledDraft) {
+          if (lockModeDraft === 'pattern' && patternDraft.length < 4) {
+            setPatternError('패턴은 최소 4개의 점을 연결해야 해요.');
+            return;
+          }
+          if (lockModeDraft === 'pin' && pinDraft.length !== 4) {
+            setPinError('PIN은 4자리 숫자여야 해요.');
+            return;
+          }
         }
-      }
 
-      await updateSettings({
-        lock_type: lockType,
-        lock_value: lockValue
-      });
+        try {
+          let lockType: 'pattern' | 'pin' | null = null;
+          let lockValue: string | null = null;
 
-      const now = new Date().toISOString();
-      const next: LockSettings = {
-        ...lock,
-        enabled: lockEnabledDraft,
-        mode: lockModeDraft,
-        pattern: lockEnabledDraft && lockModeDraft === 'pattern' ? patternDraft : [],
-        pin: lockEnabledDraft && lockModeDraft === 'pin' ? pinDraft : '',
-        updatedAt: now,
-        createdAt: lock.createdAt || (lockEnabledDraft ? now : lock.createdAt),
-        biometricEnabled: lock.biometricEnabled
-      };
-      if (!lockEnabledDraft) {
-        next.pattern = [];
-        next.pin = '';
-      }
+          if (lockEnabledDraft) {
+            lockType = lockModeDraft;
+            if (lockModeDraft === 'pattern') {
+              lockValue = await hashLockValue(patternDraft);
+            } else {
+              lockValue = await hashLockValue(pinDraft);
+            }
+          }
 
-      sessionStorage.removeItem(LOCK_SESSION_KEY);
-      setLock(next);
-      saveLockSettings(next); // 로컬에도 저장 (오프라인 대비)
-      setMLock(false);
-      notify.success(lockEnabledDraft ? '잠금 설정을 저장했어요' : '화면 잠금을 해제했어요', '✅');
-    } catch (err) {
-      console.error('잠금 설정 저장 실패:', err);
-      notify.error('잠금 설정 저장에 실패했어요', '❌');
+          await updateSettings({
+            lock_type: lockType,
+            lock_value: lockValue,
+          });
+
+          const now = new Date().toISOString();
+          const next: LockSettings = {
+            ...lock,
+            enabled: lockEnabledDraft,
+            mode: lockModeDraft,
+            pattern: lockEnabledDraft && lockModeDraft === 'pattern' ? patternDraft : [],
+            pin: lockEnabledDraft && lockModeDraft === 'pin' ? pinDraft : '',
+            updatedAt: now,
+            createdAt: lock.createdAt || (lockEnabledDraft ? now : lock.createdAt),
+            biometricEnabled: lock.biometricEnabled,
+          };
+          if (!lockEnabledDraft) {
+            next.pattern = [];
+            next.pin = '';
+          }
+
+          sessionStorage.removeItem(LOCK_SESSION_KEY);
+          setLock(next);
+          saveLockSettings(next); // 로컬에도 저장 (오프라인 대비)
+          setMLock(false);
+          notify.success(
+            lockEnabledDraft ? '잠금 설정을 저장했어요' : '화면 잠금을 해제했어요',
+            '✅'
+          );
+        } catch (err) {
+          console.error('잠금 설정 저장 실패:', err);
+          notify.error('잠금 설정 저장에 실패했어요', '❌');
+        }
+      },
+      {
+        customMessage: '잠금 설정을 변경하려면 로그인 또는 가입이 필요해요.',
       }
-    },
-    {
-      customMessage: '잠금 설정을 변경하려면 로그인 또는 가입이 필요해요.'
-    }
-  );
+    );
   };
 
   // Album detail
@@ -489,7 +516,7 @@ export default function MyPage() {
         date: curFlower.date,
         water: curFlower.water,
         emoji: curFlower.emoji,
-        message: flowerMessage || curFlower.message
+        message: flowerMessage || curFlower.message,
       });
     }
   }, [mFlower, curFlower, flowerMessage]);
@@ -506,12 +533,10 @@ export default function MyPage() {
       notify.warning('한 줄 메시지는 15자 이내로 입력해 주세요.', '⚠️');
       return;
     }
-    setAlbum(prev =>
-      prev.map(item =>
-        item.id === curFlower.id ? { ...item, message: flowerMessage } : item
-      )
+    setAlbum((prev) =>
+      prev.map((item) => (item.id === curFlower.id ? { ...item, message: flowerMessage } : item))
     );
-    setCurFlower(prev => (prev ? { ...prev, message: flowerMessage } : prev));
+    setCurFlower((prev) => (prev ? { ...prev, message: flowerMessage } : prev));
     notify.success('한 줄 메시지를 저장했어요.', '✅');
   }
   function downloadFlower() {
@@ -528,10 +553,12 @@ export default function MyPage() {
     if (!canvas || !curFlower) return;
     const url = canvas.toDataURL('image/png');
     if (navigator.share) {
-      navigator.share({
-        title: '마음씨 감정꽃',
-        text: `${curFlower.title} · 공감 ${curFlower.water}`
-      }).catch(() => {});
+      navigator
+        .share({
+          title: '마음씨 감정꽃',
+          text: `${curFlower.title} · 공감 ${curFlower.water}`,
+        })
+        .catch(() => {});
     } else {
       const a = document.createElement('a');
       a.href = url;
@@ -549,13 +576,13 @@ export default function MyPage() {
           const date = new Date(e.created_at).toISOString().split('T')[0];
           return {
             date,
-            mood: e.emotion_type,
+            mood: e.emotion_type ?? e.main_emotion,
             text: e.content,
             public: e.is_public,
             category: e.category || null,
             image_url: e.image_url || null,
             created_at: e.created_at,
-            updated_at: e.updated_at
+            updated_at: e.updated_at,
           };
         });
 
@@ -567,7 +594,7 @@ export default function MyPage() {
         notify.success('JSON 파일을 다운로드했어요.', '✅');
       },
       {
-        customMessage: '데이터를 다운로드하려면 로그인 또는 가입이 필요해요.'
+        customMessage: '데이터를 다운로드하려면 로그인 또는 가입이 필요해요.',
       }
     );
   }
@@ -580,13 +607,13 @@ export default function MyPage() {
           const date = new Date(e.created_at).toISOString().split('T')[0];
           return {
             date,
-            mood: e.emotion_type,
+            mood: e.emotion_type ?? e.main_emotion,
             text: e.content,
             public: e.is_public ? '공개' : '비공개',
             category: e.category || '',
             image_url: e.image_url || '',
             created_at: e.created_at,
-            updated_at: e.updated_at
+            updated_at: e.updated_at,
           };
         });
 
@@ -611,7 +638,7 @@ export default function MyPage() {
         notify.success('CSV 파일을 다운로드했어요.', '✅');
       },
       {
-        customMessage: '데이터를 다운로드하려면 로그인 또는 가입이 필요해요.'
+        customMessage: '데이터를 다운로드하려면 로그인 또는 가입이 필요해요.',
       }
     );
   }
@@ -632,11 +659,17 @@ export default function MyPage() {
     } else {
       // 이메일이 없으면 클립보드에 복사
       const text = `제목: ${qSubj || '마음씨 문의'}\n\n${qBody}`;
-      navigator.clipboard.writeText(text).then(() => {
-        notify.success('문의 내용이 클립보드에 복사되었어요. 이메일 앱에서 붙여넣기 해주세요.', '✅');
-      }).catch(() => {
-        notify.info('문의 내용을 직접 복사해서 이메일로 보내주세요.', 'ℹ️');
-      });
+      navigator.clipboard
+        .writeText(text)
+        .then(() => {
+          notify.success(
+            '문의 내용이 클립보드에 복사되었어요. 이메일 앱에서 붙여넣기 해주세요.',
+            '✅'
+          );
+        })
+        .catch(() => {
+          notify.info('문의 내용을 직접 복사해서 이메일로 보내주세요.', 'ℹ️');
+        });
     }
   }
 
@@ -647,21 +680,23 @@ export default function MyPage() {
   return (
     <Layout hideHeader>
       <div className="mypage-root">
-
         {/* 상단 프로필 섹션 */}
         <section className="mypage-profile">
           <div className="mypage-profile-main">
             <div className="avatar" data-has={profile.img ? 'img' : 'emo'}>
-              {profile.img ? (
-                <img alt="프로필" src={profile.img} />
-              ) : (
-                <div className="emo">🙂</div>
-              )}
+              {profile.img ? <img alt="프로필" src={profile.img} /> : <div className="emo">🙂</div>}
             </div>
             <div>
               <div className="nickname-row">
                 <div className="nickname">{profile.name}</div>
-                <button type="button" className="name-edit" aria-label="닉네임 수정" onClick={onEditName}>✏️</button>
+                <button
+                  type="button"
+                  className="name-edit"
+                  aria-label="닉네임 수정"
+                  onClick={onEditName}
+                >
+                  ✏️
+                </button>
               </div>
               <div className="bio">MBTI {profile.mbti}</div>
               <div className="badges">
@@ -685,29 +720,35 @@ export default function MyPage() {
         {/* 계정 정보 섹션 */}
         {user && session && (
           <section className="mypage-profile" style={{ marginTop: 20 }}>
-            <div style={{ 
-              fontSize: 15, 
-              fontWeight: 700, 
-              marginBottom: 16,
-              color: 'var(--ms-text-main)'
-            }}>
+            <div
+              style={{
+                fontSize: 15,
+                fontWeight: 700,
+                marginBottom: 16,
+                color: 'var(--ms-text-main)',
+              }}
+            >
               계정 정보
             </div>
 
             {/* 내 프로필 */}
             <div style={{ marginBottom: 20 }}>
-              <div style={{ 
-                fontSize: 13, 
-                fontWeight: 600, 
-                marginBottom: 10,
-                color: 'var(--ms-ink-soft)'
-              }}>
+              <div
+                style={{
+                  fontSize: 13,
+                  fontWeight: 600,
+                  marginBottom: 10,
+                  color: 'var(--ms-ink-soft)',
+                }}
+              >
                 내 프로필
               </div>
               <div style={{ display: 'grid', gap: 8, fontSize: 13 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ color: 'var(--ms-ink-muted)' }}>사용자 ID</span>
-                  <span style={{ color: 'var(--ms-ink-soft)', fontFamily: 'monospace', fontSize: 12 }}>
+                  <span
+                    style={{ color: 'var(--ms-ink-soft)', fontFamily: 'monospace', fontSize: 12 }}
+                  >
                     {user.id.substring(0, 8)}...
                   </span>
                 </div>
@@ -734,12 +775,14 @@ export default function MyPage() {
 
             {/* 로그인 정보 */}
             <div>
-              <div style={{ 
-                fontSize: 13, 
-                fontWeight: 600, 
-                marginBottom: 10,
-                color: 'var(--ms-ink-soft)'
-              }}>
+              <div
+                style={{
+                  fontSize: 13,
+                  fontWeight: 600,
+                  marginBottom: 10,
+                  color: 'var(--ms-ink-soft)',
+                }}
+              >
                 로그인 정보
               </div>
               <div style={{ display: 'grid', gap: 8, fontSize: 13 }}>
@@ -753,7 +796,7 @@ export default function MyPage() {
                         apple: 'Apple',
                         kakao: 'Kakao',
                         facebook: 'Facebook',
-                        line: 'LINE'
+                        line: 'LINE',
                       };
                       return providerMap[provider || ''] || provider || '알 수 없음';
                     })()}
@@ -777,7 +820,7 @@ export default function MyPage() {
                       color: 'var(--ms-ink-soft)',
                       fontSize: 12,
                       fontWeight: 500,
-                      cursor: 'pointer'
+                      cursor: 'pointer',
                     }}
                   >
                     소셜 계정 관리
@@ -806,37 +849,48 @@ export default function MyPage() {
         </div>
 
         <div className="card" onClick={() => setMAlbum(true)}>
-          <div><div className="tt">감정꽃 앨범</div></div>
+          <div>
+            <div className="tt">감정꽃 앨범</div>
+          </div>
           <div className="chev">›</div>
         </div>
 
         <div className="card" onClick={() => setMExport(true)}>
-          <div><div className="tt">감정기록 모아보기</div></div>
+          <div>
+            <div className="tt">감정기록 모아보기</div>
+          </div>
           <div className="chev">›</div>
         </div>
 
         <div className="card" onClick={() => setMLock(true)}>
-          <div><div className="tt">화면 잠금</div></div>
+          <div>
+            <div className="tt">화면 잠금</div>
+          </div>
           <div className="chev">›</div>
         </div>
 
         <div className="card" onClick={() => setMSupport(true)}>
-          <div><div className="tt">고객 문의</div></div>
+          <div>
+            <div className="tt">고객 문의</div>
+          </div>
           <div className="chev">›</div>
         </div>
 
         {/* 로그아웃 버튼 (로그인 상태에서만 표시) */}
         {user && session && (
-          <div className="card" onClick={async () => {
-            if (!confirm('정말 로그아웃하시겠어요?')) return;
-            try {
-              await signOut();
-              navigate('/login', { replace: true });
-            } catch (error) {
-              console.error('로그아웃 실패:', error);
-              notify.error('로그아웃에 실패했어요. 잠시 후 다시 시도해주세요.', '❌');
-            }
-          }}>
+          <div
+            className="card"
+            onClick={async () => {
+              if (!confirm('정말 로그아웃하시겠어요?')) return;
+              try {
+                await signOut();
+                navigate('/login', { replace: true });
+              } catch (error) {
+                console.error('로그아웃 실패:', error);
+                notify.error('로그아웃에 실패했어요. 잠시 후 다시 시도해주세요.', '❌');
+              }
+            }}
+          >
             <div className="tt">로그아웃</div>
             <div className="chev">↪</div>
           </div>
@@ -844,11 +898,18 @@ export default function MyPage() {
 
         {/* 회원탈퇴 버튼 (로그인 상태에서만 표시) */}
         {user && session && (
-          <div className="card danger" onClick={() => {
-            navigate('/delete-account');
-          }}>
-            <div className="tt" style={{ color: '#ef4444' }}>회원탈퇴</div>
-            <div className="chev" style={{ borderColor: '#fecaca', background: '#fff5f5' }}>✖</div>
+          <div
+            className="card danger"
+            onClick={() => {
+              navigate('/delete-account');
+            }}
+          >
+            <div className="tt" style={{ color: '#ef4444' }}>
+              회원탈퇴
+            </div>
+            <div className="chev" style={{ borderColor: '#fecaca', background: '#fff5f5' }}>
+              ✖
+            </div>
           </div>
         )}
       </div>
@@ -857,7 +918,9 @@ export default function MyPage() {
       {mProfile && (
         <Modal onClose={() => setMProfile(false)}>
           <h3>프로필 설정</h3>
-          <p className="hint">마음씨에서 보이는 나의 얼굴을 정리하는 공간이에요. 언제든지 다시 바꿀 수 있어요.</p>
+          <p className="hint">
+            마음씨에서 보이는 나의 얼굴을 정리하는 공간이에요. 언제든지 다시 바꿀 수 있어요.
+          </p>
           <div className="row">
             <div>MBTI</div>
             <div>
@@ -867,7 +930,24 @@ export default function MyPage() {
                 className="input"
                 disabled={isGuest}
               >
-                {['ENFJ', 'ENFP', 'ENTJ', 'ENTP', 'ESFJ', 'ESFP', 'ESTJ', 'ESTP', 'INFJ', 'INFP', 'INTJ', 'INTP', 'ISFJ', 'ISFP', 'ISTJ', 'ISTP'].map((m) => (
+                {[
+                  'ENFJ',
+                  'ENFP',
+                  'ENTJ',
+                  'ENTP',
+                  'ESFJ',
+                  'ESFP',
+                  'ESTJ',
+                  'ESTP',
+                  'INFJ',
+                  'INFP',
+                  'INTJ',
+                  'INTP',
+                  'ISFJ',
+                  'ISFP',
+                  'ISTJ',
+                  'ISTP',
+                ].map((m) => (
                   <option key={m}>{m}</option>
                 ))}
               </select>
@@ -877,14 +957,25 @@ export default function MyPage() {
             <div>프로필 사진</div>
             <div>
               <div className="grid2" style={{ marginBottom: 8 }}>
-                <button type="button" className="btn" onClick={onUploadAvatarClick} disabled={isGuest}>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={onUploadAvatarClick}
+                  disabled={isGuest}
+                >
                   사진 업로드
                 </button>
                 <button type="button" className="btn" onClick={onDefaultEmoji} disabled={isGuest}>
                   마음씨 기본 이모티콘
                 </button>
               </div>
-              <input type="file" ref={fileAvatarRef} accept="image/*" onChange={onFileAvatarChange} style={{ display: 'none' }} />
+              <input
+                type="file"
+                ref={fileAvatarRef}
+                accept="image/*"
+                onChange={onFileAvatarChange}
+                style={{ display: 'none' }}
+              />
             </div>
           </div>
           <div className="grid2" style={{ marginTop: 10 }}>
@@ -902,7 +993,7 @@ export default function MyPage() {
                     notify.success('프로필 정보를 저장했어요', '✅');
                   },
                   {
-                    customMessage: '프로필 정보를 저장하려면 로그인 또는 가입이 필요해요.'
+                    customMessage: '프로필 정보를 저장하려면 로그인 또는 가입이 필요해요.',
                   }
                 );
               }}
@@ -923,18 +1014,35 @@ export default function MyPage() {
             <div>공감 알림</div>
             <div>
               <label className="tog">
-                <input type="checkbox" checked={settings.emp} onChange={(e) => setSettings(prev => ({ ...prev, emp: e.target.checked }))} />
+                <input
+                  type="checkbox"
+                  checked={settings.emp}
+                  onChange={(e) => setSettings((prev) => ({ ...prev, emp: e.target.checked }))}
+                />
                 <span className="tog-ball" />
               </label>
             </div>
           </div>
           <div className="row">
             <div>기록 루틴 시간</div>
-            <div><input type="time" value={settings.time} onChange={(e) => setSettings(prev => ({ ...prev, time: e.target.value || '21:00' }))} className="input" /></div>
+            <div>
+              <input
+                type="time"
+                value={settings.time}
+                onChange={(e) =>
+                  setSettings((prev) => ({ ...prev, time: e.target.value || '21:00' }))
+                }
+                className="input"
+              />
+            </div>
           </div>
           <div className="grid2" style={{ marginTop: 10 }}>
-            <button className="btn" onClick={() => setMAlert(false)}>닫기</button>
-            <button className="btn primary" onClick={onSaveAlert}>저장</button>
+            <button className="btn" onClick={() => setMAlert(false)}>
+              닫기
+            </button>
+            <button className="btn primary" onClick={onSaveAlert}>
+              저장
+            </button>
           </div>
         </Modal>
       )}
@@ -954,19 +1062,31 @@ export default function MyPage() {
             </div>
           ) : (
             <div className="album" id="albumList">
-              {album.map(it => (
+              {album.map((it) => (
                 <div key={it.id} className="item" onClick={() => openFlower(it)}>
                   <div className="flower">{it.emoji}</div>
-                  <div className="meta"><span>{it.title}</span></div>
-                  <div className="meta" style={{ fontWeight: 600 }}><span>{it.date}</span><span /></div>
+                  <div className="meta">
+                    <span>{it.title}</span>
+                  </div>
+                  <div className="meta" style={{ fontWeight: 600 }}>
+                    <span>{it.date}</span>
+                    <span />
+                  </div>
                 </div>
               ))}
             </div>
           )}
           <div className="grid2" style={{ marginTop: 10 }}>
-            <button className="btn" onClick={() => setMAlbum(false)}>닫기</button>
+            <button className="btn" onClick={() => setMAlbum(false)}>
+              닫기
+            </button>
             {album.length > 0 && (
-              <button className="btn primary" onClick={() => notify.info('꽃을 탭하면 상세 보기에서 저장/공유할 수 있어요', 'ℹ️')}>도움말</button>
+              <button
+                className="btn primary"
+                onClick={() => notify.info('꽃을 탭하면 상세 보기에서 저장/공유할 수 있어요', 'ℹ️')}
+              >
+                도움말
+              </button>
             )}
           </div>
         </Modal>
@@ -986,8 +1106,17 @@ export default function MyPage() {
               ✕
             </button>
           </div>
-          <canvas ref={flowerCanvasRef} id="flowerCanvas" width={600} height={360} className="flower-canvas" />
-          <div className="row"><div>개화 날짜</div><div id="flowerDate">{curFlower.date}</div></div>
+          <canvas
+            ref={flowerCanvasRef}
+            id="flowerCanvas"
+            width={600}
+            height={360}
+            className="flower-canvas"
+          />
+          <div className="row">
+            <div>개화 날짜</div>
+            <div id="flowerDate">{curFlower.date}</div>
+          </div>
           <div className="row">
             <div>한 줄 메시지</div>
             <div>
@@ -1000,16 +1129,25 @@ export default function MyPage() {
                 placeholder="15자 이내로 입력"
                 className="input"
               />
-              <div className="ms-input-help" style={{ fontSize: 11, color: 'var(--ms-ink-muted)', marginTop: 4 }}>
+              <div
+                className="ms-input-help"
+                style={{ fontSize: 11, color: 'var(--ms-ink-muted)', marginTop: 4 }}
+              >
                 {flowerMessage.length} / 15자
               </div>
             </div>
           </div>
           <div className="grid2 flower-actions" style={{ marginTop: 10 }}>
-            <button className="btn" onClick={saveFlowerMessage}>메시지 저장</button>
+            <button className="btn" onClick={saveFlowerMessage}>
+              메시지 저장
+            </button>
             <div className="grid2">
-              <button className="btn" onClick={downloadFlower}>PNG 저장</button>
-              <button className="btn" onClick={shareFlower}>공유하기</button>
+              <button className="btn" onClick={downloadFlower}>
+                PNG 저장
+              </button>
+              <button className="btn" onClick={shareFlower}>
+                공유하기
+              </button>
             </div>
           </div>
         </Modal>
@@ -1021,7 +1159,9 @@ export default function MyPage() {
           <h3>감정기록 모아보기</h3>
           <p className="hint">
             마음씨에서 쌓인 기록을 한 번에 내려받을 수 있어요.
-            {emotionsLoading ? ' 기록을 불러오는 중...' : ` 총 ${emotions.length}개의 기록이 있어요.`}
+            {emotionsLoading
+              ? ' 기록을 불러오는 중...'
+              : ` 총 ${emotions.length}개의 기록이 있어요.`}
           </p>
           {emotions.length > 0 ? (
             <>
@@ -1041,11 +1181,15 @@ export default function MyPage() {
             </>
           ) : (
             <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--ms-ink-soft)' }}>
-              {emotionsLoading ? '기록을 불러오는 중...' : '아직 기록이 없어요. 첫 번째 기록을 남겨볼까요?'}
+              {emotionsLoading
+                ? '기록을 불러오는 중...'
+                : '아직 기록이 없어요. 첫 번째 기록을 남겨볼까요?'}
             </div>
           )}
           <div className="grid2" style={{ marginTop: 10 }}>
-            <button className="btn" onClick={() => setMExport(false)}>닫기</button>
+            <button className="btn" onClick={() => setMExport(false)}>
+              닫기
+            </button>
           </div>
         </Modal>
       )}
@@ -1134,11 +1278,17 @@ export default function MyPage() {
                             </span>
                           ))
                         ) : (
-                          <span className="lock-pattern-placeholder">아직 선택된 패턴이 없어요.</span>
+                          <span className="lock-pattern-placeholder">
+                            아직 선택된 패턴이 없어요.
+                          </span>
                         )}
                       </div>
                       {patternError && <div className="lock-error">{patternError}</div>}
-                      <button type="button" className="lock-pattern-reset" onClick={resetPatternDraft}>
+                      <button
+                        type="button"
+                        className="lock-pattern-reset"
+                        onClick={resetPatternDraft}
+                      >
                         패턴 다시 그리기
                       </button>
                       <p className="lock-helper">최소 4개의 점을 순서대로 연결해 주세요.</p>
@@ -1149,7 +1299,10 @@ export default function MyPage() {
                     <div className="lock-pin-panel">
                       <div className="lock-pin-dots">
                         {[0, 1, 2, 3].map((i) => (
-                          <div key={i} className={`lock-pin-dot ${i < pinDraft.length ? 'filled' : ''}`} />
+                          <div
+                            key={i}
+                            className={`lock-pin-dot ${i < pinDraft.length ? 'filled' : ''}`}
+                          />
                         ))}
                       </div>
                       <input
@@ -1177,7 +1330,11 @@ export default function MyPage() {
             </div>
 
             <div className="lock-modal-footer">
-              <button type="button" className="lock-btn lock-btn-secondary" onClick={() => setMLock(false)}>
+              <button
+                type="button"
+                className="lock-btn lock-btn-secondary"
+                onClick={() => setMLock(false)}
+              >
                 닫기
               </button>
               <button
@@ -1200,35 +1357,61 @@ export default function MyPage() {
           <p className="hint">서비스 사용 중 궁금한 점이나 제안하고 싶은 점을 남겨주세요.</p>
           <div className="row">
             <div>이메일</div>
-            <div><input className="input" value={qEmail} onChange={(e) => setQEmail(e.target.value)} placeholder="선택 (예: hello@maeumssi.app)" /></div>
+            <div>
+              <input
+                className="input"
+                value={qEmail}
+                onChange={(e) => setQEmail(e.target.value)}
+                placeholder="선택 (예: hello@maeumssi.app)"
+              />
+            </div>
           </div>
           <div className="row">
             <div>제목</div>
-            <div><input className="input" value={qSubj} onChange={(e) => setQSubj(e.target.value)} placeholder="제목" /></div>
+            <div>
+              <input
+                className="input"
+                value={qSubj}
+                onChange={(e) => setQSubj(e.target.value)}
+                placeholder="제목"
+              />
+            </div>
           </div>
           <div className="row">
             <div>내용</div>
-            <div><textarea className="input" value={qBody} onChange={(e) => setQBody(e.target.value)} rows={5} placeholder="문의 내용을 적어주세요" /></div>
+            <div>
+              <textarea
+                className="input"
+                value={qBody}
+                onChange={(e) => setQBody(e.target.value)}
+                rows={5}
+                placeholder="문의 내용을 적어주세요"
+              />
+            </div>
           </div>
           <div className="grid2" style={{ marginTop: 10 }}>
-            <button className="btn" onClick={() => setMSupport(false)}>닫기</button>
-            <button className="btn primary" onClick={sendSupport}>보내기</button>
+            <button className="btn" onClick={() => setMSupport(false)}>
+              닫기
+            </button>
+            <button className="btn primary" onClick={sendSupport}>
+              보내기
+            </button>
           </div>
         </Modal>
       )}
-
     </Layout>
   );
 }
 
 function Modal({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
   return (
-    <div className="modal show" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="sheet">
-        {children}
-      </div>
+    <div
+      className="modal show"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="sheet">{children}</div>
     </div>
   );
 }
-
-

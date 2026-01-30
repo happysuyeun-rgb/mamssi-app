@@ -1,5 +1,10 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import { notify, type ToastNotification, type BannerNotification, type ModalNotification } from '@lib/notify';
+import {
+  notify,
+  type ToastNotification,
+  type BannerNotification,
+  type ModalNotification,
+} from '@lib/notify';
 import Toast from '@components/notify/Toast';
 import Banner from '@components/notify/Banner';
 import Modal from '@components/notify/Modal';
@@ -71,16 +76,3 @@ export function NotifyProvider({ children }: { children: ReactNode }) {
     </NotifyContext.Provider>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

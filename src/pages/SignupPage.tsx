@@ -55,7 +55,9 @@ export default function SignupPage() {
               checked={agreeRequired}
               onChange={(e) => setAgreeRequired(e.target.checked)}
             />
-            <label htmlFor="policy-required">(필수) 서비스 이용약관 및 개인정보 처리방침에 동의합니다.</label>
+            <label htmlFor="policy-required">
+              (필수) 서비스 이용약관 및 개인정보 처리방침에 동의합니다.
+            </label>
           </div>
           <div className="policy-item">
             <input
@@ -81,4 +83,3 @@ export default function SignupPage() {
     </div>
   );
 }
-

@@ -14,7 +14,7 @@ export default function NotificationSheet({
   notifications,
   onClose,
   onMarkAllRead,
-  onMarkRead
+  onMarkRead,
 }: Props) {
   if (!isOpen) return null;
 
@@ -34,9 +34,7 @@ export default function NotificationSheet({
         </header>
 
         <div className="notif-sheet-content">
-          {notifications.length === 0 && (
-            <div className="notif-empty">새로운 알림이 없습니다.</div>
-          )}
+          {notifications.length === 0 && <div className="notif-empty">새로운 알림이 없습니다.</div>}
           {Object.entries(grouped).map(([dateLabel, items]) => (
             <div key={dateLabel} className="notif-group">
               <div className="notif-group-title">{dateLabel}</div>
@@ -111,11 +109,3 @@ function formatTime(dateIso: string) {
   const date = new Date(dateIso);
   return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
 }
-
-
-
-
-
-
-
-

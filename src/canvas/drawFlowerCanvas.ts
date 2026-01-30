@@ -42,5 +42,3 @@ export function drawFlowerCanvas(canvas: HTMLCanvasElement, data: FlowerData) {
   g.font = '700 16px system-ui';
   g.fillText('마음씨 · 감정꽃', canvas.width - 182, canvas.height - 32);
 }
-
-

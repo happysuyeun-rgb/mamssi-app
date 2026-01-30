@@ -22,8 +22,9 @@ export interface AppErrorDetails {
   hint?: string;
   cause?: Error | unknown;
   statusCode?: number;
-  userId?: string;
-  resourceId?: string;
+  userId?: string | null;
+  resourceId?: string | null;
+  operation?: string;
 }
 
 /**
@@ -38,6 +39,7 @@ export class AppError extends Error {
   public readonly statusCode?: number;
   public readonly userId?: string;
   public readonly resourceId?: string;
+  public readonly operation?: string;
 
   constructor(params: AppErrorDetails) {
     super(params.message);
@@ -47,8 +49,9 @@ export class AppError extends Error {
     this.hint = params.hint;
     this.cause = params.cause;
     this.statusCode = params.statusCode;
-    this.userId = params.userId;
-    this.resourceId = params.resourceId;
+    this.userId = params.userId ?? undefined;
+    this.resourceId = params.resourceId ?? undefined;
+    this.operation = params.operation;
 
     // Error stack trace 유지
     if (params.cause instanceof Error) {
@@ -60,8 +63,14 @@ export class AppError extends Error {
    * Supabase 에러를 AppError로 변환
    */
   static fromSupabaseError(
-    error: { code?: string; message?: string; details?: string; hint?: string; statusCode?: number },
-    context?: { userId?: string; resourceId?: string; operation?: string }
+    error: {
+      code?: string;
+      message?: string;
+      details?: string;
+      hint?: string;
+      statusCode?: number;
+    },
+    context?: { userId?: string | null; resourceId?: string | null; operation?: string }
   ): AppError {
     const code = error.code || 'UNKNOWN_ERROR';
     const statusCode = error.statusCode;
@@ -88,22 +97,25 @@ export class AppError extends Error {
       details: error.details,
       hint: error.hint,
       statusCode,
-      userId: context?.userId,
-      resourceId: context?.resourceId
+      userId: context?.userId ?? undefined,
+      resourceId: context?.resourceId ?? undefined,
     });
   }
 
   /**
    * 네트워크 에러를 AppError로 변환
    */
-  static fromNetworkError(error: unknown, context?: { userId?: string; operation?: string }): AppError {
+  static fromNetworkError(
+    error: unknown,
+    context?: { userId?: string | null; operation?: string }
+  ): AppError {
     if (error instanceof TypeError && error.message.includes('fetch')) {
       return new AppError({
         code: 'NETWORK_ERROR',
         message: '네트워크 연결을 확인해주세요.',
         details: error.message,
         cause: error,
-        userId: context?.userId
+        userId: context?.userId ?? undefined,
       });
     }
 
@@ -112,7 +124,7 @@ export class AppError extends Error {
       message: '네트워크 오류가 발생했어요.',
       details: error instanceof Error ? error.message : String(error),
       cause: error,
-      userId: context?.userId
+      userId: context?.userId ?? undefined,
     });
   }
 
@@ -139,7 +151,7 @@ export class AppError extends Error {
       message,
       statusCode: error.statusCode,
       userId: context?.userId,
-      resourceId: context?.filePath
+      resourceId: context?.filePath,
     });
   }
 }
@@ -148,9 +160,7 @@ export class AppError extends Error {
  * Service Result Type
  * 모든 서비스 함수는 { data, error } 형태로 반환
  */
-export type ServiceResult<T> =
-  | { data: T; error: null }
-  | { data: null; error: AppError };
+export type ServiceResult<T> = { data: T; error: null } | { data: null; error: AppError };
 
 /**
  * Service Result Helper Functions
@@ -184,7 +194,7 @@ export async function toServiceResult<T>(
           code: 'UNKNOWN_ERROR',
           message: error.message || '알 수 없는 오류가 발생했어요.',
           cause: error,
-          userId: context?.userId
+          userId: context?.userId,
         })
       );
     }
@@ -193,7 +203,7 @@ export async function toServiceResult<T>(
         code: 'UNKNOWN_ERROR',
         message: '알 수 없는 오류가 발생했어요.',
         cause: error,
-        userId: context?.userId
+        userId: context?.userId,
       })
     );
   }

@@ -3,7 +3,7 @@ import {
   createNotification,
   fetchNotifications,
   markAllNotificationsRead,
-  markNotificationRead
+  markNotificationRead,
 } from '@services/notifications';
 import type { NotificationRecord, NotificationType } from '@domain/notification';
 
@@ -66,14 +66,6 @@ export function useNotificationCenter(userId: string) {
     markAll,
     markRead,
     refresh: load,
-    pushNotification
+    pushNotification,
   };
 }
-
-
-
-
-
-
-
-

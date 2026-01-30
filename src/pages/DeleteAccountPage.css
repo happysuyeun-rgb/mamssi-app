@@ -100,7 +100,9 @@
   border: 1px solid var(--ms-line, #dde8e3);
   background: #fff;
   cursor: pointer;
-  transition: background 0.2s, border-color 0.2s;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
   font-size: 14px;
   color: var(--ms-text-main, #16352f);
 }
@@ -110,7 +112,7 @@
   border-color: var(--ms-primary, #2f6f63);
 }
 
-.delete-account-reason-item input[type="radio"] {
+.delete-account-reason-item input[type='radio'] {
   width: 18px;
   height: 18px;
   cursor: pointer;
@@ -118,7 +120,7 @@
   flex-shrink: 0;
 }
 
-.delete-account-reason-item input[type="radio"]:disabled {
+.delete-account-reason-item input[type='radio']:disabled {
   cursor: not-allowed;
 }
 
@@ -168,7 +170,7 @@
   line-height: 1.5;
 }
 
-.delete-account-confirm-item input[type="checkbox"] {
+.delete-account-confirm-item input[type='checkbox'] {
   margin-top: 2px;
   width: 18px;
   height: 18px;
@@ -177,7 +179,7 @@
   flex-shrink: 0;
 }
 
-.delete-account-confirm-item input[type="checkbox"]:disabled {
+.delete-account-confirm-item input[type='checkbox']:disabled {
   cursor: not-allowed;
 }
 
@@ -198,7 +200,9 @@
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
-  transition: opacity 0.2s, transform 0.1s;
+  transition:
+    opacity 0.2s,
+    transform 0.1s;
   border: none;
 }
 
@@ -242,15 +246,3 @@
     font-size: 56px;
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-

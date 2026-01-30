@@ -20,20 +20,20 @@ export default function Banner({ notification, onDismiss }: BannerProps) {
       bg: 'linear-gradient(180deg, #F0FFFA, #E5FAF4)',
       border: '1px solid #CDEAE1',
       text: '#144E43',
-      icon: 'ℹ️'
+      icon: 'ℹ️',
     },
     warn: {
       bg: 'linear-gradient(180deg, #FFFBEB, #FEF3C7)',
       border: '1px solid #FCD34D',
       text: '#92400E',
-      icon: '⚠️'
+      icon: '⚠️',
     },
     critical: {
       bg: 'linear-gradient(180deg, #FEE2E2, #FECACA)',
       border: '1px solid #F87171',
       text: '#991B1B',
-      icon: '🚨'
-    }
+      icon: '🚨',
+    },
   };
 
   const styles = levelStyles[notification.level];
@@ -60,7 +60,7 @@ export default function Banner({ notification, onDismiss }: BannerProps) {
         fontWeight: 500,
         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         opacity: isVisible ? 1 : 0,
-        transform: isVisible ? 'translateY(0)' : 'translateY(-100%)'
+        transform: isVisible ? 'translateY(0)' : 'translateY(-100%)',
       }}
     >
       <span style={{ fontSize: 16, lineHeight: 1 }} aria-hidden="true">
@@ -84,7 +84,7 @@ export default function Banner({ notification, onDismiss }: BannerProps) {
             alignItems: 'center',
             justifyContent: 'center',
             borderRadius: 8,
-            transition: 'background 0.2s'
+            transition: 'background 0.2s',
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.background = 'rgba(0,0,0,0.1)';
@@ -99,16 +99,3 @@ export default function Banner({ notification, onDismiss }: BannerProps) {
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

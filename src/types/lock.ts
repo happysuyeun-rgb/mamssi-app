@@ -24,6 +24,5 @@ export const defaultLockSettings: LockSettings = {
   mode: 'pattern',
   pattern: [],
   pin: '',
-  biometricEnabled: false
+  biometricEnabled: false,
 };
-

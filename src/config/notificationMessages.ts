@@ -1,294 +1,290 @@
-import type { NotificationCategory, NotificationType } from '@domain/notification';
-
-export type NotificationMessageTemplate = {
-  icon: string;
-  title: string;
-  message: string;
-  category: NotificationCategory;
-};
+import type {
+  NotificationCategory,
+  NotificationType,
+  NotificationMessageTemplate,
+} from '@domain/notification';
 
 export const NOTIFICATION_MESSAGES: Record<NotificationType, NotificationMessageTemplate> = {
   signup_welcome: {
     icon: '🤝',
     title: '가입을 환영해요',
     message: '마음씨에 오신 걸 환영해요! 첫 씨앗을 심어보세요.',
-    category: 'onboarding'
+    category: 'onboarding',
   },
   seed_received: {
     icon: '🌱',
     title: '씨앗을 받았어요',
     message: '새로운 감정꽃 여정이 시작됐어요.',
-    category: 'onboarding'
+    category: 'onboarding',
   },
   routine_streak_active: {
     icon: '🔄',
     title: '연속 기록 중이에요',
     message: '하루씩 쌓여가고 있어요. 기대돼요!',
-    category: 'routine'
+    category: 'routine',
   },
   routine_streak_broken: {
     icon: '💭',
     title: '기록이 끊어졌어요',
     message: '기록이 하루 쉬어졌어요. 조금씩 다시 시작해볼까요?',
-    category: 'routine'
+    category: 'routine',
   },
   record_saved: {
     icon: '📝',
     title: '감정 기록을 저장했어요',
     message: '오늘의 감정이 기록이 조용히 정원에 저장되었어요.',
-    category: 'record'
+    category: 'record',
   },
   record_with_image: {
     icon: '📷',
     title: '사진과 함께 기록했어요',
     message: '감정과 함께 따뜻한 순간이 저장됐어요.',
-    category: 'record'
+    category: 'record',
   },
   first_record: {
     icon: '✨',
     title: '첫 기록을 남겼어요',
     message: '첫 기록이 저장되었어요. 감정 정원에 씨앗이 자랐어요.',
-    category: 'record'
+    category: 'record',
   },
   record_updated: {
     icon: '🖊️',
     title: '기록이 수정됐어요',
     message: '기록이 새로운 마음에 맞게 업데이트되었어요.',
-    category: 'record'
+    category: 'record',
   },
   record_deleted: {
     icon: '🗑️',
     title: '기록을 삭제했어요',
     message: '기록 한 장을 조용히 흘려보냈어요.',
-    category: 'record'
+    category: 'record',
   },
   record_visibility_changed: {
     icon: '🌐',
     title: '공개 설정이 바뀌었어요',
     message: '기록의 공개 범위가 변경됐어요.',
-    category: 'record'
+    category: 'record',
   },
   report_received: {
     icon: '🚨',
     title: '신고 접수 안내',
     message: '신고 접수가 되었어요. 완전하게 살펴볼게요.',
-    category: 'forest'
+    category: 'forest',
   },
   like_received: {
     icon: '💧',
     title: '새로운 공감',
     message: '누군가가 내 감정에 공감해줬어요.',
-    category: 'forest'
+    category: 'forest',
   },
   like_three: {
     icon: '💧',
     title: '3개의 공감이 도착했어요',
     message: '따뜻한 마음들이 모이고 있어요.',
-    category: 'forest'
+    category: 'forest',
   },
   like_five: {
     icon: '💧',
     title: '5개의 공감이 모였어요',
     message: '당신의 감정이 많은 위로가 되었어요.',
-    category: 'forest'
+    category: 'forest',
   },
   likes_total: {
     icon: '💧',
     title: '공감이 쌓이고 있어요',
     message: '지금까지 총 N개의 공감을 받았어요.',
-    category: 'forest'
+    category: 'forest',
   },
   post_selected_best: {
     icon: '🏅',
     title: '인기 글로 선정됐어요',
     message: '많은 공감이 모이면서 BEST 글이 되었어요.',
-    category: 'forest'
+    category: 'forest',
   },
   report_resolved: {
     icon: '🛡️',
     title: '안전센터 처리 완료',
     message: '신고 내용이 처리되었어요.',
-    category: 'forest'
+    category: 'forest',
   },
   report_rejected: {
     icon: '🛡️',
     title: '신고가 반려되었어요',
     message: '정책 기준에 따라 해당 내용은 유지돼요.',
-    category: 'forest'
+    category: 'forest',
   },
   growth_level_1: {
     icon: '🌱',
     title: '1단계 새싹',
     message: '첫 감정의 씨앗이 자랐어요.',
-    category: 'growth'
+    category: 'growth',
   },
   growth_level_2: {
     icon: '🌿',
     title: '2단계 줄기',
     message: '축하합니다, 줄기가 자라났어요.',
-    category: 'growth'
+    category: 'growth',
   },
   growth_level_3: {
     icon: '🌿',
     title: '3단계 꽃봉오리',
     message: '감정이 피어나기 직전이에요. 봉오리가 맺혔어요.',
-    category: 'growth'
+    category: 'growth',
   },
   growth_level_4: {
     icon: '🌸',
     title: '4단계 반쯤 떨린 꽃봉오리',
     message: '이제 곧 감정의 꽃이 피어납니다.',
-    category: 'growth'
+    category: 'growth',
   },
   growth_level_5: {
     icon: '🌸',
     title: '5단계 개화',
     message: '축하합니다! 감정의 꽃이 환짝 피었어요.',
-    category: 'growth'
+    category: 'growth',
   },
   bloom_caption_saved: {
     icon: '✏️',
     title: '꽃 한 줄 기록 완료',
     message: '감정꽃 앨범에 문구가 저장됐어요.',
-    category: 'flower'
+    category: 'flower',
   },
   bloom_exported: {
     icon: '📤',
     title: '꽃을 내보냈어요',
     message: '감정꽃을 이미지로 저장했어요.',
-    category: 'flower'
+    category: 'flower',
   },
   routine_7days: {
     icon: '🔄',
     title: '루틴 달성 리마인드',
     message: '7일 연속 기록 달성! 감정의 꽃이 피고 있어요.',
-    category: 'routine'
+    category: 'routine',
   },
   routine_30days: {
     icon: '🔄',
     title: '30일 연속 기록 달성!',
     message: '멋진 루틴이에요. 마음을 잘 돌보고 있어요.',
-    category: 'routine'
+    category: 'routine',
   },
   backup_required: {
     icon: '💾',
     title: '백업이 필요해요',
     message: '데이터 백업을 추천드려요.',
-    category: 'system'
+    category: 'system',
   },
   backup_completed: {
     icon: '💾',
     title: '백업이 완료됐어요',
     message: '데이터가 안전하게 저장됐어요.',
-    category: 'system'
+    category: 'system',
   },
   logged_out: {
     icon: '🚪',
     title: '로그아웃됐어요',
     message: '다시 로그인해 주세요.',
-    category: 'account'
+    category: 'account',
   },
   profile_photo_updated: {
     icon: '🖼️',
     title: '프로필이 바뀌었어요',
     message: '새로운 프로필 이미지가 저장됐어요.',
-    category: 'profile'
+    category: 'profile',
   },
   nickname_updated: {
     icon: '📝',
     title: '닉네임이 바뀌었어요',
     message: '내 정보가 업데이트됐어요.',
-    category: 'profile'
+    category: 'profile',
   },
   mbti_updated: {
     icon: '🔤',
     title: 'MBTI가 변경됐어요',
     message: '내 성향 정보가 업데이트됐어요.',
-    category: 'profile'
+    category: 'profile',
   },
   pin_enabled: {
     icon: '🔐',
     title: 'PIN 잠금이 설정됐어요',
     message: '더 안전한 마음씨가 되었습니다.',
-    category: 'profile'
+    category: 'profile',
   },
   pin_disabled: {
     icon: '🔓',
     title: 'PIN 잠금이 해제됐어요',
     message: '기기 잠금이 해제됐어요.',
-    category: 'profile'
+    category: 'profile',
   },
   pin_reset: {
     icon: '🔒',
     title: 'PIN이 재설정됐어요',
     message: '새로운 잠금 번호가 설정됐어요.',
-    category: 'profile'
+    category: 'profile',
   },
   flower_saved: {
     icon: '🌸',
     title: '개화 기록이 저장됐어요',
     message: '감정꽃 앨범에서 확인할 수 있어요.',
-    category: 'flower'
+    category: 'flower',
   },
   flower_deleted: {
     icon: '🗑️',
     title: '앨범 기록 삭제됨',
     message: '해당 개화 기록이 삭제되었어요.',
-    category: 'flower'
+    category: 'flower',
   },
   support_request_created: {
     icon: '📮',
     title: '문의가 등록됐어요',
     message: '최대한 빠르게 답변드릴게요.',
-    category: 'support'
+    category: 'support',
   },
   support_request_answered: {
     icon: '📮',
     title: '답변이 도착했어요',
     message: '문의하신 내용이 처리되었어요.',
-    category: 'support'
+    category: 'support',
   },
   account_deleted: {
     icon: '❗',
     title: '회원탈퇴가 진행됐어요',
     message: '모든 데이터가 삭제되었어요.',
-    category: 'account'
+    category: 'account',
   },
   account_rejoined: {
     icon: '🔄',
     title: '재가입됐어요',
     message: '다시 돌아와줘서 고마워요.',
-    category: 'account'
+    category: 'account',
   },
   ops_notice: {
     icon: '📢',
     title: '새로운 공지사항',
     message: '새로운 업데이트 내용을 확인해 주세요.',
-    category: 'operations'
+    category: 'operations',
   },
   event_started: {
     icon: '🎉',
     title: '이벤트가 시작됐어요',
     message: '참여하고 보상을 받아보세요.',
-    category: 'operations'
+    category: 'operations',
   },
   event_awarded: {
     icon: '🎉',
     title: '이벤트에 당첨됐어요',
     message: '축하해요! 선물이 도착했어요.',
-    category: 'operations'
+    category: 'operations',
   },
   maintenance_notice: {
     icon: '⚠️',
     title: '시스템 점검 안내',
     message: '점검 중에는 일부 기능이 제한될 수 있어요.',
-    category: 'system'
+    category: 'system',
   },
   app_update_required: {
     icon: '⬆️',
     title: '업데이트가 필요해요',
     message: '최신 버전으로 업데이트해주세요.',
-    category: 'system'
-  }
+    category: 'system',
+  },
 };
-

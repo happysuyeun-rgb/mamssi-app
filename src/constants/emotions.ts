@@ -16,7 +16,7 @@ export const EMOTION_OPTIONS: EmotionOption[] = [
   { code: 'EXCITED', label: '설렘', emoji: '🤩' },
   { code: 'GROWTH', label: '성장', emoji: '🌱' },
   { code: 'PROUD', label: '뿌듯', emoji: '🥰' },
-  { code: 'COMPLEX', label: '복잡', emoji: '🌀' }
+  { code: 'COMPLEX', label: '복잡', emoji: '🌀' },
 ];
 
 export const EMOTION_OPTION_MAP: Record<EmotionCode, EmotionOption> = EMOTION_OPTIONS.reduce(
@@ -30,17 +30,3 @@ export const EMOTION_OPTION_MAP: Record<EmotionCode, EmotionOption> = EMOTION_OP
 export function findEmotionOption(code: EmotionCode | string) {
   return EMOTION_OPTIONS.find((opt) => opt.code === code) ?? null;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-

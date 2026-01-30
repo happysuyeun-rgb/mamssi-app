@@ -73,7 +73,7 @@ export default function Modal({ notification, onClose }: ModalProps) {
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 2000,
-        padding: 16
+        padding: 16,
       }}
       onClick={(e) => {
         if (e.target === e.currentTarget) {
@@ -95,7 +95,7 @@ export default function Modal({ notification, onClose }: ModalProps) {
           maxWidth: 400,
           width: '100%',
           boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)',
-          animation: 'modalFadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+          animation: 'modalFadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -106,7 +106,7 @@ export default function Modal({ notification, onClose }: ModalProps) {
             fontWeight: 700,
             color: 'var(--ink, #0F172A)',
             marginBottom: 12,
-            letterSpacing: '-0.02em'
+            letterSpacing: '-0.02em',
           }}
         >
           {notification.title}
@@ -117,7 +117,7 @@ export default function Modal({ notification, onClose }: ModalProps) {
             fontSize: 14,
             color: 'var(--ms-ink-soft)',
             lineHeight: 1.6,
-            marginBottom: 24
+            marginBottom: 24,
           }}
         >
           {notification.message}
@@ -126,7 +126,7 @@ export default function Modal({ notification, onClose }: ModalProps) {
           style={{
             display: 'flex',
             gap: 10,
-            justifyContent: 'flex-end'
+            justifyContent: 'flex-end',
           }}
         >
           {notification.cancelLabel && (
@@ -143,7 +143,7 @@ export default function Modal({ notification, onClose }: ModalProps) {
                 fontSize: 14,
                 fontWeight: 600,
                 cursor: 'pointer',
-                transition: 'all 0.2s'
+                transition: 'all 0.2s',
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.background = 'var(--ms-bg-soft)';
@@ -169,7 +169,7 @@ export default function Modal({ notification, onClose }: ModalProps) {
               fontWeight: 600,
               cursor: 'pointer',
               transition: 'all 0.2s',
-              boxShadow: 'var(--ms-shadow-soft)'
+              boxShadow: 'var(--ms-shadow-soft)',
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.background = 'var(--mint-600, #24B89D)';
@@ -185,4 +185,3 @@ export default function Modal({ notification, onClose }: ModalProps) {
     </div>
   );
 }
-

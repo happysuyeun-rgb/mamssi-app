@@ -52,9 +52,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   });
 
   // public.users 테이블에서 userProfile 조회
-  const fetchUserProfile = async (userId: string, skipOnboarding?: boolean): Promise<UserProfile | null> => {
+  const fetchUserProfile = async (
+    userId: string,
+    skipOnboarding?: boolean
+  ): Promise<UserProfile | null> => {
     const isOnboardingRoute = location.pathname.startsWith('/onboarding');
-    console.log('[AuthProvider] fetchUserProfile 시작', { userId, skipOnboarding, isOnboardingRoute, pathname: location.pathname });
+    console.log('[AuthProvider] fetchUserProfile 시작', {
+      userId,
+      skipOnboarding,
+      isOnboardingRoute,
+      pathname: location.pathname,
+    });
     diag.log('AuthProvider: fetchUserProfile 시작', { userId, skipOnboarding, isOnboardingRoute });
 
     // 온보딩 라우트에서도 userProfile 조회는 수행 (Guard에서 온보딩 완료 여부 확인 필요)
@@ -63,9 +71,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       // 타임아웃 설정 (온보딩 라우트는 3초, 그 외는 10초)
       const timeoutMs = isOnboardingRoute ? 3000 : 10000;
-      
+
       const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error(`fetchUserProfile 타임아웃 (${timeoutMs}ms)`)), timeoutMs);
+        setTimeout(
+          () => reject(new Error(`fetchUserProfile 타임아웃 (${timeoutMs}ms)`)),
+          timeoutMs
+        );
       });
 
       const queryPromise = supabase
@@ -82,22 +93,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           message: error.message,
           details: error.details,
           hint: error.hint,
-          userId
+          userId,
         });
-        
+
         if (error.code === 'PGRST116') {
           // row not found - 신규 사용자
           console.log('[AuthProvider] users 테이블에 row 없음 (신규 사용자)');
           diag.log('AuthProvider: users 테이블에 row 없음 (신규 사용자)');
           return null;
         }
-        
+
         // RLS 정책 에러 체크
-        if (error.code === '42501' || error.message?.includes('permission denied') || error.message?.includes('RLS')) {
+        if (
+          error.code === '42501' ||
+          error.message?.includes('permission denied') ||
+          error.message?.includes('RLS')
+        ) {
           console.error('[AuthProvider] RLS 정책 에러 - users 테이블 조회 권한 없음:', error);
           diag.err('AuthProvider: RLS 정책 에러 - users 테이블 조회 권한 없음:', error);
         }
-        
+
         diag.err('AuthProvider: userProfile 조회 실패:', error);
         return null;
       }
@@ -110,7 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const profile = {
         onboarding_completed: data.onboarding_completed ?? false,
-        is_deleted: data.is_deleted ?? false
+        is_deleted: data.is_deleted ?? false,
       };
 
       console.log('[AuthProvider] fetchUserProfile 성공:', profile);
@@ -120,7 +135,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error('[AuthProvider] fetchUserProfile 예외:', {
         error: err,
         userId,
-        errorMessage: err instanceof Error ? err.message : String(err)
+        errorMessage: err instanceof Error ? err.message : String(err),
       });
       diag.err('AuthProvider: userProfile 조회 중 오류:', err);
       return null;
@@ -130,16 +145,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // userProfile 갱신 함수
   const refreshUserProfile = async () => {
     if (user?.id) {
-      console.log('[AuthProvider] refreshUserProfile 시작', { userId: user.id, pathname: location.pathname });
-      
+      console.log('[AuthProvider] refreshUserProfile 시작', {
+        userId: user.id,
+        pathname: location.pathname,
+      });
+
       // 온보딩 라우트에서도 userProfile 조회 수행 (Guard에서 온보딩 완료 여부 확인 필요)
       const profile = await fetchUserProfile(user.id, false);
-      console.log('[AuthProvider] refreshUserProfile 완료', { 
+      console.log('[AuthProvider] refreshUserProfile 완료', {
         profile,
-        onboarding_completed: profile?.onboarding_completed 
+        onboarding_completed: profile?.onboarding_completed,
       });
       setUserProfile(profile);
-      
+
       // profile이 조회되면 로컬 스토리지와 동기화
       if (profile) {
         if (profile.onboarding_completed === true) {
@@ -153,7 +171,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // profile이 null이면 로컬 스토리지 확인 (fallback)
         const localOnboarding = safeStorage.getItem(ONBOARDING_COMPLETE_KEY) === 'true';
         if (localOnboarding) {
-          console.log('[AuthProvider] refreshUserProfile: profile이 null이지만 로컬 스토리지에 onboarding_completed=true 있음');
+          console.log(
+            '[AuthProvider] refreshUserProfile: profile이 null이지만 로컬 스토리지에 onboarding_completed=true 있음'
+          );
         }
       }
     }
@@ -169,9 +189,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     console.log('[AuthProvider] ENV 검증', {
       hasUrl: !!supabaseUrl,
       hasKey: !!supabaseAnonKey,
-      url: supabaseUrl ? supabaseUrl.substring(0, 30) + '...' : 'undefined'
+      url: supabaseUrl ? supabaseUrl.substring(0, 30) + '...' : 'undefined',
     });
-    
+
     if (!supabaseUrl || !supabaseAnonKey) {
       diag.err('ENV missing:', { hasUrl: !!supabaseUrl, hasKey: !!supabaseAnonKey });
       // ENV가 없어도 앱은 계속 진행 (가드가 redirect 하지 않도록)
@@ -195,27 +215,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // 초기 세션 확인
     console.log('[AuthProvider] init start', { pathname: location.pathname });
     diag.log('AuthProvider: getSession 호출 전', { loading: true });
-    
-    supabase.auth.getSession()
+
+    supabase.auth
+      .getSession()
       .then(async ({ data: { session }, error: sessionError }) => {
         clearTimeout(timeoutId); // 성공 시 타임아웃 해제
-        
+
         console.log('[AuthProvider] getSession 완료', {
           hasSession: !!session,
           userId: session?.user?.id,
           error: sessionError,
-          pathname: location.pathname
+          pathname: location.pathname,
         });
-        diag.log('AuthProvider: getSession 완료', { hasSession: !!session, userId: session?.user?.id });
-        
+        diag.log('AuthProvider: getSession 완료', {
+          hasSession: !!session,
+          userId: session?.user?.id,
+        });
+
         if (sessionError) {
           console.error('[AuthProvider] getSession 에러:', sessionError);
           diag.err('AuthProvider: getSession 에러:', sessionError);
         }
-        
+
         setSession(session);
         setUser(session?.user ?? null);
-        
+
         // 세션이 있으면 userProfile 조회
         // 단, 온보딩 라우트에서는 skip하여 타임아웃 방지
         // 하지만 초기 로드 시에는 온보딩 라우트가 아니면 항상 조회
@@ -223,12 +247,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (session?.user?.id) {
           if (!isOnboardingRoute) {
             // 온보딩 라우트가 아니면 userProfile 조회 (온보딩 완료 여부 확인)
-            console.log('[AuthProvider] getUser 시작 (온보딩 라우트 아님)', { userId: session.user.id, pathname: location.pathname });
+            console.log('[AuthProvider] getUser 시작 (온보딩 라우트 아님)', {
+              userId: session.user.id,
+              pathname: location.pathname,
+            });
             try {
               const profile = await fetchUserProfile(session.user.id, false);
               console.log('[AuthProvider] getUser 완료', { profile });
               setUserProfile(profile);
-              
+
               // profile이 조회되면 로컬 스토리지와 동기화
               if (profile) {
                 if (profile.onboarding_completed) {
@@ -236,13 +263,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                   console.log('[AuthProvider] 로컬 스토리지 onboarding_completed 동기화: true');
                 } else {
                   safeStorage.removeItem(ONBOARDING_COMPLETE_KEY);
-                  console.log('[AuthProvider] 로컬 스토리지 onboarding_completed 동기화: false (제거)');
+                  console.log(
+                    '[AuthProvider] 로컬 스토리지 onboarding_completed 동기화: false (제거)'
+                  );
                 }
               } else {
                 // profile이 null이면 로컬 스토리지 확인 (fallback)
                 const localOnboarding = safeStorage.getItem(ONBOARDING_COMPLETE_KEY) === 'true';
                 if (localOnboarding) {
-                  console.log('[AuthProvider] profile이 null이지만 로컬 스토리지에 onboarding_completed=true 있음');
+                  console.log(
+                    '[AuthProvider] profile이 null이지만 로컬 스토리지에 onboarding_completed=true 있음'
+                  );
                 }
               }
             } catch (profileErr) {
@@ -252,14 +283,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
           } else {
             // 온보딩 라우트에서는 getUser skip
-            console.log('[AuthProvider] 온보딩 라우트 감지, getUser skip', { pathname: location.pathname });
+            console.log('[AuthProvider] 온보딩 라우트 감지, getUser skip', {
+              pathname: location.pathname,
+            });
             // 온보딩 중에는 userProfile을 null로 유지하여 진행 허용
             setUserProfile(null);
           }
         } else {
           setUserProfile(null);
         }
-        
+
         console.log('[AuthProvider] setLoading(false) 호출 - getSession 경로');
         setSessionInitialized(true);
         setLoading(false);
@@ -268,7 +301,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
       .catch((err) => {
         clearTimeout(timeoutId); // 에러 시에도 타임아웃 해제
-        
+
         console.error('[AuthProvider] getSession catch:', err);
         diag.err('AuthProvider: getSession 실패:', err);
         // 에러가 나도 loading을 false로 설정하여 앱이 멈추지 않도록
@@ -282,17 +315,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // 인증 상태 변경 리스너
     console.log('[AuthProvider] onAuthStateChange 리스너 등록 시작');
     diag.log('AuthProvider: onAuthStateChange 리스너 등록 전');
-    
+
     const {
-      data: { subscription }
+      data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('[AuthProvider] onAuthStateChange 진입', {
         event,
         hasSession: !!session,
-        userId: session?.user?.id
+        userId: session?.user?.id,
       });
-      diag.log('AuthProvider: onAuthStateChange 진입', { event, hasSession: !!session, userId: session?.user?.id });
-      
+      diag.log('AuthProvider: onAuthStateChange 진입', {
+        event,
+        hasSession: !!session,
+        userId: session?.user?.id,
+      });
+
       try {
         setSession(session);
         setUser(session?.user ?? null);
@@ -301,20 +338,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // 단, 온보딩 라우트에서는 skip하여 타임아웃 방지
         const isOnboardingRoute = location.pathname.startsWith('/onboarding');
         if (session?.user?.id && !isOnboardingRoute) {
-          console.log('[AuthProvider] onAuthStateChange: getUser 시작', { userId: session.user.id });
+          console.log('[AuthProvider] onAuthStateChange: getUser 시작', {
+            userId: session.user.id,
+          });
           try {
             const profile = await fetchUserProfile(session.user.id, false);
             console.log('[AuthProvider] onAuthStateChange: getUser 완료', { profile });
             setUserProfile(profile);
-            
+
             // profile이 조회되면 로컬 스토리지와 동기화
             if (profile) {
               if (profile.onboarding_completed) {
                 safeStorage.setItem(ONBOARDING_COMPLETE_KEY, 'true');
-                console.log('[AuthProvider] onAuthStateChange: 로컬 스토리지 onboarding_completed 동기화: true');
+                console.log(
+                  '[AuthProvider] onAuthStateChange: 로컬 스토리지 onboarding_completed 동기화: true'
+                );
               } else {
                 safeStorage.removeItem(ONBOARDING_COMPLETE_KEY);
-                console.log('[AuthProvider] onAuthStateChange: 로컬 스토리지 onboarding_completed 동기화: false (제거)');
+                console.log(
+                  '[AuthProvider] onAuthStateChange: 로컬 스토리지 onboarding_completed 동기화: false (제거)'
+                );
               }
             }
           } catch (profileErr) {
@@ -362,7 +405,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUserProfile(null);
       }
     });
-    
+
     console.log('[AuthProvider] onAuthStateChange 리스너 등록 완료');
     diag.log('AuthProvider: onAuthStateChange 리스너 등록 완료');
 
@@ -376,8 +419,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`
-        }
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
       });
 
       if (error) throw error;
@@ -393,8 +436,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'apple',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`
-        }
+          redirectTo: `${window.location.origin}/auth/callback`,
+        },
       });
 
       if (error) throw error;
@@ -457,7 +500,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signInWithKakao,
         signOut,
         setGuestMode,
-        refreshUserProfile
+        refreshUserProfile,
       }}
     >
       {children}
@@ -472,4 +515,3 @@ export function useAuth() {
   }
   return context;
 }
-

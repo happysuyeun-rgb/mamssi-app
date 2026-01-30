@@ -7,7 +7,7 @@
 import { supabase } from '@lib/supabaseClient';
 import { AppError, type ServiceResult, success, failure } from '@lib/errors';
 import { logger } from '@lib/logger';
-import type { EmotionRow } from '@types/database';
+import type { EmotionRow } from '@domain/database';
 
 export type EmotionCreatePayload = {
   user_id: string;
@@ -59,9 +59,14 @@ export async function fetchEmotions(options: {
       logger.error('감정 기록 조회 실패', {
         userId,
         operation: 'fetchEmotions',
-        error: AppError.fromSupabaseError(error, { userId })
+        error: AppError.fromSupabaseError(error, { userId }),
       });
-      return failure(AppError.fromSupabaseError(error, { userId, operation: 'fetchEmotions' }));
+      return failure(
+        AppError.fromSupabaseError(error, {
+          userId: userId ?? undefined,
+          operation: 'fetchEmotions',
+        })
+      );
     }
 
     return success((data || []) as EmotionRow[]);
@@ -69,10 +74,10 @@ export async function fetchEmotions(options: {
     logger.error('감정 기록 조회 중 예외 발생', {
       userId,
       operation: 'fetchEmotions',
-      error
+      error,
     });
     return failure(
-      AppError.fromNetworkError(error, { userId, operation: 'fetchEmotions' })
+      AppError.fromNetworkError(error, { userId: userId ?? undefined, operation: 'fetchEmotions' })
     );
   }
 }
@@ -99,9 +104,15 @@ export async function fetchEmotionById(
         userId,
         operation: 'fetchEmotionById',
         resourceId: emotionId,
-        error: AppError.fromSupabaseError(error, { userId, resourceId: emotionId })
+        error: AppError.fromSupabaseError(error, { userId, resourceId: emotionId }),
       });
-      return failure(AppError.fromSupabaseError(error, { userId, resourceId: emotionId, operation: 'fetchEmotionById' }));
+      return failure(
+        AppError.fromSupabaseError(error, {
+          userId: userId ?? undefined,
+          resourceId: emotionId,
+          operation: 'fetchEmotionById',
+        })
+      );
     }
 
     return success((data || null) as EmotionRow | null);
@@ -110,10 +121,13 @@ export async function fetchEmotionById(
       userId,
       operation: 'fetchEmotionById',
       resourceId: emotionId,
-      error
+      error,
     });
     return failure(
-      AppError.fromNetworkError(error, { userId, operation: 'fetchEmotionById' })
+      AppError.fromNetworkError(error, {
+        userId: userId ?? undefined,
+        operation: 'fetchEmotionById',
+      })
     );
   }
 }
@@ -128,20 +142,23 @@ export async function createEmotion(
 
   try {
     // auth.uid() 확인
-    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user: authUser },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     if (authError || !authUser) {
       logger.error('인증 확인 실패', {
         userId: user_id,
         operation: 'createEmotion',
-        error: authError
+        error: authError,
       });
       return failure(
         new AppError({
           code: 'AUTH_REQUIRED',
           message: '로그인이 필요해요.',
           userId: user_id,
-          operation: 'createEmotion'
+          operation: 'createEmotion',
         })
       );
     }
@@ -150,37 +167,35 @@ export async function createEmotion(
       logger.error('사용자 ID 불일치', {
         userId: user_id,
         authUserId: authUser.id,
-        operation: 'createEmotion'
+        operation: 'createEmotion',
       });
       return failure(
         new AppError({
           code: 'PERMISSION_DENIED',
           message: '권한이 없어요.',
           userId: user_id,
-          operation: 'createEmotion'
+          operation: 'createEmotion',
         })
       );
     }
 
-    const { data, error } = await supabase
-      .from('emotions')
-      .insert(payload)
-      .select()
-      .single();
+    const { data, error } = await supabase.from('emotions').insert(payload).select().single();
 
     if (error) {
       logger.error('감정 기록 생성 실패', {
         userId: user_id,
         operation: 'createEmotion',
-        error: AppError.fromSupabaseError(error, { userId: user_id, operation: 'createEmotion' })
+        error: AppError.fromSupabaseError(error, { userId: user_id, operation: 'createEmotion' }),
       });
-      return failure(AppError.fromSupabaseError(error, { userId: user_id, operation: 'createEmotion' }));
+      return failure(
+        AppError.fromSupabaseError(error, { userId: user_id, operation: 'createEmotion' })
+      );
     }
 
     logger.log('감정 기록 생성 성공', {
       userId: user_id,
       operation: 'createEmotion',
-      resourceId: data.id
+      resourceId: data.id,
     });
 
     return success(data as EmotionRow);
@@ -188,7 +203,7 @@ export async function createEmotion(
     logger.error('감정 기록 생성 중 예외 발생', {
       userId: user_id,
       operation: 'createEmotion',
-      error
+      error,
     });
     return failure(
       AppError.fromNetworkError(error, { userId: user_id, operation: 'createEmotion' })
@@ -206,14 +221,17 @@ export async function updateEmotion(
 ): Promise<ServiceResult<EmotionRow>> {
   try {
     // auth.uid() 확인
-    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user: authUser },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     if (authError || !authUser || authUser.id !== userId) {
       logger.error('인증 확인 실패', {
         userId,
         operation: 'updateEmotion',
         resourceId: emotionId,
-        error: authError
+        error: authError,
       });
       return failure(
         new AppError({
@@ -221,7 +239,7 @@ export async function updateEmotion(
           message: '로그인이 필요해요.',
           userId,
           resourceId: emotionId,
-          operation: 'updateEmotion'
+          operation: 'updateEmotion',
         })
       );
     }
@@ -230,7 +248,7 @@ export async function updateEmotion(
       .from('emotions')
       .update({
         ...payload,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       })
       .eq('id', emotionId)
       .eq('user_id', userId) // RLS 정책과 함께 이중 체크
@@ -242,15 +260,25 @@ export async function updateEmotion(
         userId,
         operation: 'updateEmotion',
         resourceId: emotionId,
-        error: AppError.fromSupabaseError(error, { userId, resourceId: emotionId, operation: 'updateEmotion' })
+        error: AppError.fromSupabaseError(error, {
+          userId,
+          resourceId: emotionId,
+          operation: 'updateEmotion',
+        }),
       });
-      return failure(AppError.fromSupabaseError(error, { userId, resourceId: emotionId, operation: 'updateEmotion' }));
+      return failure(
+        AppError.fromSupabaseError(error, {
+          userId,
+          resourceId: emotionId,
+          operation: 'updateEmotion',
+        })
+      );
     }
 
     logger.log('감정 기록 수정 성공', {
       userId,
       operation: 'updateEmotion',
-      resourceId: emotionId
+      resourceId: emotionId,
     });
 
     return success(data as EmotionRow);
@@ -259,11 +287,9 @@ export async function updateEmotion(
       userId,
       operation: 'updateEmotion',
       resourceId: emotionId,
-      error
+      error,
     });
-    return failure(
-      AppError.fromNetworkError(error, { userId, operation: 'updateEmotion' })
-    );
+    return failure(AppError.fromNetworkError(error, { userId, operation: 'updateEmotion' }));
   }
 }
 
@@ -276,14 +302,17 @@ export async function deleteEmotion(
 ): Promise<ServiceResult<void>> {
   try {
     // auth.uid() 확인
-    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user: authUser },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     if (authError || !authUser || authUser.id !== userId) {
       logger.error('인증 확인 실패', {
         userId,
         operation: 'deleteEmotion',
         resourceId: emotionId,
-        error: authError
+        error: authError,
       });
       return failure(
         new AppError({
@@ -291,7 +320,7 @@ export async function deleteEmotion(
           message: '로그인이 필요해요.',
           userId,
           resourceId: emotionId,
-          operation: 'deleteEmotion'
+          operation: 'deleteEmotion',
         })
       );
     }
@@ -307,15 +336,25 @@ export async function deleteEmotion(
         userId,
         operation: 'deleteEmotion',
         resourceId: emotionId,
-        error: AppError.fromSupabaseError(error, { userId, resourceId: emotionId, operation: 'deleteEmotion' })
+        error: AppError.fromSupabaseError(error, {
+          userId,
+          resourceId: emotionId,
+          operation: 'deleteEmotion',
+        }),
       });
-      return failure(AppError.fromSupabaseError(error, { userId, resourceId: emotionId, operation: 'deleteEmotion' }));
+      return failure(
+        AppError.fromSupabaseError(error, {
+          userId,
+          resourceId: emotionId,
+          operation: 'deleteEmotion',
+        })
+      );
     }
 
     logger.log('감정 기록 삭제 성공', {
       userId,
       operation: 'deleteEmotion',
-      resourceId: emotionId
+      resourceId: emotionId,
     });
 
     return success(undefined);
@@ -324,11 +363,9 @@ export async function deleteEmotion(
       userId,
       operation: 'deleteEmotion',
       resourceId: emotionId,
-      error
+      error,
     });
-    return failure(
-      AppError.fromNetworkError(error, { userId, operation: 'deleteEmotion' })
-    );
+    return failure(AppError.fromNetworkError(error, { userId, operation: 'deleteEmotion' }));
   }
 }
 
@@ -352,7 +389,7 @@ export async function hasEmotionOnDate(
       logger.error('감정 기록 존재 확인 실패', {
         userId,
         operation: 'hasEmotionOnDate',
-        error: AppError.fromSupabaseError(error, { userId, operation: 'hasEmotionOnDate' })
+        error: AppError.fromSupabaseError(error, { userId, operation: 'hasEmotionOnDate' }),
       });
       return failure(AppError.fromSupabaseError(error, { userId, operation: 'hasEmotionOnDate' }));
     }
@@ -362,10 +399,8 @@ export async function hasEmotionOnDate(
     logger.error('감정 기록 존재 확인 중 예외 발생', {
       userId,
       operation: 'hasEmotionOnDate',
-      error
+      error,
     });
-    return failure(
-      AppError.fromNetworkError(error, { userId, operation: 'hasEmotionOnDate' })
-    );
+    return failure(AppError.fromNetworkError(error, { userId, operation: 'hasEmotionOnDate' }));
   }
 }

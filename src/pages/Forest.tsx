@@ -5,7 +5,12 @@ import FabMenu from '@components/FabMenu';
 import { useAuth } from '@hooks/useAuth';
 import { useNotify } from '@providers/NotifyProvider';
 import { useActionGuard } from '@hooks/useActionGuard';
-import { useCommunity, type CommunityPost, type ReportReason, type SortType } from '@hooks/useCommunity';
+import {
+  useCommunity,
+  type CommunityPost,
+  type ReportReason,
+  type SortType,
+} from '@hooks/useCommunity';
 import { FOREST_CATEGORIES } from '@constants/forest';
 import { EMOTION_OPTIONS } from '@constants/emotions';
 import type { ForestCategory, ForestPost, ForestReportReason } from '@domain/forest';
@@ -14,15 +19,10 @@ import '@styles/page-hero.css';
 
 const SORT_OPTIONS: { label: string; value: SortType }[] = [
   { label: '최신순', value: 'latest' },
-  { label: '공감순', value: 'best' }
+  { label: '공감순', value: 'best' },
 ];
 
-const REPORT_REASONS: ReportReason[] = [
-  '부적절/혐오',
-  '광고/스팸',
-  '개인정보 노출',
-  '기타'
-];
+const REPORT_REASONS: ReportReason[] = ['부적절/혐오', '광고/스팸', '개인정보 노출', '기타'];
 
 // CommunityPost를 ForestPost로 변환
 function communityPostToForestPost(post: CommunityPost): ForestPost {
@@ -48,7 +48,7 @@ function communityPostToForestPost(post: CommunityPost): ForestPost {
     nickname: post.profiles?.nickname || post.profiles?.seed_name || '익명',
     mbti: undefined,
     recordId: post.emotion_id || undefined,
-    emotionEmoji: emotionOpt?.emoji || '🙂'
+    emotionEmoji: emotionOpt?.emoji || '🙂',
   };
 }
 
@@ -77,7 +77,7 @@ export default function Forest({ mode = 'all' }: ForestProps) {
     fetchPosts,
     toggleLike: toggleLikeCommunity,
     reportPost: reportPostCommunity,
-    deletePost: deletePostCommunity
+    deletePost: deletePostCommunity,
   } = useCommunity(user?.id || null);
 
   const [detailPostId, setDetailPostId] = useState<string | null>(null);
@@ -110,7 +110,7 @@ export default function Forest({ mode = 'all' }: ForestProps) {
       });
     } else {
       filtered = [...filtered].sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        (a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime()
       );
     }
 
@@ -122,9 +122,8 @@ export default function Forest({ mode = 'all' }: ForestProps) {
     return filtered;
   }, [posts, selectedCategory, sortType, isMyPostsView]);
 
-
   const detailPost = useMemo(
-    () => (detailPostId ? posts.find((post) => post.id === detailPostId) ?? null : null),
+    () => (detailPostId ? (posts.find((post) => post.id === detailPostId) ?? null) : null),
     [detailPostId, posts]
   );
 
@@ -148,12 +147,12 @@ export default function Forest({ mode = 'all' }: ForestProps) {
     if (!post) return;
 
     const wasLiked = post.isLikedByMe;
-    
+
     requireAuthForAction(
       'like_post',
       async () => {
         await toggleLikeCommunity(postId, wasLiked);
-        
+
         if (wasLiked) {
           notify.info('공감을 취소했어요', '💧');
         } else {
@@ -162,7 +161,7 @@ export default function Forest({ mode = 'all' }: ForestProps) {
         }
       },
       {
-        customMessage: '공감을 주고받으려면 로그인 또는 가입이 필요해요.'
+        customMessage: '공감을 주고받으려면 로그인 또는 가입이 필요해요.',
       }
     );
   };
@@ -180,7 +179,7 @@ export default function Forest({ mode = 'all' }: ForestProps) {
         setReportDetails('');
       },
       {
-        customMessage: '신고를 하려면 로그인 또는 가입이 필요해요.'
+        customMessage: '신고를 하려면 로그인 또는 가입이 필요해요.',
       }
     );
   };
@@ -190,21 +189,21 @@ export default function Forest({ mode = 'all' }: ForestProps) {
       'delete_post',
       () => {
         notify.modal({
-      title: '게시글 삭제',
-      message: '정말 이 글을 삭제할까요?',
-      confirmLabel: '삭제',
-      cancelLabel: '취소',
-      onConfirm: async () => {
-        await deletePostCommunity(postId);
-        notify.success('게시글이 삭제되었어요.', '✅');
-        if (detailPostId === postId) {
-          setDetailPostId(null);
-        }
-      }
-    });
+          title: '게시글 삭제',
+          message: '정말 이 글을 삭제할까요?',
+          confirmLabel: '삭제',
+          cancelLabel: '취소',
+          onConfirm: async () => {
+            await deletePostCommunity(postId);
+            notify.success('게시글이 삭제되었어요.', '✅');
+            if (detailPostId === postId) {
+              setDetailPostId(null);
+            }
+          },
+        });
       },
       {
-        customMessage: '게시글을 삭제하려면 로그인 또는 가입이 필요해요.'
+        customMessage: '게시글을 삭제하려면 로그인 또는 가입이 필요해요.',
       }
     );
   };
@@ -214,7 +213,7 @@ export default function Forest({ mode = 'all' }: ForestProps) {
     const shareData = {
       title: '마음씨 공감숲',
       text: post.content,
-      url: shareUrl
+      url: shareUrl,
     };
     try {
       if (navigator.share) {
@@ -222,10 +221,10 @@ export default function Forest({ mode = 'all' }: ForestProps) {
       } else if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(shareUrl);
       }
-      setToastMessage('공감 링크를 공유했어요.');
+      notify.toast({ type: 'success', message: '공감 링크를 공유했어요.' });
     } catch (error) {
       console.error(error);
-      setToastMessage('공유 중 문제가 발생했어요.');
+      notify.toast({ type: 'error', message: '공유 중 문제가 발생했어요.' });
     }
   };
 
@@ -236,7 +235,7 @@ export default function Forest({ mode = 'all' }: ForestProps) {
       navigate(`/record?id=${post.recordId}`);
       return;
     }
-    setToastMessage('원본 기록을 찾을 수 없어 수정할 수 없어요.');
+    notify.toast({ type: 'warning', message: '원본 기록을 찾을 수 없어 수정할 수 없어요.' });
   };
 
   const heroIcon = isMyPostsView ? '📘' : '🌿';
@@ -249,7 +248,9 @@ export default function Forest({ mode = 'all' }: ForestProps) {
     <Layout hideHeader>
       <section className="forest-root">
         <div className="page-hero">
-          <div className="page-hero-icon" aria-hidden="true">{heroIcon}</div>
+          <div className="page-hero-icon" aria-hidden="true">
+            {heroIcon}
+          </div>
           <div>
             <h1 className="page-hero-title">{heroTitle}</h1>
             <p className="page-hero-desc">{heroDesc}</p>
@@ -258,7 +259,7 @@ export default function Forest({ mode = 'all' }: ForestProps) {
 
         {/* 카테고리 탭 */}
         <div className="forest-tabs">
-          {FOREST_CATEGORIES.map(category => {
+          {FOREST_CATEGORIES.map((category) => {
             const active = category === 'BEST' ? !selectedCategory : selectedCategory === category;
             return (
               <button
@@ -275,7 +276,7 @@ export default function Forest({ mode = 'all' }: ForestProps) {
 
         {/* 정렬 토글 */}
         <div className="forest-sort">
-          {SORT_OPTIONS.map(option => (
+          {SORT_OPTIONS.map((option) => (
             <button
               key={option.value}
               type="button"
@@ -288,36 +289,36 @@ export default function Forest({ mode = 'all' }: ForestProps) {
         </div>
 
         {/* 상태 영역 */}
-        {status === 'loading' && (
-          <div className="forest-state">공감숲을 준비하고 있어요…</div>
-        )}
-        
+        {status === 'loading' && <div className="forest-state">공감숲을 준비하고 있어요…</div>}
+
         {status === 'error' && (
           <div className="forest-state error">
             <div style={{ marginBottom: 8 }}>
               {errorMessage || '공감숲을 불러오는데 실패했어요.'}
             </div>
             {import.meta.env.DEV && errorMessage && (
-              <div style={{ 
-                marginTop: 8,
-                marginBottom: 12,
-                padding: 12,
-                background: '#f5f5f5',
-                borderRadius: 8,
-                fontSize: 11, 
-                color: '#666',
-                fontFamily: 'monospace',
-                whiteSpace: 'pre-wrap',
-                textAlign: 'left'
-              }}>
+              <div
+                style={{
+                  marginTop: 8,
+                  marginBottom: 12,
+                  padding: 12,
+                  background: '#f5f5f5',
+                  borderRadius: 8,
+                  fontSize: 11,
+                  color: '#666',
+                  fontFamily: 'monospace',
+                  whiteSpace: 'pre-wrap',
+                  textAlign: 'left',
+                }}
+              >
                 {errorMessage}
               </div>
             )}
-            <button 
-              type="button" 
+            <button
+              type="button"
               onClick={() => {
                 fetchPosts();
-              }} 
+              }}
               className="forest-retry"
             >
               다시 시도하기
@@ -389,7 +390,7 @@ function ForestCard({
   onReport,
   onOpen,
   onShare,
-  onDelete
+  onDelete,
 }: {
   post: ForestPost;
   onLike: (postId: string) => void;
@@ -433,10 +434,10 @@ function ForestCard({
       <div className="forest-card-author-line">
         <span className="forest-card-author">{post.nickname}</span>
         <span className="forest-card-dot">·</span>
-        <span className="forest-card-time">{formatRelativeTime(post.createdAt)}</span>
+        <span className="forest-card-time">{formatRelativeTime(post.createdAt ?? '')}</span>
       </div>
 
-        <div className="forest-card-footer">
+      <div className="forest-card-footer">
         {post.isMine && (
           <>
             <button
@@ -515,7 +516,7 @@ function ForestPostSheet({
   onReport,
   onDelete,
   onShare,
-  onEdit
+  onEdit,
 }: {
   post: ForestPost | null;
   onClose: () => void;
@@ -544,7 +545,7 @@ function ForestPostSheet({
             <p className="forest-sheet-label">마음 기록 보기</p>
             <h2 className="forest-sheet-title">{post.nickname}</h2>
             <p className="forest-sheet-meta">
-              {mbtiLabel} · {formatRelativeTime(post.createdAt)}
+              {mbtiLabel} · {formatRelativeTime(post.createdAt ?? '')}
             </p>
           </div>
           <button type="button" className="forest-sheet-close" onClick={onClose}>
@@ -589,7 +590,11 @@ function ForestPostSheet({
               <button type="button" className="forest-sheet-owner-btn" onClick={() => onEdit(post)}>
                 수정
               </button>
-              <button type="button" className="forest-sheet-owner-btn danger" onClick={() => onDelete(post.id)}>
+              <button
+                type="button"
+                className="forest-sheet-owner-btn danger"
+                onClick={() => onDelete(post.id)}
+              >
                 삭제
               </button>
             </>
@@ -605,7 +610,7 @@ function ReportModal({
   onClose,
   onSubmit,
   details,
-  onDetailsChange
+  onDetailsChange,
 }: {
   open: boolean;
   onClose: () => void;
@@ -644,7 +649,7 @@ function ReportModal({
         <p className="forest-report-desc">신고 사유를 선택해 주세요. (필수)</p>
 
         <div className="forest-report-reasons">
-          {REPORT_REASONS.map(item => (
+          {REPORT_REASONS.map((item) => (
             <label key={item} className="forest-report-option">
               <input
                 type="radio"
@@ -670,7 +675,7 @@ function ReportModal({
             border: '1px solid var(--ms-line)',
             fontSize: 14,
             fontFamily: 'inherit',
-            resize: 'vertical'
+            resize: 'vertical',
           }}
         />
 

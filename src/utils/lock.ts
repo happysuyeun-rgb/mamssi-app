@@ -14,7 +14,7 @@ export function normalizeLockSettings(raw?: Partial<LockSettings> | null): LockS
     mode,
     pattern,
     pin,
-    biometricEnabled
+    biometricEnabled,
   };
 }
 
@@ -36,17 +36,3 @@ export function loadLockSettings(): LockSettings {
 export function saveLockSettings(next: LockSettings) {
   lsSet(LOCK_STORAGE_KEY, next);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-

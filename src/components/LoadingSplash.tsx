@@ -14,14 +14,14 @@ export default function LoadingSplash({ message = '로딩 중...' }: LoadingSpla
         justifyContent: 'center',
         minHeight: '100vh',
         background: 'var(--ms-surface)',
-        color: 'var(--ms-ink)'
+        color: 'var(--ms-ink)',
       }}
     >
       <div
         style={{
           fontSize: 48,
           marginBottom: 16,
-          animation: 'spin 1s linear infinite'
+          animation: 'spin 1s linear infinite',
         }}
       >
         🌱
@@ -30,7 +30,7 @@ export default function LoadingSplash({ message = '로딩 중...' }: LoadingSpla
         style={{
           fontSize: 14,
           color: 'var(--ms-ink-soft)',
-          fontWeight: 500
+          fontWeight: 500,
         }}
       >
         {message}
@@ -46,16 +46,3 @@ export default function LoadingSplash({ message = '로딩 중...' }: LoadingSpla
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

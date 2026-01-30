@@ -11,19 +11,15 @@ type LayoutProps = {
 export default function Layout({
   children,
   hideHeader = true,
-  contentPadding = '16px 16px 96px'
+  contentPadding = '16px 16px 96px',
 }: LayoutProps) {
   return (
     <div className="ms-app-shell">
       <div className="ms-app" style={{ padding: contentPadding }}>
         {!hideHeader && <Header />}
-        <main style={{ paddingTop: hideHeader ? 0 : 10 }}>
-          {children}
-        </main>
+        <main style={{ paddingTop: hideHeader ? 0 : 10 }}>{children}</main>
       </div>
       <TabBar />
     </div>
   );
 }
-
-

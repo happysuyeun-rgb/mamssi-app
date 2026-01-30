@@ -4,11 +4,26 @@
   --tabbar-height: 72px;
 }
 
-* { box-sizing: border-box; }
-html, body, #root { height: 100%; }
+* {
+  box-sizing: border-box;
+}
+html,
+body,
+#root {
+  height: 100%;
+}
 body {
   margin: 0;
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans KR", AppleSDGothicNeo, "Malgun Gothic", sans-serif;
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    'Noto Sans KR',
+    AppleSDGothicNeo,
+    'Malgun Gothic',
+    sans-serif;
   background: var(--ms-bg);
   color: var(--ms-ink);
 }
@@ -39,5 +54,3 @@ body {
 }
 
 /* End of globals */
-
-

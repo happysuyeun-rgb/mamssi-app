@@ -59,5 +59,3 @@ export type WeekEmotions = {
   weekStart: string; // Monday ISO date
   days: (CalendarEmotionRecord | null)[]; // length 7
 };
-
-

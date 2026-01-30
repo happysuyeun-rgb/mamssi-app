@@ -15,7 +15,7 @@ export default function SignupOnboardingStep({
   onBack,
   onSocialClick,
   onOpenLogin,
-  loading = false
+  loading = false,
 }: SignupOnboardingStepProps) {
   const [agreeRequired, setAgreeRequired] = useState(false);
   const [agreeOptional, setAgreeOptional] = useState(false);
@@ -33,12 +33,27 @@ export default function SignupOnboardingStep({
     onSocialClick(provider);
   };
 
-  const socialButtons: { provider: SocialProvider; label: string; icon: string; className: string }[] = [
+  const socialButtons: {
+    provider: SocialProvider;
+    label: string;
+    icon: string;
+    className: string;
+  }[] = [
     { provider: 'google', label: 'Google로 계속하기', icon: 'G', className: 'auth-btn-google' },
     { provider: 'apple', label: 'Apple로 계속하기', icon: '', className: 'auth-btn-apple' },
-    { provider: 'kakao', label: '카카오 계정으로 계속하기', icon: '✉️', className: 'auth-btn-kakao' },
-    { provider: 'facebook', label: 'Facebook으로 계속하기', icon: 'f', className: 'auth-btn-facebook' },
-    { provider: 'line', label: 'LINE 계정으로 계속하기', icon: 'L', className: 'auth-btn-line' }
+    {
+      provider: 'kakao',
+      label: '카카오 계정으로 계속하기',
+      icon: '✉️',
+      className: 'auth-btn-kakao',
+    },
+    {
+      provider: 'facebook',
+      label: 'Facebook으로 계속하기',
+      icon: 'f',
+      className: 'auth-btn-facebook',
+    },
+    { provider: 'line', label: 'LINE 계정으로 계속하기', icon: 'L', className: 'auth-btn-line' },
   ];
 
   return (
@@ -70,7 +85,9 @@ export default function SignupOnboardingStep({
             checked={agreeRequired}
             onChange={(e) => handleAgreeRequiredChange(e.target.checked)}
           />
-          <label htmlFor="policy-required">(필수) 서비스 이용약관 및 개인정보 처리방침에 동의합니다.</label>
+          <label htmlFor="policy-required">
+            (필수) 서비스 이용약관 및 개인정보 처리방침에 동의합니다.
+          </label>
         </div>
         <div className="policy-item">
           <input
@@ -107,4 +124,3 @@ export default function SignupOnboardingStep({
     </div>
   );
 }
-

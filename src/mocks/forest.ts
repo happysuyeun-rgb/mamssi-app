@@ -17,7 +17,7 @@ const forestPosts: ForestPost[] = [
     createdAt: '2025-11-14T09:00:00+09:00',
     likeCount: 12,
     isLikedByMe: false,
-    isMine: false
+    isMine: false,
   },
   {
     id: 'p2',
@@ -32,7 +32,8 @@ const forestPosts: ForestPost[] = [
     likeCount: 23,
     isLikedByMe: true,
     isMine: true,
-    imageUrl: 'https://images.pexels.com/photos/450326/pexels-photo-450326.jpeg?auto=compress&cs=tinysrgb&w=800'
+    imageUrl:
+      'https://images.pexels.com/photos/450326/pexels-photo-450326.jpeg?auto=compress&cs=tinysrgb&w=800',
   },
   {
     id: 'p3',
@@ -46,7 +47,7 @@ const forestPosts: ForestPost[] = [
     createdAt: '2025-11-16T20:10:00+09:00',
     likeCount: 5,
     isLikedByMe: false,
-    isMine: false
+    isMine: false,
   },
   {
     id: 'p4',
@@ -60,7 +61,7 @@ const forestPosts: ForestPost[] = [
     createdAt: '2025-11-16T07:40:00+09:00',
     likeCount: 8,
     isLikedByMe: false,
-    isMine: false
+    isMine: false,
   },
   {
     id: 'p5',
@@ -74,21 +75,21 @@ const forestPosts: ForestPost[] = [
     createdAt: '2025-11-13T19:20:00+09:00',
     likeCount: 30,
     isLikedByMe: false,
-    isMine: false
-  }
+    isMine: false,
+  },
 ];
 
 export function getPosts(): ForestPost[] {
-  return forestPosts.map(post => ({ ...post }));
+  return forestPosts.map((post) => ({ ...post }));
 }
 
 export function getPostById(postId: string): ForestPost | null {
-  const found = forestPosts.find(p => p.id === postId);
+  const found = forestPosts.find((p) => p.id === postId);
   return found ? { ...found } : null;
 }
 
 export function toggleLike(postId: string): ForestPost | null {
-  const idx = forestPosts.findIndex(p => p.id === postId);
+  const idx = forestPosts.findIndex((p) => p.id === postId);
   if (idx < 0) return null;
   const target = forestPosts[idx];
   if (target.isMine) return target;
@@ -100,7 +101,7 @@ export function toggleLike(postId: string): ForestPost | null {
 }
 
 export function deletePost(postId: string): boolean {
-  const idx = forestPosts.findIndex(p => p.id === postId);
+  const idx = forestPosts.findIndex((p) => p.id === postId);
   if (idx < 0) return false;
   if (!forestPosts[idx].isMine) return false;
   forestPosts.splice(idx, 1);
@@ -112,7 +113,7 @@ function generatePostId(): string {
 }
 
 export function removeForestPostByRecord(recordId: string): void {
-  const idx = forestPosts.findIndex(post => post.recordId === recordId);
+  const idx = forestPosts.findIndex((post) => post.recordId === recordId);
   if (idx >= 0) {
     forestPosts.splice(idx, 1);
   }
@@ -124,7 +125,7 @@ export function syncForestPostFromRecord(record: EmotionRecord): ForestPost | nu
   if (!category) return null;
 
   const profile = getCurrentUserProfile();
-  const existingIdx = forestPosts.findIndex(post => post.recordId === record.id);
+  const existingIdx = forestPosts.findIndex((post) => post.recordId === record.id);
   const base: ForestPost = {
     id: existingIdx >= 0 ? forestPosts[existingIdx].id : generatePostId(),
     recordId: record.id,
@@ -139,7 +140,7 @@ export function syncForestPostFromRecord(record: EmotionRecord): ForestPost | nu
     likeCount: existingIdx >= 0 ? forestPosts[existingIdx].likeCount : 0,
     isLikedByMe: existingIdx >= 0 ? forestPosts[existingIdx].isLikedByMe : false,
     isMine: record.userId === profile.id,
-    imageUrl: record.imageUrl
+    imageUrl: record.imageUrl,
   };
 
   if (existingIdx >= 0) {
@@ -153,5 +154,3 @@ export function syncForestPostFromRecord(record: EmotionRecord): ForestPost | nu
 
 // TODO: Replace with Supabase-backed implementation later.
 export const __dev = { forestPosts };
-
-

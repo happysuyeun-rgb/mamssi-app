@@ -21,7 +21,7 @@ const ghostBtn: CSSProperties = {
   border: '1px solid var(--ms-line)',
   padding: '4px 10px',
   fontSize: 11,
-  cursor: 'pointer'
+  cursor: 'pointer',
 };
 
 const growthLevelLabels: Record<number, string> = {
@@ -30,7 +30,7 @@ const growthLevelLabels: Record<number, string> = {
   2: '줄기',
   3: '봉오리',
   4: '반개화',
-  5: '만개'
+  5: '만개',
 };
 
 const growthLevelImages: Record<number, string> = {
@@ -39,7 +39,7 @@ const growthLevelImages: Record<number, string> = {
   2: '/assets/garden/level-2-stem.svg',
   3: '/assets/garden/level-3-bud.svg',
   4: '/assets/garden/level-4-half-bloom.svg',
-  5: '/assets/garden/level-5-bloom.svg'
+  5: '/assets/garden/level-5-bloom.svg',
 };
 
 // 성장 단계 계산 (설계서 기준: 포인트 기반)
@@ -52,7 +52,7 @@ const growthLevelImages: Record<number, string> = {
 function getGrowthLevel(percent: number, bloomLevel?: number): number {
   // bloomLevel이 전달되면 우선 사용 (Home.tsx에서 계산된 값)
   if (bloomLevel !== undefined) return bloomLevel;
-  
+
   // 설계서 기준으로 계산
   if (percent >= 100) return 5; // Level 5: 개화 (100pt)
   if (percent >= 70) return 4; // Level 4: 반쯤 열린 꽃봉오리 (70pt~99pt)
@@ -68,7 +68,7 @@ export default function FlowerBadge({
   seedName = '봄비',
   totalDays = 30,
   recordedDays = 15,
-  todayMessage = '오늘의 정원 소식: 오늘 내 씨앗이 작은 공감들을 모으고 있어요 🌱'
+  todayMessage = '오늘의 정원 소식: 오늘 내 씨앗이 작은 공감들을 모으고 있어요 🌱',
 }: FlowerBadgeProps) {
   const { user } = useAuth();
   const notify = useNotify();
@@ -80,9 +80,9 @@ export default function FlowerBadge({
 
   // seedName prop이 변경되면 currentSeedName과 seedInput도 업데이트
   useEffect(() => {
-    console.log('[FlowerBadge] seedName prop 변경 감지:', { 
-      oldSeedName: currentSeedName, 
-      newSeedName: seedName 
+    console.log('[FlowerBadge] seedName prop 변경 감지:', {
+      oldSeedName: currentSeedName,
+      newSeedName: seedName,
     });
     setCurrentSeedName(seedName);
     // 모달이 열려있지 않을 때만 seedInput 업데이트 (사용자가 입력 중일 때 덮어쓰지 않도록)
@@ -119,51 +119,52 @@ export default function FlowerBadge({
 
     if (user) {
       try {
-        console.log('[FlowerBadge] 씨앗 이름 저장 시작:', { 
-          userId: user.id, 
+        console.log('[FlowerBadge] 씨앗 이름 저장 시작:', {
+          userId: user.id,
           seedName: value,
           currentSeedName,
-          seedNameProp: seedName
+          seedNameProp: seedName,
         });
-        
+
         // user_settings 테이블에 seed_name upsert (user_id 기준)
         const { data, error } = await updateSettings({ seed_name: value });
 
         if (error) {
-          console.error('[FlowerBadge] 씨앗 이름 저장 실패:', { 
-            userId: user.id, 
+          const err = error as { code?: string; message?: string; details?: string; hint?: string };
+          console.error('[FlowerBadge] 씨앗 이름 저장 실패:', {
+            userId: user.id,
             seedName: value,
             error,
-            errorCode: error.code,
-            errorMessage: error.message,
-            errorDetails: error.details,
-            errorHint: error.hint
+            errorCode: err.code,
+            errorMessage: err.message,
+            errorDetails: err.details,
+            errorHint: err.hint,
           });
           notify.error(`씨앗 이름 저장에 실패했어요: ${error.message}`, '❌');
           return;
         }
 
         if (!data) {
-          console.error('[FlowerBadge] 씨앗 이름 저장 실패: data가 null', { 
-            userId: user.id, 
-            seedName: value
+          console.error('[FlowerBadge] 씨앗 이름 저장 실패: data가 null', {
+            userId: user.id,
+            seedName: value,
           });
           notify.error('씨앗 이름 저장에 실패했어요. (데이터 없음)', '❌');
           return;
         }
 
-        console.log('[FlowerBadge] 씨앗 이름 저장 성공:', { 
-          userId: user.id, 
+        console.log('[FlowerBadge] 씨앗 이름 저장 성공:', {
+          userId: user.id,
           seedName: value,
           savedData: data,
-          savedSeedName: data.seed_name
+          savedSeedName: data.seed_name,
         });
 
         // 저장된 데이터 확인
         if (data.seed_name !== value) {
           console.warn('[FlowerBadge] 저장된 seed_name이 입력값과 다름:', {
             input: value,
-            saved: data.seed_name
+            saved: data.seed_name,
           });
         }
 
@@ -171,7 +172,7 @@ export default function FlowerBadge({
         console.log('[FlowerBadge] fetchSettings 호출 시작');
         await fetchSettings();
         console.log('[FlowerBadge] fetchSettings 호출 완료');
-        
+
         // 홈 데이터 새로고침을 위해 전역 함수 호출 (비동기로 대기)
         if ((window as any).__refreshHomeData) {
           console.log('[FlowerBadge] 홈 데이터 새로고침 시작');
@@ -185,7 +186,7 @@ export default function FlowerBadge({
         } else {
           console.warn('[FlowerBadge] __refreshHomeData 함수가 없음');
         }
-        
+
         // 홈 데이터 새로고침 후 seedName prop이 업데이트되면 useEffect가 currentSeedName을 업데이트함
         // 하지만 즉시 UI에 반영하기 위해 로컬 state도 업데이트
         setCurrentSeedName(value);
@@ -193,13 +194,16 @@ export default function FlowerBadge({
         setSeedModalOpen(false);
         notify.success(`씨앗 이름이 "${value}"로 변경되었어요.`, '✨');
       } catch (err) {
-        console.error('[FlowerBadge] 씨앗 이름 저장 중 예외 발생:', { 
+        console.error('[FlowerBadge] 씨앗 이름 저장 중 예외 발생:', {
           userId: user.id,
           error: err,
           errorMessage: err instanceof Error ? err.message : String(err),
-          errorStack: err instanceof Error ? err.stack : undefined
+          errorStack: err instanceof Error ? err.stack : undefined,
         });
-        notify.error(`씨앗 이름 저장에 실패했어요: ${err instanceof Error ? err.message : String(err)}`, '❌');
+        notify.error(
+          `씨앗 이름 저장에 실패했어요: ${err instanceof Error ? err.message : String(err)}`,
+          '❌'
+        );
       }
     } else {
       // 게스트 모드는 로컬 상태만 업데이트
@@ -225,7 +229,12 @@ export default function FlowerBadge({
 
         {/* 2. 게이지 영역 (중앙 정렬) */}
         <div className="home-garden-gauge-wrapper">
-          <GrowthGauge growthPct={growthPct} growthLevelImage={growthLevelImage} stageLabel={stageLabel} bloomLevel={growthLevel} />
+          <GrowthGauge
+            growthPct={growthPct}
+            growthLevelImage={growthLevelImage}
+            stageLabel={stageLabel}
+            bloomLevel={growthLevel}
+          />
         </div>
 
         {/* 3. 현재 성장 단계 섹션 (중앙 정렬, 연한 민트 배경) */}
@@ -238,7 +247,12 @@ export default function FlowerBadge({
         <div className="home-garden-seed-section">
           <span className="home-garden-seed-label">씨앗 이름</span>
           <span className="home-garden-seed-value">{currentSeedName}</span>
-          <button type="button" className="home-seed-edit" onClick={openSeedEdit} aria-label="씨앗 이름 수정">
+          <button
+            type="button"
+            className="home-seed-edit"
+            onClick={openSeedEdit}
+            aria-label="씨앗 이름 수정"
+          >
             ✏️
           </button>
         </div>
@@ -264,7 +278,7 @@ export default function FlowerBadge({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            zIndex: 30
+            zIndex: 30,
           }}
         >
           <div
@@ -275,13 +289,19 @@ export default function FlowerBadge({
               background: 'var(--ms-surface)',
               borderRadius: 24,
               boxShadow: '0 8px 30px rgba(15,23,42,0.16)',
-              padding: '18px 18px 14px'
+              padding: '18px 18px 14px',
             }}
           >
-            <div className="ms-modal-title" style={{ fontSize: 17, fontWeight: 600, marginBottom: 6 }}>
+            <div
+              className="ms-modal-title"
+              style={{ fontSize: 17, fontWeight: 600, marginBottom: 6 }}
+            >
               씨앗 이름 수정
             </div>
-            <div className="ms-modal-date" style={{ fontSize: 11, color: 'var(--ms-ink-muted)', marginBottom: 12 }}>
+            <div
+              className="ms-modal-date"
+              style={{ fontSize: 11, color: 'var(--ms-ink-muted)', marginBottom: 12 }}
+            >
               씨앗에게 어떤 이름을 붙이고 싶나요?
             </div>
             <input
@@ -295,18 +315,34 @@ export default function FlowerBadge({
                 fontSize: 13,
                 borderRadius: 18,
                 border: '1px solid var(--ms-line)',
-                marginBottom: 8
+                marginBottom: 8,
               }}
             />
-            <div className="ms-input-help" style={{ fontSize: 11, color: 'var(--ms-ink-muted)', marginBottom: 12 }}>
+            <div
+              className="ms-input-help"
+              style={{ fontSize: 11, color: 'var(--ms-ink-muted)', marginBottom: 12 }}
+            >
               · 10자 이내 / 공백만 입력 불가
               <br />· 예시: 봄비, 달빛산책, 조용한숲…
             </div>
-            <div className="ms-modal-actions" style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, flexWrap: 'wrap' }}>
-              <button type="button" className="ms-btn-ghost-sm" onClick={() => setSeedModalOpen(false)} style={ghostBtn}>
+            <div
+              className="ms-modal-actions"
+              style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, flexWrap: 'wrap' }}
+            >
+              <button
+                type="button"
+                className="ms-btn-ghost-sm"
+                onClick={() => setSeedModalOpen(false)}
+                style={ghostBtn}
+              >
                 취소
               </button>
-              <button type="button" className="ms-btn-ghost-sm" onClick={saveSeedName} style={ghostBtn}>
+              <button
+                type="button"
+                className="ms-btn-ghost-sm"
+                onClick={saveSeedName}
+                style={ghostBtn}
+              >
                 확인
               </button>
             </div>
@@ -316,4 +352,3 @@ export default function FlowerBadge({
     </>
   );
 }
-

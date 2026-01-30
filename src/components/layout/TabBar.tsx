@@ -13,25 +13,42 @@ const linkStyle: React.CSSProperties = {
   color: 'var(--ms-color-ink-muted)',
   textDecoration: 'none',
   fontSize: 11,
-  fontWeight: 600
+  fontWeight: 600,
 };
 
 export default function TabBar() {
   return (
-    <nav style={{
-      position: 'fixed', left: 0, right: 0, bottom: 0, background: '#fff',
-      borderTop: '1px solid var(--ms-color-border-soft)', zIndex: 20
-    }}>
-      <div style={{
-        maxWidth: 720, margin: '0 auto', display: 'grid',
-        gridTemplateColumns: 'repeat(4,1fr)', gap: 2, padding: '7px 8px 8px'
-      }}>
-        <NavLink to="/" end style={({ isActive }) => ({
-          ...linkStyle,
-          color: isActive ? 'var(--ms-color-primary)' : linkStyle.color,
-          background: isActive ? '#e0f7f5' : 'transparent',
-          border: isActive ? '1px solid #99f6e4' : '1px solid transparent'
-        })}>
+    <nav
+      style={{
+        position: 'fixed',
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: '#fff',
+        borderTop: '1px solid var(--ms-color-border-soft)',
+        zIndex: 20,
+      }}
+    >
+      <div
+        style={{
+          maxWidth: 720,
+          margin: '0 auto',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4,1fr)',
+          gap: 2,
+          padding: '7px 8px 8px',
+        }}
+      >
+        <NavLink
+          to="/"
+          end
+          style={({ isActive }) => ({
+            ...linkStyle,
+            color: isActive ? 'var(--ms-color-primary)' : linkStyle.color,
+            background: isActive ? '#e0f7f5' : 'transparent',
+            border: isActive ? '1px solid #99f6e4' : '1px solid transparent',
+          })}
+        >
           {({ isActive }) => (
             <>
               <HomeIcon isActive={isActive} size={24} />
@@ -39,12 +56,15 @@ export default function TabBar() {
             </>
           )}
         </NavLink>
-        <NavLink to="/forest" style={({ isActive }) => ({
-          ...linkStyle,
-          color: isActive ? 'var(--ms-color-primary)' : linkStyle.color,
-          background: isActive ? '#e0f7f5' : 'transparent',
-          border: isActive ? '1px solid #99f6e4' : '1px solid transparent'
-        })}>
+        <NavLink
+          to="/forest"
+          style={({ isActive }) => ({
+            ...linkStyle,
+            color: isActive ? 'var(--ms-color-primary)' : linkStyle.color,
+            background: isActive ? '#e0f7f5' : 'transparent',
+            border: isActive ? '1px solid #99f6e4' : '1px solid transparent',
+          })}
+        >
           {({ isActive }) => (
             <>
               <CommunityIcon isActive={isActive} size={24} />
@@ -52,12 +72,15 @@ export default function TabBar() {
             </>
           )}
         </NavLink>
-        <NavLink to="/record" style={({ isActive }) => ({
-          ...linkStyle,
-          color: isActive ? 'var(--ms-color-primary)' : linkStyle.color,
-          background: isActive ? '#e0f7f5' : 'transparent',
-          border: isActive ? '1px solid #99f6e4' : '1px solid transparent'
-        })}>
+        <NavLink
+          to="/record"
+          style={({ isActive }) => ({
+            ...linkStyle,
+            color: isActive ? 'var(--ms-color-primary)' : linkStyle.color,
+            background: isActive ? '#e0f7f5' : 'transparent',
+            border: isActive ? '1px solid #99f6e4' : '1px solid transparent',
+          })}
+        >
           {({ isActive }) => (
             <>
               <CalendarIcon isActive={isActive} size={24} />
@@ -65,12 +88,15 @@ export default function TabBar() {
             </>
           )}
         </NavLink>
-        <NavLink to="/mypage" style={({ isActive }) => ({
-          ...linkStyle,
-          color: isActive ? 'var(--ms-color-primary)' : linkStyle.color,
-          background: isActive ? '#e0f7f5' : 'transparent',
-          border: isActive ? '1px solid #99f6e4' : '1px solid transparent'
-        })}>
+        <NavLink
+          to="/mypage"
+          style={({ isActive }) => ({
+            ...linkStyle,
+            color: isActive ? 'var(--ms-color-primary)' : linkStyle.color,
+            background: isActive ? '#e0f7f5' : 'transparent',
+            border: isActive ? '1px solid #99f6e4' : '1px solid transparent',
+          })}
+        >
           {({ isActive }) => (
             <>
               <MyProfileIcon isActive={isActive} size={24} />
@@ -82,5 +108,3 @@ export default function TabBar() {
     </nav>
   );
 }
-
-

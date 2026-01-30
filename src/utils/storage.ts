@@ -79,7 +79,5 @@ export function lsRemove(key: string) {
 export const safeStorage = {
   getItem: safeGetItem,
   setItem: safeSetItem,
-  removeItem: safeRemoveItem
+  removeItem: safeRemoveItem,
 };
-
-

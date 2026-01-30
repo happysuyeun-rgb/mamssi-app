@@ -26,8 +26,8 @@ vi.mock('@lib/logger', () => ({
     info: vi.fn(),
     warn: vi.fn(),
     error: vi.fn(),
-    debug: vi.fn()
-  }
+    debug: vi.fn(),
+  },
 }));
 
 describe('통합 시나리오 테스트', () => {
@@ -61,7 +61,7 @@ describe('통합 시나리오 테스트', () => {
         user_id: mockUserId,
         emotion_date: '2024-01-15',
         main_emotion: '기쁨',
-        content: '오늘 기분이 좋아요'
+        content: '오늘 기분이 좋아요',
       });
       expect(createEmotionResult.error).toBeNull();
       expect(createEmotionResult.data?.user_id).toBe(mockUserId);
@@ -86,7 +86,7 @@ describe('통합 시나리오 테스트', () => {
         emotion_date: '2024-01-15',
         main_emotion: '기쁨',
         content: '오늘 기분이 좋아요',
-        is_public: false
+        is_public: false,
       });
       expect(createEmotionResult.error).toBeNull();
       const emotionId = createEmotionResult.data!.id;
@@ -102,13 +102,13 @@ describe('통합 시나리오 테스트', () => {
 
       // 3. 공개 기록 조회 (피드)
       const fetchPublicResult = await emotionsService.fetchEmotions({
-        publicOnly: true
+        publicOnly: true,
       });
       expect(fetchPublicResult.error).toBeNull();
       expect(fetchPublicResult.data).toContainEqual(
         expect.objectContaining({
           id: emotionId,
-          is_public: true
+          is_public: true,
         })
       );
     });
@@ -120,7 +120,7 @@ describe('통합 시나리오 테스트', () => {
         userId: null,
         session: null,
         userProfile: null,
-        isGuest: true
+        isGuest: true,
       };
 
       // 가드 체크 (requireAuth)
@@ -135,7 +135,7 @@ describe('통합 시나리오 테스트', () => {
         userId: mockUserId,
         session: { user: { id: mockUserId } },
         userProfile: { onboarding_completed: true, is_deleted: false },
-        isGuest: false
+        isGuest: false,
       };
 
       const { requireAuth } = await import('@lib/guards');
@@ -154,14 +154,14 @@ describe('통합 시나리오 테스트', () => {
         userId: mockUserId,
         file: mockFile,
         maxSize: 5 * 1024 * 1024, // 5MB
-        allowedTypes: ['image/']
+        allowedTypes: ['image/'],
       });
       expect(uploadResult.error).toBeNull();
       expect(uploadResult.data).toContain('profile-images');
 
       // 2. 설정 저장
       const updateSettingsResult = await settingsService.upsertUserSettings(mockUserId, {
-        profile_url: uploadResult.data!
+        profile_url: uploadResult.data!,
       });
       expect(updateSettingsResult.error).toBeNull();
       expect(updateSettingsResult.data?.profile_url).toBe(uploadResult.data);
@@ -169,14 +169,14 @@ describe('통합 시나리오 테스트', () => {
 
     it('4-2. 파일 크기 초과 시 에러', async () => {
       const largeFile = new File(['x'.repeat(6 * 1024 * 1024)], 'large.jpg', {
-        type: 'image/jpeg'
+        type: 'image/jpeg',
       });
 
       const uploadResult = await storageService.uploadFile({
         bucket: 'profile-images',
         userId: mockUserId,
         file: largeFile,
-        maxSize: 5 * 1024 * 1024
+        maxSize: 5 * 1024 * 1024,
       });
       expect(uploadResult.error).not.toBeNull();
       expect(uploadResult.error?.code).toBe('VALIDATION_ERROR');
@@ -199,13 +199,13 @@ describe('통합 시나리오 테스트', () => {
     it('5-2. 설정 중복 생성 방지 (upsert)', async () => {
       // 첫 번째 생성
       const firstResult = await settingsService.upsertUserSettings(mockUserId, {
-        seed_name: '첫 씨앗'
+        seed_name: '첫 씨앗',
       });
       expect(firstResult.error).toBeNull();
 
       // 두 번째 업데이트 (upsert)
       const secondResult = await settingsService.upsertUserSettings(mockUserId, {
-        seed_name: '두 번째 씨앗'
+        seed_name: '두 번째 씨앗',
       });
       expect(secondResult.error).toBeNull();
       expect(secondResult.data?.seed_name).toBe('두 번째 씨앗');
@@ -218,7 +218,7 @@ describe('통합 시나리오 테스트', () => {
       const networkError = new TypeError('Failed to fetch');
       const error = AppError.fromNetworkError(networkError, {
         userId: mockUserId,
-        operation: 'test'
+        operation: 'test',
       });
 
       expect(error.code).toBe('NETWORK_ERROR');
@@ -229,11 +229,11 @@ describe('통합 시나리오 테스트', () => {
       const permissionError = {
         code: '42501',
         message: 'permission denied',
-        statusCode: 403
+        statusCode: 403,
       };
       const error = AppError.fromSupabaseError(permissionError, {
         userId: mockUserId,
-        operation: 'test'
+        operation: 'test',
       });
 
       expect(error.code).toBe('PERMISSION_DENIED');
@@ -246,7 +246,7 @@ describe('통합 시나리오 테스트', () => {
         userId: mockUserId,
         session: { user: { id: mockUserId } },
         userProfile: { onboarding_completed: true, is_deleted: false },
-        isGuest: false
+        isGuest: false,
       };
 
       const { requireOnboardingComplete } = await import('@lib/guards');
@@ -259,7 +259,7 @@ describe('통합 시나리오 테스트', () => {
         userId: mockUserId,
         session: { user: { id: mockUserId } },
         userProfile: { onboarding_completed: false, is_deleted: false },
-        isGuest: false
+        isGuest: false,
       };
 
       const { requireOnboardingComplete } = await import('@lib/guards');
@@ -276,7 +276,7 @@ describe('통합 시나리오 테스트', () => {
         user_id: mockUserId,
         emotion_date: '2024-01-15',
         main_emotion: '기쁨',
-        content: '원본 내용'
+        content: '원본 내용',
       });
       const emotionId = createResult.data!.id;
 
@@ -296,7 +296,7 @@ describe('통합 시나리오 테스트', () => {
         user_id: mockUserId,
         emotion_date: '2024-01-15',
         main_emotion: '기쁨',
-        content: '삭제할 내용'
+        content: '삭제할 내용',
       });
       const emotionId = createResult.data!.id;
 

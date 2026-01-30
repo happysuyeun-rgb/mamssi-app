@@ -11,7 +11,9 @@
 
 .simple-card--clickable {
   cursor: pointer;
-  transition: transform 0.1s, box-shadow 0.2s;
+  transition:
+    transform 0.1s,
+    box-shadow 0.2s;
 }
 
 .simple-card--clickable:hover {
@@ -65,15 +67,3 @@
   flex-shrink: 0;
   margin-left: 12px;
 }
-
-
-
-
-
-
-
-
-
-
-
-

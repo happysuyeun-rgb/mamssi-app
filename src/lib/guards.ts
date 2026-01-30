@@ -5,7 +5,7 @@
 
 import { AppError } from './errors';
 import { logger } from './logger';
-import type { UserRow } from '@types/database';
+import type { UserRow } from '@domain/database';
 
 export type GuardContext = {
   userId: string | null;
@@ -34,9 +34,9 @@ export function requireAuth(context: GuardContext): GuardResult {
       error: new AppError({
         code: 'AUTH_REQUIRED',
         message: '로그인이 필요해요.',
-        userId: userId || undefined
+        userId: userId ?? undefined,
       }),
-      redirectTo: '/onboarding'
+      redirectTo: '/onboarding',
     };
   }
 
@@ -47,25 +47,25 @@ export function requireAuth(context: GuardContext): GuardResult {
       error: new AppError({
         code: 'AUTH_REQUIRED',
         message: '로그인이 필요해요.',
-        userId: userId || undefined
+        userId: userId ?? undefined,
       }),
-      redirectTo: '/onboarding'
+      redirectTo: '/onboarding',
     };
   }
 
   if (session.user.id !== userId) {
     logger.error('사용자 ID 불일치', {
       userId,
-      sessionUserId: session.user.id
+      sessionUserId: session.user.id,
     });
     return {
       allowed: false,
       error: new AppError({
         code: 'AUTH_INVALID',
         message: '인증 정보가 일치하지 않아요.',
-        userId: userId || undefined
+        userId: userId ?? undefined,
       }),
-      redirectTo: '/onboarding'
+      redirectTo: '/onboarding',
     };
   }
 
@@ -86,46 +86,46 @@ export function requireOnboardingComplete(context: GuardContext): GuardResult {
 
   if (!userProfile) {
     logger.warn('userProfile 없음 - 온보딩 필요', {
-      userId: context.userId || undefined
+      userId: context.userId || undefined,
     });
     return {
       allowed: false,
       error: new AppError({
         code: 'ONBOARDING_REQUIRED',
         message: '온보딩을 완료해주세요.',
-        userId: context.userId || undefined
+        userId: context.userId || undefined,
       }),
-      redirectTo: '/onboarding'
+      redirectTo: '/onboarding',
     };
   }
 
   if (userProfile.is_deleted) {
     logger.warn('삭제된 계정', {
-      userId: context.userId || undefined
+      userId: context.userId || undefined,
     });
     return {
       allowed: false,
       error: new AppError({
         code: 'AUTH_INVALID',
         message: '삭제된 계정이에요.',
-        userId: context.userId || undefined
+        userId: context.userId || undefined,
       }),
-      redirectTo: '/onboarding'
+      redirectTo: '/onboarding',
     };
   }
 
   if (!userProfile.onboarding_completed) {
     logger.warn('온보딩 미완료', {
-      userId: context.userId || undefined
+      userId: context.userId || undefined,
     });
     return {
       allowed: false,
       error: new AppError({
         code: 'ONBOARDING_REQUIRED',
         message: '온보딩을 완료해주세요.',
-        userId: context.userId || undefined
+        userId: context.userId || undefined,
       }),
-      redirectTo: '/onboarding'
+      redirectTo: '/onboarding',
     };
   }
 
@@ -143,16 +143,16 @@ export function requireGuest(context: GuardContext): GuardResult {
     logger.warn('게스트 전용 페이지 - 로그인 사용자 접근 시도', {
       userId: userId || undefined,
       isGuest,
-      hasSession: !!session
+      hasSession: !!session,
     });
     return {
       allowed: false,
       error: new AppError({
         code: 'PERMISSION_DENIED',
         message: '게스트 전용 페이지예요.',
-        userId: userId || undefined
+        userId: userId ?? undefined,
       }),
-      redirectTo: '/home'
+      redirectTo: '/home',
     };
   }
 
@@ -169,7 +169,7 @@ export function requireOnboardingIncomplete(context: GuardContext): GuardResult 
     // 인증이 안 되어 있으면 온보딩 화면으로 리다이렉트
     return {
       allowed: true, // 온보딩 화면은 접근 허용
-      redirectTo: '/onboarding'
+      redirectTo: '/onboarding',
     };
   }
 
@@ -183,16 +183,16 @@ export function requireOnboardingIncomplete(context: GuardContext): GuardResult 
   // 이미 온보딩을 완료한 경우 홈으로 리다이렉트
   if (userProfile.onboarding_completed) {
     logger.warn('온보딩 완료 사용자 - 온보딩 화면 접근 시도', {
-      userId: context.userId || undefined
+      userId: context.userId || undefined,
     });
     return {
       allowed: false,
       error: new AppError({
         code: 'ONBOARDING_REQUIRED',
         message: '이미 온보딩을 완료했어요.',
-        userId: context.userId || undefined
+        userId: context.userId || undefined,
       }),
-      redirectTo: '/home'
+      redirectTo: '/home',
     };
   }
 
@@ -243,9 +243,11 @@ export function requireAny(
   const firstResult = guards[0](context);
   return {
     allowed: false,
-    error: firstResult.error || new AppError({
-      code: 'PERMISSION_DENIED',
-      message: '권한이 없어요.'
-    })
+    error:
+      firstResult.error ||
+      new AppError({
+        code: 'PERMISSION_DENIED',
+        message: '권한이 없어요.',
+      }),
   };
 }

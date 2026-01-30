@@ -14,7 +14,7 @@ export default function FeedPreview({ feedCount = 0, likeSum = 0 }: FeedPreviewP
       className="home-week-card"
       style={{
         marginTop: 24,
-        cursor: 'pointer'
+        cursor: 'pointer',
       }}
       onClick={() => navigate('/forest')}
     >
@@ -35,4 +35,3 @@ export default function FeedPreview({ feedCount = 0, likeSum = 0 }: FeedPreviewP
     </section>
   );
 }
-

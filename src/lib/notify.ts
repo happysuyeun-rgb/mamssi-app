@@ -97,7 +97,7 @@ class NotifyManager {
       icon,
       message,
       action,
-      duration: duration || (type === 'error' ? 5000 : 3000)
+      duration: duration || (type === 'error' ? 5000 : 3000),
     };
 
     if (this.currentToast) {
@@ -108,18 +108,14 @@ class NotifyManager {
     }
   }
 
-  banner(options: {
-    level: BannerLevel;
-    message: string;
-    dismissible?: boolean;
-  }) {
+  banner(options: { level: BannerLevel; message: string; dismissible?: boolean }) {
     const { level, message, dismissible = true } = options;
 
     const notification: BannerNotification = {
       id: this.generateId(),
       level,
       message,
-      dismissible
+      dismissible,
     };
 
     // 배너는 최대 1개만 표시
@@ -148,7 +144,7 @@ class NotifyManager {
       confirmLabel: confirmLabel || '확인',
       cancelLabel: cancelLabel || '취소',
       onConfirm,
-      onCancel
+      onCancel,
     };
 
     // 모달은 최대 1개만 표시
@@ -177,7 +173,10 @@ class NotifyManager {
   dismissBanner(id: string) {
     if (this.currentBanner?.id === id) {
       this.currentBanner = null;
-      this.emit({ type: 'banner', data: { id, level: 'info', message: '', dismissible: true } as BannerNotification });
+      this.emit({
+        type: 'banner',
+        data: { id, level: 'info', message: '', dismissible: true } as BannerNotification,
+      });
     }
   }
 
@@ -221,16 +220,3 @@ class NotifyManager {
 }
 
 export const notify = new NotifyManager();
-
-
-
-
-
-
-
-
-
-
-
-
-

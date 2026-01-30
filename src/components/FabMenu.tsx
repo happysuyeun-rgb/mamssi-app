@@ -38,7 +38,7 @@ export default function FabMenu({ className }: FabMenuProps) {
         handleNavigate('/record');
       },
       {
-        customMessage: '감정 기록을 남기려면 로그인 또는 가입이 필요해요.'
+        customMessage: '감정 기록을 남기려면 로그인 또는 가입이 필요해요.',
       }
     );
   };
@@ -88,5 +88,3 @@ export default function FabMenu({ className }: FabMenuProps) {
     </div>
   );
 }
-
-

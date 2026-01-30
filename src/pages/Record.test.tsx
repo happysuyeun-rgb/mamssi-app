@@ -12,12 +12,12 @@ const mockNotify = {
   error: vi.fn(),
   info: vi.fn(),
   banner: vi.fn(),
-  dismissBanner: vi.fn()
+  dismissBanner: vi.fn(),
 };
 
 const mockUser = {
   id: 'test-user-id',
-  email: 'test@example.com'
+  email: 'test@example.com',
 };
 
 vi.mock('react-router-dom', async () => {
@@ -25,21 +25,21 @@ vi.mock('react-router-dom', async () => {
   return {
     ...actual,
     useNavigate: () => mockNavigate,
-    useSearchParams: () => [new URLSearchParams(), vi.fn()]
+    useSearchParams: () => [new URLSearchParams(), vi.fn()],
   };
 });
 
 vi.mock('@providers/NotifyProvider', () => ({
   NotifyProvider: ({ children }: { children: React.ReactNode }) => children,
-  useNotify: () => mockNotify
+  useNotify: () => mockNotify,
 }));
 
 vi.mock('@hooks/useAuth', () => ({
   useAuth: () => ({
     user: mockUser,
     isGuest: false,
-    session: { access_token: 'test-token' }
-  })
+    session: { access_token: 'test-token' },
+  }),
 }));
 
 vi.mock('@hooks/useEmotions', () => ({
@@ -49,44 +49,42 @@ vi.mock('@hooks/useEmotions', () => ({
     updateEmotion: vi.fn().mockResolvedValue({ data: { id: 'updated-id' }, error: null }),
     fetchEmotions: vi.fn(),
     checkTodayPrivateEmotion: vi.fn().mockResolvedValue(false),
-    getEmotionById: vi.fn().mockResolvedValue(null)
-  })
+    getEmotionById: vi.fn().mockResolvedValue(null),
+  }),
 }));
 
 vi.mock('@hooks/useHomeData', () => ({
   useHomeData: () => ({
-    refetch: vi.fn()
-  })
+    refetch: vi.fn(),
+  }),
 }));
 
 vi.mock('@hooks/useActionGuard', () => ({
   useActionGuard: () => ({
-    requireAuthForAction: vi.fn((action, callback) => callback())
-  })
+    requireAuthForAction: vi.fn((action, callback) => callback()),
+  }),
 }));
 
 vi.mock('@utils/imageUpload', () => ({
   uploadEmotionImage: vi.fn().mockResolvedValue({
     url: 'https://example.com/image.jpg',
-    error: null
+    error: null,
   }),
-  deleteEmotionImage: vi.fn()
+  deleteEmotionImage: vi.fn(),
 }));
 
 vi.mock('@services/flowers', () => ({
-  updateFlowerGrowth: vi.fn().mockResolvedValue({})
+  updateFlowerGrowth: vi.fn().mockResolvedValue({}),
 }));
 
 vi.mock('@services/notifications', () => ({
-  createNotification: vi.fn().mockResolvedValue({})
+  createNotification: vi.fn().mockResolvedValue({}),
 }));
 
 const renderWithProviders = (component: React.ReactElement) => {
   return render(
     <BrowserRouter>
-      <NotifyProvider>
-        {component}
-      </NotifyProvider>
+      <NotifyProvider>{component}</NotifyProvider>
     </BrowserRouter>
   );
 };
@@ -112,12 +110,12 @@ describe('Record - 이미지 업로드 2개 제한', () => {
       item: (index: number) => file,
       [Symbol.iterator]: function* () {
         yield file;
-      }
+      },
     } as unknown as FileList;
 
     Object.defineProperty(fileInput, 'files', {
       value: fileList,
-      writable: false
+      writable: false,
     });
 
     fireEvent.change(fileInput!);
@@ -133,18 +131,18 @@ describe('Record - 이미지 업로드 2개 제한', () => {
     renderWithProviders(<Record />);
 
     const fileInput = screen.getByLabelText(/사진 추가/i).querySelector('input[type="file"]');
-    
+
     // 이미지 2개 추가
     const file1 = new File(['test1'], 'test1.jpg', { type: 'image/jpeg' });
     const file2 = new File(['test2'], 'test2.jpg', { type: 'image/jpeg' });
-    
+
     const fileList1 = {
       0: file1,
       length: 1,
       item: (index: number) => file1,
       [Symbol.iterator]: function* () {
         yield file1;
-      }
+      },
     } as unknown as FileList;
 
     const fileList2 = {
@@ -153,13 +151,13 @@ describe('Record - 이미지 업로드 2개 제한', () => {
       item: (index: number) => file2,
       [Symbol.iterator]: function* () {
         yield file2;
-      }
+      },
     } as unknown as FileList;
 
     // 첫 번째 이미지 추가
     Object.defineProperty(fileInput, 'files', {
       value: fileList1,
-      writable: false
+      writable: false,
     });
     fireEvent.change(fileInput!);
 
@@ -170,7 +168,7 @@ describe('Record - 이미지 업로드 2개 제한', () => {
     // 두 번째 이미지 추가
     Object.defineProperty(fileInput, 'files', {
       value: fileList2,
-      writable: false
+      writable: false,
     });
     fireEvent.change(fileInput!);
 
@@ -186,12 +184,12 @@ describe('Record - 이미지 업로드 2개 제한', () => {
       item: (index: number) => file3,
       [Symbol.iterator]: function* () {
         yield file3;
-      }
+      },
     } as unknown as FileList;
 
     Object.defineProperty(fileInput, 'files', {
       value: fileList3,
-      writable: false
+      writable: false,
     });
     fireEvent.change(fileInput!);
 
@@ -207,7 +205,7 @@ describe('Record - 이미지 업로드 2개 제한', () => {
     renderWithProviders(<Record />);
 
     const fileInput = screen.getByLabelText(/사진 추가/i).querySelector('input[type="file"]');
-    
+
     const largeFile = new File(['x'.repeat(11 * 1024 * 1024)], 'large.jpg', { type: 'image/jpeg' });
     const fileList = {
       0: largeFile,
@@ -215,12 +213,12 @@ describe('Record - 이미지 업로드 2개 제한', () => {
       item: (index: number) => largeFile,
       [Symbol.iterator]: function* () {
         yield largeFile;
-      }
+      },
     } as unknown as FileList;
 
     Object.defineProperty(fileInput, 'files', {
       value: fileList,
-      writable: false
+      writable: false,
     });
 
     fireEvent.change(fileInput!);
@@ -237,7 +235,7 @@ describe('Record - 이미지 업로드 2개 제한', () => {
     renderWithProviders(<Record />);
 
     const fileInput = screen.getByLabelText(/사진 추가/i).querySelector('input[type="file"]');
-    
+
     const textFile = new File(['test'], 'test.txt', { type: 'text/plain' });
     const fileList = {
       0: textFile,
@@ -245,12 +243,12 @@ describe('Record - 이미지 업로드 2개 제한', () => {
       item: (index: number) => textFile,
       [Symbol.iterator]: function* () {
         yield textFile;
-      }
+      },
     } as unknown as FileList;
 
     Object.defineProperty(fileInput, 'files', {
       value: fileList,
-      writable: false
+      writable: false,
     });
 
     fireEvent.change(fileInput!);

@@ -47,7 +47,7 @@ export function useActionGuard() {
           cancelLabel: '나중에 할게요',
           onConfirm: () => {
             navigate('/onboarding', { replace: true });
-          }
+          },
         });
       } else {
         // 토스트만 표시
@@ -59,16 +59,3 @@ export function useActionGuard() {
 
   return { requireAuthForAction };
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

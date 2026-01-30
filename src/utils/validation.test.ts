@@ -3,35 +3,35 @@ import { describe, it, expect } from 'vitest';
 // 씨앗 이름 유효성 검사 함수
 export function validateSeedName(name: string): { valid: boolean; error?: string } {
   const trimmed = name.trim();
-  
+
   if (!trimmed) {
     return { valid: false, error: '씨앗 이름을 입력해주세요.' };
   }
-  
+
   if (trimmed.length > 10) {
     return { valid: false, error: '씨앗 이름은 10자 이내로 입력해주세요.' };
   }
-  
+
   return { valid: true };
 }
 
 // 닉네임 유효성 검사 함수
 export function validateNickname(nickname: string): { valid: boolean; error?: string } {
   const trimmed = nickname.trim();
-  
+
   if (!trimmed) {
     return { valid: false, error: '닉네임을 비워둘 수는 없어요' };
   }
-  
+
   if (trimmed.length > 12) {
     return { valid: false, error: '닉네임은 1~12자로 입력해 주세요' };
   }
-  
+
   const forbidden = ['시발', '씨발', '개새', '좆', 'fuck', 'shit'];
   if (forbidden.some((w) => trimmed.toLowerCase().includes(w))) {
     return { valid: false, error: '조금 더 다정한 닉네임으로 바꿔볼까요?' };
   }
-  
+
   return { valid: true };
 }
 

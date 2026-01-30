@@ -6,8 +6,8 @@
   display: flex;
   justify-content: center;
   background:
-    radial-gradient(1400px 380px at 50% -80px, var(--mint-50, #E9FFF7), transparent 60%),
-    var(--bg, #F6FAF9);
+    radial-gradient(1400px 380px at 50% -80px, var(--mint-50, #e9fff7), transparent 60%),
+    var(--bg, #f6faf9);
 }
 
 .onboarding-app {
@@ -30,7 +30,7 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #BDF3E8, #69DFC6);
+  background: linear-gradient(135deg, #bdf3e8, #69dfc6);
   display: grid;
   place-items: center;
   box-shadow: 0 6px 18px rgba(35, 184, 157, 0.35);
@@ -44,7 +44,7 @@
 
 .onboarding-brand-sub {
   font-size: 11px;
-  color: var(--ink-muted, #8A94A6);
+  color: var(--ink-muted, #8a94a6);
 }
 
 .onboarding-card {
@@ -54,11 +54,11 @@
 }
 
 .onboarding-panel {
-  background: var(--surface, #FFFFFF);
+  background: var(--surface, #ffffff);
   border-radius: var(--radius, 24px);
   padding: 22px 20px;
   box-shadow: var(--shadow, 0 14px 40px rgba(20, 78, 67, 0.16));
-  border: 1px solid var(--border, #E6EBF0);
+  border: 1px solid var(--border, #e6ebf0);
   min-height: 370px;
   display: flex;
   flex-direction: column;
@@ -70,7 +70,7 @@
 
 .onboarding-eyebrow {
   font-size: 11px;
-  color: var(--ink-muted, #8A94A6);
+  color: var(--ink-muted, #8a94a6);
 }
 
 .onboarding-panel h1 {
@@ -79,12 +79,12 @@
   letter-spacing: -0.02em;
   margin: 6px 0 0;
   white-space: pre-line;
-  color: var(--ink, #0F172A);
+  color: var(--ink, #0f172a);
 }
 
 .onboarding-desc {
   font-size: 13px;
-  color: var(--ink-soft, #49566A);
+  color: var(--ink-soft, #49566a);
   margin-top: 8px;
   line-height: 1.6;
   white-space: pre-line;
@@ -103,7 +103,7 @@
   width: 160px;
   height: 160px;
   border-radius: 50%;
-  background: radial-gradient(circle at 25% 20%, #fff 0, var(--mint-50, #E9FFF7) 42%, #D6F7EC 100%);
+  background: radial-gradient(circle at 25% 20%, #fff 0, var(--mint-50, #e9fff7) 42%, #d6f7ec 100%);
   position: relative;
   display: grid;
   place-items: center;
@@ -137,7 +137,7 @@
 }
 
 .onboarding-dot.active {
-  background: linear-gradient(90deg, var(--mint-500, #39C6A5), var(--mint-600, #24B89D));
+  background: linear-gradient(90deg, var(--mint-500, #39c6a5), var(--mint-600, #24b89d));
 }
 
 .onboarding-tags {
@@ -149,9 +149,9 @@
 
 .onboarding-tag {
   font-size: 11px;
-  color: var(--ivy-800, #144E43);
-  background: linear-gradient(180deg, #F0FFFA, #E5FAF4);
-  border: 1px solid #CDEAE1;
+  color: var(--ivy-800, #144e43);
+  background: linear-gradient(180deg, #f0fffa, #e5faf4);
+  border: 1px solid #cdeae1;
   border-radius: 999px;
   padding: 6px 10px;
 }
@@ -173,7 +173,7 @@
 }
 
 .onboarding-btn-primary {
-  background: linear-gradient(180deg, var(--mint-500, #39C6A5), var(--mint-600, #24B89D));
+  background: linear-gradient(180deg, var(--mint-500, #39c6a5), var(--mint-600, #24b89d));
   color: #fff;
   box-shadow: 0 10px 26px rgba(35, 184, 157, 0.35);
 }
@@ -185,18 +185,18 @@
 
 .onboarding-btn-outline {
   background: #fff;
-  color: var(--ivy-800, #144E43);
-  border-color: #CFE7E0;
+  color: var(--ivy-800, #144e43);
+  border-color: #cfe7e0;
 }
 
 .onboarding-btn-outline:hover {
-  background: var(--mint-50, #E9FFF7);
+  background: var(--mint-50, #e9fff7);
 }
 
 .onboarding-btn-ghost {
   background: none;
   border: none;
-  color: #7B8797;
+  color: #7b8797;
   font-weight: 700;
   height: auto;
   padding: 0;
@@ -205,7 +205,7 @@
 }
 
 .onboarding-btn-ghost:hover {
-  color: var(--ivy-800, #144E43);
+  color: var(--ivy-800, #144e43);
 }
 
 .onboarding-btn-full {
@@ -237,7 +237,7 @@
   flex-direction: column;
   gap: 6px;
   font-size: 12px;
-  color: var(--ink-soft, #49566A);
+  color: var(--ink-soft, #49566a);
   margin-top: 10px;
 }
 
@@ -248,7 +248,7 @@
   cursor: pointer;
 }
 
-.onboarding-terms input[type="checkbox"] {
+.onboarding-terms input[type='checkbox'] {
   margin-top: 2px;
   cursor: pointer;
 }
@@ -256,23 +256,23 @@
 .onboarding-input {
   width: 100%;
   padding: 12px 14px;
-  border: 1px solid var(--border, #E6EBF0);
+  border: 1px solid var(--border, #e6ebf0);
   border-radius: 16px;
-  background: #F9FAFB;
+  background: #f9fafb;
   font-size: 16px;
-  color: var(--ink, #0F172A);
+  color: var(--ink, #0f172a);
   transition: all 0.2s;
 }
 
 .onboarding-input:focus {
-  border-color: var(--mint-500, #39C6A5);
+  border-color: var(--mint-500, #39c6a5);
   outline: none;
   background: #fff;
   box-shadow: 0 0 0 1px rgba(35, 184, 157, 0.2);
 }
 
 .onboarding-error {
-  color: #DC2626;
+  color: #dc2626;
   font-size: 11px;
   margin-top: 4px;
   display: none;
@@ -284,26 +284,19 @@
 
 /* CSS Variables for Onboarding */
 :root {
-  --mint-50: #E9FFF7;
-  --mint-100: #CFF6EC;
-  --mint-300: #7EDBC2;
-  --mint-500: #39C6A5;
-  --mint-600: #24B89D;
-  --ivy-800: #144E43;
-  --ink: #0F172A;
-  --ink-soft: #49566A;
-  --ink-muted: #8A94A6;
-  --border: #E6EBF0;
-  --surface: #FFFFFF;
-  --bg: #F6FAF9;
+  --mint-50: #e9fff7;
+  --mint-100: #cff6ec;
+  --mint-300: #7edbc2;
+  --mint-500: #39c6a5;
+  --mint-600: #24b89d;
+  --ivy-800: #144e43;
+  --ink: #0f172a;
+  --ink-soft: #49566a;
+  --ink-muted: #8a94a6;
+  --border: #e6ebf0;
+  --surface: #ffffff;
+  --bg: #f6faf9;
   --shadow: 0 14px 40px rgba(20, 78, 67, 0.16);
   --radius: 24px;
   --radius-btn: 18px;
 }
-
-
-
-
-
-
-

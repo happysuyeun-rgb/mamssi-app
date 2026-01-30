@@ -12,7 +12,7 @@ export default function TodayRecordCTA({ todayLogged, todayDate }: TodayRecordCT
   const navigate = useNavigate();
   const { isGuest, session } = useAuth();
   const notify = useNotify();
-  
+
   // 더미 props가 없으면 실제 오늘 날짜 사용
   const targetDate = todayDate || new Date().toISOString().split('T')[0];
   const isLogged = todayLogged !== undefined ? todayLogged : false;
@@ -28,15 +28,15 @@ export default function TodayRecordCTA({ todayLogged, todayDate }: TodayRecordCT
         cancelLabel: '닫기',
         onConfirm: () => {
           console.log('[TodayRecordCTA] go signup - 회원가입 페이지로 이동');
-          diag.log('TodayRecordCTA: 회원가입 페이지로 이동', { 
+          diag.log('TodayRecordCTA: 회원가입 페이지로 이동', {
             path: '/signup',
-            isGuest: isGuestMode
+            isGuest: isGuestMode,
           });
           navigate('/signup', { replace: true });
         },
         onCancel: () => {
           // 닫기 버튼 클릭 시 아무 동작 없음
-        }
+        },
       });
       return;
     }
@@ -65,11 +65,10 @@ export default function TodayRecordCTA({ todayLogged, todayDate }: TodayRecordCT
         cursor: 'pointer',
         transition: 'all 0.2s',
         boxShadow: 'var(--ms-shadow-soft)',
-        opacity: 1
+        opacity: 1,
       }}
     >
       🌿 {isLogged ? '오늘의 감정 수정하기' : '오늘의 감정 기록하기'}
     </button>
   );
 }
-

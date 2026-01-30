@@ -42,12 +42,16 @@ function formatDotDate(iso: string): string {
   return `${date.getFullYear()}.${String(date.getMonth() + 1).padStart(2, '0')}.${String(date.getDate()).padStart(2, '0')}`;
 }
 
-
 function cn(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(' ');
 }
 
-export default function WeeklyMoodWidget({ weekSummary, weekStart, todayDate, onDeleteRecord }: WeeklyMoodWidgetProps) {
+export default function WeeklyMoodWidget({
+  weekSummary,
+  weekStart,
+  todayDate,
+  onDeleteRecord,
+}: WeeklyMoodWidgetProps) {
   const navigate = useNavigate();
   const notify = useNotify();
   const [selectedDayIndex, setSelectedDayIndex] = useState<number | null>(null);
@@ -56,20 +60,22 @@ export default function WeeklyMoodWidget({ weekSummary, weekStart, todayDate, on
 
   // 더미 props가 없으면 실제 데이터 생성
   const actualToday = todayDate || new Date().toISOString().split('T')[0];
-  const actualWeekStart = weekStart || (() => {
-    const today = new Date(actualToday);
-    const day = today.getDay();
-    const diff = (day + 6) % 7;
-    const start = new Date(today);
-    start.setDate(start.getDate() - diff);
-    return start.toISOString().split('T')[0];
-  })();
+  const actualWeekStart =
+    weekStart ||
+    (() => {
+      const today = new Date(actualToday);
+      const day = today.getDay();
+      const diff = (day + 6) % 7;
+      const start = new Date(today);
+      start.setDate(start.getDate() - diff);
+      return start.toISOString().split('T')[0];
+    })();
 
   const weekData = useMemo(() => {
     if (weekSummary) {
       return weekSummary.map((record, idx) => ({
         ...record,
-        date: record.date || getDayIso(actualWeekStart, idx)
+        date: record.date || getDayIso(actualWeekStart, idx),
       }));
     }
     // 더미 데이터가 없으면 빈 배열 반환
@@ -79,7 +85,7 @@ export default function WeeklyMoodWidget({ weekSummary, weekStart, todayDate, on
       label: undefined,
       note: undefined,
       recordId: undefined,
-      imageUrl: undefined
+      imageUrl: undefined,
     }));
   }, [weekSummary, actualWeekStart]);
 
@@ -91,13 +97,13 @@ export default function WeeklyMoodWidget({ weekSummary, weekStart, todayDate, on
   function handleWeekDayClick(index: number) {
     const dayIso = getDayIso(actualWeekStart, index);
     const entry = weekData[index];
-    
+
     // 미래 날짜 체크
     if (dayIso > actualToday) {
       notify.warning('미래날짜는 기록할수 없어요!', '⚠️');
       return;
     }
-    
+
     if (!entry || !entry.emoji) {
       // 기록이 없는 날짜 (과거 또는 오늘)
       if (dayIso === actualToday) {
@@ -108,7 +114,7 @@ export default function WeeklyMoodWidget({ weekSummary, weekStart, todayDate, on
       }
       return;
     }
-    
+
     // 기록이 있는 날짜는 모달 표시
     setSelectedDayIndex(index);
     setEmotionModalOpen(true);
@@ -116,9 +122,9 @@ export default function WeeklyMoodWidget({ weekSummary, weekStart, todayDate, on
 
   function onEditEmotion() {
     if (!modalRecord || !modalRecord.recordId) return;
-    console.log('[WeeklyMoodWidget] 수정 버튼 클릭:', { 
-      recordId: modalRecord.recordId, 
-      date: modalRecord.date 
+    console.log('[WeeklyMoodWidget] 수정 버튼 클릭:', {
+      recordId: modalRecord.recordId,
+      date: modalRecord.date,
     });
     setEmotionModalOpen(false);
     navigate(`/record?id=${modalRecord.recordId}&date=${modalRecord.date}`);
@@ -126,7 +132,7 @@ export default function WeeklyMoodWidget({ weekSummary, weekStart, todayDate, on
 
   async function onDeleteEmotion() {
     if (!modalRecord || !modalRecord.recordId || !onDeleteRecord) return;
-    
+
     const confirmed = window.confirm('정말 이 기록을 삭제할까요?');
     if (!confirmed) return;
 
@@ -137,10 +143,10 @@ export default function WeeklyMoodWidget({ weekSummary, weekStart, todayDate, on
       console.log('[WeeklyMoodWidget] 삭제 완료:', { recordId: modalRecord.recordId });
       setEmotionModalOpen(false);
     } catch (err) {
-      console.error('[WeeklyMoodWidget] 삭제 실패:', { 
-        recordId: modalRecord.recordId, 
+      console.error('[WeeklyMoodWidget] 삭제 실패:', {
+        recordId: modalRecord.recordId,
         error: err,
-        errorMessage: err instanceof Error ? err.message : String(err)
+        errorMessage: err instanceof Error ? err.message : String(err),
       });
       alert('기록 삭제에 실패했어요. 잠시 후 다시 시도해주세요.');
     } finally {
@@ -189,7 +195,9 @@ export default function WeeklyMoodWidget({ weekSummary, weekStart, todayDate, on
             );
           })}
         </div>
-        <p className="home-week-helper">기록이 없는 날은 · 로 표시돼요. 눌러서 오늘부터 천천히 채워갈 수 있어요.</p>
+        <p className="home-week-helper">
+          기록이 없는 날은 · 로 표시돼요. 눌러서 오늘부터 천천히 채워갈 수 있어요.
+        </p>
       </section>
 
       {/* 감정 상세 모달 */}
@@ -206,7 +214,7 @@ export default function WeeklyMoodWidget({ weekSummary, weekStart, todayDate, on
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            zIndex: 30
+            zIndex: 30,
           }}
         >
           <div className="forest-sheet home-detail-sheet">
@@ -216,14 +224,20 @@ export default function WeeklyMoodWidget({ weekSummary, weekStart, todayDate, on
                 <h2 className="forest-sheet-title">{modalDayName}요일의 마음</h2>
                 <p className="forest-sheet-meta">{modalDateLabel}</p>
               </div>
-              <button type="button" className="forest-sheet-close" onClick={() => setEmotionModalOpen(false)}>
+              <button
+                type="button"
+                className="forest-sheet-close"
+                onClick={() => setEmotionModalOpen(false)}
+              >
                 닫기
               </button>
             </div>
 
             <div className="forest-sheet-emotion-row">
               <span className="forest-sheet-emotion">{modalRecord.emoji}</span>
-              {modalRecord.label && <span className="forest-category-pill">{modalRecord.label}</span>}
+              {modalRecord.label && (
+                <span className="forest-category-pill">{modalRecord.label}</span>
+              )}
             </div>
 
             {modalRecord.note && (
@@ -232,43 +246,40 @@ export default function WeeklyMoodWidget({ weekSummary, weekStart, todayDate, on
               </div>
             )}
 
-            {modalRecord.imageUrl && (() => {
-              // 이미지 URL 배열로 변환 (현재는 단일 이미지, 향후 확장 가능)
-              const imageUrls = modalRecord.imageUrl ? [modalRecord.imageUrl] : [];
-              
-              return imageUrls.length > 0 ? (
-                <div className="emotion-record-images">
-                  {imageUrls.map((url, idx) => (
-                    <img
-                      key={idx}
-                      src={url}
-                      alt={`감정 기록 이미지 ${idx + 1}`}
-                    />
-                  ))}
-                </div>
-              ) : null;
-            })()}
+            {modalRecord.imageUrl &&
+              (() => {
+                // 이미지 URL 배열로 변환 (현재는 단일 이미지, 향후 확장 가능)
+                const imageUrls = modalRecord.imageUrl ? [modalRecord.imageUrl] : [];
+
+                return imageUrls.length > 0 ? (
+                  <div className="emotion-record-images">
+                    {imageUrls.map((url, idx) => (
+                      <img key={idx} src={url} alt={`감정 기록 이미지 ${idx + 1}`} />
+                    ))}
+                  </div>
+                ) : null;
+              })()}
 
             {modalRecord.recordId && (
               <div className="forest-sheet-actions">
-                <button 
-                  type="button" 
-                  className="forest-sheet-owner-btn" 
+                <button
+                  type="button"
+                  className="forest-sheet-owner-btn"
                   onClick={onEditEmotion}
                   disabled={isDeleting}
                 >
                   수정
                 </button>
                 {onDeleteRecord && (
-                  <button 
-                    type="button" 
-                    className="forest-sheet-owner-btn" 
+                  <button
+                    type="button"
+                    className="forest-sheet-owner-btn"
                     onClick={onDeleteEmotion}
                     disabled={isDeleting}
-                    style={{ 
+                    style={{
                       color: '#ef4444',
                       borderColor: '#fecaca',
-                      background: '#fff5f5'
+                      background: '#fff5f5',
                     }}
                   >
                     {isDeleting ? '삭제 중...' : '삭제'}
@@ -282,4 +293,3 @@ export default function WeeklyMoodWidget({ weekSummary, weekStart, todayDate, on
     </>
   );
 }
-

@@ -27,6 +27,8 @@ export type UserSettingsRow = {
   seed_name: string | null; // 씨앗 이름 (10자 이내)
   lock_type: 'pattern' | 'pin' | null;
   lock_value: string | null;
+  birthdate?: string | null; // 선택적 (UI 표시용)
+  gender?: string | null; // 선택적 (UI 표시용)
   updated_at: string;
   created_at: string;
 };

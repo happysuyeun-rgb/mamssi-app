@@ -60,6 +60,14 @@ export type NotificationType =
   | 'maintenance_notice'
   | 'app_update_required';
 
+/** 알림 메시지 템플릿 (config/notificationMessages에서 사용) */
+export type NotificationMessageTemplate = {
+  icon: string;
+  title: string;
+  message: string;
+  category: NotificationCategory;
+};
+
 export interface NotificationRecord {
   id: string;
   userId: string;
@@ -72,4 +80,3 @@ export interface NotificationRecord {
   createdAt: string;
   meta?: Record<string, unknown>;
 }
-

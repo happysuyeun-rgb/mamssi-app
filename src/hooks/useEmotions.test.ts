@@ -14,12 +14,12 @@ vi.mock('@lib/supabaseClient', () => ({
       eq: vi.fn().mockReturnThis(),
       order: vi.fn().mockReturnThis(),
       limit: vi.fn().mockReturnThis(),
-      single: vi.fn()
+      single: vi.fn(),
     })),
     auth: {
-      getUser: vi.fn()
-    }
-  }
+      getUser: vi.fn(),
+    },
+  },
 }));
 
 describe('useEmotions', () => {
@@ -31,25 +31,25 @@ describe('useEmotions', () => {
     it('image_url이 null이어도 payload에 포함되어야 함', async () => {
       const mockInsert = vi.fn().mockResolvedValue({
         data: { id: 'new-id', image_url: null },
-        error: null
+        error: null,
       });
 
       const mockSingle = vi.fn().mockResolvedValue({
         data: { id: 'new-id', image_url: null },
-        error: null
+        error: null,
       });
 
       (supabase.from as any).mockReturnValue({
         insert: vi.fn().mockReturnValue({
           select: vi.fn().mockReturnValue({
-            single: mockSingle
-          })
-        })
+            single: mockSingle,
+          }),
+        }),
       });
 
       (supabase.auth.getUser as any).mockResolvedValue({
         data: { user: { id: 'test-user-id' } },
-        error: null
+        error: null,
       });
 
       const { result } = renderHook(() => useEmotions({ userId: 'test-user-id' }));
@@ -57,7 +57,7 @@ describe('useEmotions', () => {
       const payload = {
         emotion_type: '기쁨',
         content: '테스트 내용',
-        image_url: null
+        image_url: null,
       };
 
       await waitFor(async () => {
@@ -69,20 +69,20 @@ describe('useEmotions', () => {
     it('image_url이 빈 문자열이면 null로 변환되어야 함', async () => {
       const mockSingle = vi.fn().mockResolvedValue({
         data: { id: 'new-id', image_url: null },
-        error: null
+        error: null,
       });
 
       (supabase.from as any).mockReturnValue({
         insert: vi.fn().mockReturnValue({
           select: vi.fn().mockReturnValue({
-            single: mockSingle
-          })
-        })
+            single: mockSingle,
+          }),
+        }),
       });
 
       (supabase.auth.getUser as any).mockResolvedValue({
         data: { user: { id: 'test-user-id' } },
-        error: null
+        error: null,
       });
 
       const { result } = renderHook(() => useEmotions({ userId: 'test-user-id' }));
@@ -90,7 +90,7 @@ describe('useEmotions', () => {
       const payload = {
         emotion_type: '기쁨',
         content: '테스트 내용',
-        image_url: ''
+        image_url: '',
       };
 
       await waitFor(async () => {
@@ -103,20 +103,20 @@ describe('useEmotions', () => {
     it('image_url이 유효한 URL이면 그대로 포함되어야 함', async () => {
       const mockSingle = vi.fn().mockResolvedValue({
         data: { id: 'new-id', image_url: 'https://example.com/image.jpg' },
-        error: null
+        error: null,
       });
 
       (supabase.from as any).mockReturnValue({
         insert: vi.fn().mockReturnValue({
           select: vi.fn().mockReturnValue({
-            single: mockSingle
-          })
-        })
+            single: mockSingle,
+          }),
+        }),
       });
 
       (supabase.auth.getUser as any).mockResolvedValue({
         data: { user: { id: 'test-user-id' } },
-        error: null
+        error: null,
       });
 
       const { result } = renderHook(() => useEmotions({ userId: 'test-user-id' }));
@@ -124,7 +124,7 @@ describe('useEmotions', () => {
       const payload = {
         emotion_type: '기쁨',
         content: '테스트 내용',
-        image_url: 'https://example.com/image.jpg'
+        image_url: 'https://example.com/image.jpg',
       };
 
       await waitFor(async () => {
@@ -139,7 +139,7 @@ describe('useEmotions', () => {
     it('image_url이 null이어도 payload에 포함되어야 함', async () => {
       const mockSingle = vi.fn().mockResolvedValue({
         data: { id: 'updated-id', image_url: null },
-        error: null
+        error: null,
       });
 
       (supabase.from as any).mockReturnValue({
@@ -147,17 +147,17 @@ describe('useEmotions', () => {
           eq: vi.fn().mockReturnValue({
             eq: vi.fn().mockReturnValue({
               select: vi.fn().mockReturnValue({
-                single: mockSingle
-              })
-            })
-          })
-        })
+                single: mockSingle,
+              }),
+            }),
+          }),
+        }),
       });
 
       const { result } = renderHook(() => useEmotions({ userId: 'test-user-id' }));
 
       const payload = {
-        image_url: null
+        image_url: null,
       };
 
       await waitFor(async () => {
@@ -169,7 +169,7 @@ describe('useEmotions', () => {
     it('image_url이 빈 문자열이면 null로 변환되어야 함', async () => {
       const mockSingle = vi.fn().mockResolvedValue({
         data: { id: 'updated-id', image_url: null },
-        error: null
+        error: null,
       });
 
       (supabase.from as any).mockReturnValue({
@@ -177,17 +177,17 @@ describe('useEmotions', () => {
           eq: vi.fn().mockReturnValue({
             eq: vi.fn().mockReturnValue({
               select: vi.fn().mockReturnValue({
-                single: mockSingle
-              })
-            })
-          })
-        })
+                single: mockSingle,
+              }),
+            }),
+          }),
+        }),
       });
 
       const { result } = renderHook(() => useEmotions({ userId: 'test-user-id' }));
 
       const payload = {
-        image_url: ''
+        image_url: '',
       };
 
       await waitFor(async () => {

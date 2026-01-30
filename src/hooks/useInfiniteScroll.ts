@@ -1,10 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-export function useInfiniteScroll(
-  callback: () => void,
-  hasMore: boolean,
-  loading: boolean
-) {
+export function useInfiniteScroll(callback: () => void, hasMore: boolean, loading: boolean) {
   const observerRef = useRef<IntersectionObserver | null>(null);
   const elementRef = useRef<HTMLDivElement | null>(null);
 
@@ -37,9 +33,3 @@ export function useInfiniteScroll(
 
   return elementRef;
 }
-
-
-
-
-
-

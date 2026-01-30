@@ -81,7 +81,7 @@ export function useHomeData(userId?: string | null) {
           message: todayError.message,
           details: todayError.details,
           hint: todayError.hint,
-          userId
+          userId,
         });
       }
 
@@ -104,7 +104,7 @@ export function useHomeData(userId?: string | null) {
           message: weeklyError.message,
           details: weeklyError.details,
           hint: weeklyError.hint,
-          userId
+          userId,
         });
       }
 
@@ -126,7 +126,7 @@ export function useHomeData(userId?: string | null) {
         return {
           main_emotion, // DB 스키마: main_emotion
           count: value.count,
-          date: value.date
+          date: value.date,
         };
       });
 
@@ -145,7 +145,7 @@ export function useHomeData(userId?: string | null) {
           message: flowerError.message,
           details: flowerError.details,
           hint: flowerError.hint,
-          userId
+          userId,
         });
       }
 
@@ -155,13 +155,14 @@ export function useHomeData(userId?: string | null) {
         try {
           // ensureFlowerRow 사용 (진행 중 꽃만 생성/조회)
           const { ensureFlowerRow } = await import('@services/flowers');
-          const newFlower = await ensureFlowerRow(userId);
-          if (newFlower) {
+          const newFlowerResult = await ensureFlowerRow(userId);
+          if (!newFlowerResult.error && newFlowerResult.data) {
+            const newFlower = newFlowerResult.data;
             console.log('[useHomeData] 진행 중 꽃 생성 성공 (fallback):', {
               userId,
               flowerId: newFlower.id,
               growthPercent: newFlower.growth_percent,
-              isBloomed: newFlower.is_bloomed
+              isBloomed: newFlower.is_bloomed,
             });
             // DB 스키마에 맞게 매핑
             setFlower({
@@ -172,7 +173,7 @@ export function useHomeData(userId?: string | null) {
               is_bloomed: newFlower.is_bloomed,
               bloomed_at: newFlower.bloomed_at,
               created_at: newFlower.created_at,
-              updated_at: newFlower.updated_at
+              updated_at: newFlower.updated_at,
             });
           } else {
             console.warn('[useHomeData] 진행 중 꽃 생성 실패 (fallback):', { userId });
@@ -181,8 +182,9 @@ export function useHomeData(userId?: string | null) {
         } catch (fallbackError) {
           console.error('[useHomeData] 진행 중 꽃 생성 중 오류 (fallback):', {
             error: fallbackError,
-            errorMessage: fallbackError instanceof Error ? fallbackError.message : String(fallbackError),
-            userId
+            errorMessage:
+              fallbackError instanceof Error ? fallbackError.message : String(fallbackError),
+            userId,
           });
           setFlower(null);
         }
@@ -192,7 +194,7 @@ export function useHomeData(userId?: string | null) {
           userId,
           flowerId: flowerData.id,
           growthPercent: flowerData.growth_percent,
-          isBloomed: flowerData.is_bloomed
+          isBloomed: flowerData.is_bloomed,
         });
         setFlower(flowerData as FlowerData);
       }
@@ -224,52 +226,55 @@ export function useHomeData(userId?: string | null) {
           message: userSettingsError.message,
           details: userSettingsError.details,
           hint: userSettingsError.hint,
-          userId
+          userId,
         });
       }
 
       // seedName 우선순위: 1. user_settings.seed_name, 2. flowers.seed_name, 3. 기본값 '나의 씨앗'
-      const finalSeedName =
-        userSettingsData?.seed_name ||
-        flowerData?.seed_name ||
-        '나의 씨앗';
+      const finalSeedName = userSettingsData?.seed_name || flowerData?.seed_name || '나의 씨앗';
 
       console.log('[useHomeData] seedName 업데이트:', {
         userId,
-        userSettingsData: userSettingsData ? {
-          seed_name: userSettingsData.seed_name,
-          updated_at: userSettingsData.updated_at
-        } : null,
+        userSettingsData: userSettingsData
+          ? {
+              seed_name: userSettingsData.seed_name,
+              updated_at: userSettingsData.updated_at,
+            }
+          : null,
         flowerSeedName: flowerData?.seed_name,
         finalSeedName,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
 
       setToday(todayData || null);
       setWeekStats(weekStatsArray);
       setFeedSummary({ likeSum, postCount });
       setSeedName(finalSeedName);
-      
+
       console.log('[useHomeData] fetchData 완료:', {
         userId,
-        flowerData: flowerData ? {
-          id: flowerData.id,
-          growthPercent: flowerData.growth_percent,
-          isBloomed: flowerData.is_bloomed,
-          flowerType: flowerData.flower_type
-        } : null,
+        flowerData: flowerData
+          ? {
+              id: flowerData.id,
+              growthPercent: flowerData.growth_percent,
+              isBloomed: flowerData.is_bloomed,
+              flowerType: flowerData.flower_type,
+            }
+          : null,
         hasFlower: !!flowerData,
-        flowerStateUpdated: true
+        flowerStateUpdated: true,
       });
-      
+
       console.log('[useHomeData] fetchData 완료:', {
         userId,
-        flowerData: flowerData ? {
-          id: flowerData.id,
-          growthPercent: flowerData.growth_percent,
-          isBloomed: flowerData.is_bloomed
-        } : null,
-        hasFlower: !!flowerData
+        flowerData: flowerData
+          ? {
+              id: flowerData.id,
+              growthPercent: flowerData.growth_percent,
+              isBloomed: flowerData.is_bloomed,
+            }
+          : null,
+        hasFlower: !!flowerData,
       });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '데이터를 불러오는데 실패했어요.';
@@ -278,7 +283,7 @@ export function useHomeData(userId?: string | null) {
         error: err,
         errorMessage: err instanceof Error ? err.message : String(err),
         errorStack: err instanceof Error ? err.stack : undefined,
-        userId
+        userId,
       });
       notify.error('데이터를 불러오지 못했어요 🌧', '🌧');
     } finally {
@@ -306,7 +311,7 @@ export function useHomeData(userId?: string | null) {
           event: '*',
           schema: 'public',
           table: 'emotions',
-          filter: `user_id=eq.${userId}`
+          filter: `user_id=eq.${userId}`,
         },
         () => {
           fetchData();
@@ -323,7 +328,7 @@ export function useHomeData(userId?: string | null) {
           event: '*',
           schema: 'public',
           table: 'flowers',
-          filter: `user_id=eq.${userId}`
+          filter: `user_id=eq.${userId}`,
         },
         () => {
           fetchData();
@@ -340,7 +345,7 @@ export function useHomeData(userId?: string | null) {
           event: '*',
           schema: 'public',
           table: 'community_posts',
-          filter: `user_id=eq.${userId}`
+          filter: `user_id=eq.${userId}`,
         },
         () => {
           fetchData();
@@ -357,13 +362,13 @@ export function useHomeData(userId?: string | null) {
           event: '*',
           schema: 'public',
           table: 'user_settings',
-          filter: `user_id=eq.${userId}`
+          filter: `user_id=eq.${userId}`,
         },
         (payload) => {
           console.log('[useHomeData] user_settings 변경 감지:', {
             event: payload.eventType,
             new: payload.new,
-            old: payload.old
+            old: payload.old,
           });
           fetchData();
         }
@@ -400,7 +405,6 @@ export function useHomeData(userId?: string | null) {
     seedName,
     loading,
     error,
-    refetch
+    refetch,
   };
 }
-

@@ -56,14 +56,16 @@ export async function fetchCommunityPosts(options: {
   try {
     let query = supabase
       .from('community_posts')
-      .select(`
+      .select(
+        `
         *,
         profiles:user_id (
           nickname,
           seed_name,
           mbti
         )
-      `)
+      `
+      )
       .eq('is_public', true)
       .eq('is_hidden', false); // 숨김글 제외
 
@@ -92,7 +94,7 @@ export async function fetchCommunityPosts(options: {
         message: error.message,
         details: error.details,
         hint: error.hint,
-        options
+        options,
       });
       throw error;
     }
@@ -105,8 +107,8 @@ export async function fetchCommunityPosts(options: {
       profiles: post.profiles || {
         nickname: '익명',
         seed_name: null,
-        mbti: null
-      }
+        mbti: null,
+      },
     }));
 
     // 로그인 사용자의 공감 여부 확인
@@ -123,7 +125,7 @@ export async function fetchCommunityPosts(options: {
           code: likesError.code,
           message: likesError.message,
           details: likesError.details,
-          hint: likesError.hint
+          hint: likesError.hint,
         });
       }
 
@@ -132,24 +134,24 @@ export async function fetchCommunityPosts(options: {
       const postsWithLikes = postsWithProfiles.map((post) => ({
         ...post,
         is_liked_by_me: likedPostIds.has(post.id),
-        is_mine: post.user_id === userId
+        is_mine: post.user_id === userId,
       }));
 
       return {
         data: postsWithLikes,
-        hasMore: posts.length === pageSize // 다음 페이지 존재 여부
+        hasMore: posts.length === pageSize, // 다음 페이지 존재 여부
       };
     }
 
     return {
       data: posts,
-      hasMore: posts.length === pageSize
+      hasMore: posts.length === pageSize,
     };
   } catch (err) {
     console.error('[fetchCommunityPosts] 예외 발생:', {
       error: err,
       errorMessage: err instanceof Error ? err.message : String(err),
-      options
+      options,
     });
     throw err;
   }
@@ -165,14 +167,16 @@ export async function fetchCommunityPost(
   try {
     const { data, error } = await supabase
       .from('community_posts')
-      .select(`
+      .select(
+        `
         *,
         profiles:user_id (
           nickname,
           seed_name,
           mbti
         )
-      `)
+      `
+      )
       .eq('id', postId)
       .eq('is_public', true)
       .maybeSingle();
@@ -183,7 +187,7 @@ export async function fetchCommunityPost(
         message: error.message,
         details: error.details,
         hint: error.hint,
-        postId
+        postId,
       });
       return null;
     }
@@ -197,7 +201,7 @@ export async function fetchCommunityPost(
       post.profiles = {
         nickname: '익명',
         seed_name: null,
-        mbti: null
+        mbti: null,
       };
     }
 
@@ -219,7 +223,7 @@ export async function fetchCommunityPost(
     console.error('[fetchCommunityPost] 예외 발생:', {
       error: err,
       errorMessage: err instanceof Error ? err.message : String(err),
-      postId
+      postId,
     });
     return null;
   }
@@ -247,16 +251,18 @@ export async function createCommunityPost(payload: {
         image_url: payload.image_url,
         emotion_id: payload.emotion_id,
         is_public: true,
-        is_hidden: false
+        is_hidden: false,
       })
-      .select(`
+      .select(
+        `
         *,
         profiles:user_id (
           nickname,
           seed_name,
           mbti
         )
-      `)
+      `
+      )
       .single();
 
     if (error) {
@@ -265,7 +271,7 @@ export async function createCommunityPost(payload: {
         message: error.message,
         details: error.details,
         hint: error.hint,
-        payload
+        payload,
       });
       throw error;
     }
@@ -275,7 +281,7 @@ export async function createCommunityPost(payload: {
     console.error('[createCommunityPost] 예외 발생:', {
       error: err,
       errorMessage: err instanceof Error ? err.message : String(err),
-      payload
+      payload,
     });
     throw err;
   }
@@ -300,14 +306,16 @@ export async function updateCommunityPost(
       .update(payload)
       .eq('id', postId)
       .eq('user_id', userId) // RLS와 함께 이중 체크
-      .select(`
+      .select(
+        `
         *,
         profiles:user_id (
           nickname,
           seed_name,
           mbti
         )
-      `)
+      `
+      )
       .single();
 
     if (error) {
@@ -318,19 +326,19 @@ export async function updateCommunityPost(
         hint: error.hint,
         postId,
         userId,
-        payload
+        payload,
       });
       throw error;
     }
 
     const post = data as CommunityPost;
-    
+
     // profiles 정보가 없는 경우 기본값 설정 (방어 로직)
     if (!post.profiles) {
       post.profiles = {
         nickname: '익명',
         seed_name: null,
-        mbti: null
+        mbti: null,
       };
     }
 
@@ -341,7 +349,7 @@ export async function updateCommunityPost(
       errorMessage: err instanceof Error ? err.message : String(err),
       postId,
       userId,
-      payload
+      payload,
     });
     throw err;
   }
@@ -365,7 +373,7 @@ export async function deleteCommunityPost(postId: string, userId: string): Promi
         details: error.details,
         hint: error.hint,
         postId,
-        userId
+        userId,
       });
       throw error;
     }
@@ -376,7 +384,7 @@ export async function deleteCommunityPost(postId: string, userId: string): Promi
       error: err,
       errorMessage: err instanceof Error ? err.message : String(err),
       postId,
-      userId
+      userId,
     });
     throw err;
   }
@@ -385,7 +393,11 @@ export async function deleteCommunityPost(postId: string, userId: string): Promi
 /**
  * 공감 토글 (추가/취소)
  */
-export async function toggleLike(postId: string, userId: string, isLiked: boolean): Promise<boolean> {
+export async function toggleLike(
+  postId: string,
+  userId: string,
+  isLiked: boolean
+): Promise<boolean> {
   try {
     if (isLiked) {
       // 공감 취소
@@ -402,18 +414,16 @@ export async function toggleLike(postId: string, userId: string, isLiked: boolea
           details: error.details,
           hint: error.hint,
           postId,
-          userId
+          userId,
         });
         throw error;
       }
     } else {
       // 공감 추가
-      const { error } = await supabase
-        .from('community_likes')
-        .insert({
-          post_id: postId,
-          user_id: userId
-        });
+      const { error } = await supabase.from('community_likes').insert({
+        post_id: postId,
+        user_id: userId,
+      });
 
       if (error) {
         // 중복 공감 시도는 무시 (unique 제약 조건)
@@ -427,7 +437,7 @@ export async function toggleLike(postId: string, userId: string, isLiked: boolea
           details: error.details,
           hint: error.hint,
           postId,
-          userId
+          userId,
         });
         throw error;
       }
@@ -440,7 +450,7 @@ export async function toggleLike(postId: string, userId: string, isLiked: boolea
       errorMessage: err instanceof Error ? err.message : String(err),
       postId,
       userId,
-      isLiked
+      isLiked,
     });
     throw err;
   }
@@ -463,7 +473,7 @@ export async function reportPost(
         reporter_id: reporterId,
         reason,
         memo: memo || null,
-        status: 'pending'
+        status: 'pending',
       })
       .select()
       .single();
@@ -476,7 +486,7 @@ export async function reportPost(
         hint: error.hint,
         postId,
         reporterId,
-        reason
+        reason,
       });
       throw error;
     }
@@ -490,7 +500,7 @@ export async function reportPost(
       errorMessage: err instanceof Error ? err.message : String(err),
       postId,
       reporterId,
-      reason
+      reason,
     });
     throw err;
   }
@@ -510,14 +520,16 @@ export async function fetchMyPosts(
 
     const { data, error } = await supabase
       .from('community_posts')
-      .select(`
+      .select(
+        `
         *,
         profiles:user_id (
           nickname,
           seed_name,
           mbti
         )
-      `)
+      `
+      )
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .range(from, to);
@@ -528,7 +540,7 @@ export async function fetchMyPosts(
         message: error.message,
         details: error.details,
         hint: error.hint,
-        userId
+        userId,
       });
       throw error;
     }
@@ -541,16 +553,14 @@ export async function fetchMyPosts(
 
     return {
       data: posts,
-      hasMore: posts.length === pageSize
+      hasMore: posts.length === pageSize,
     };
   } catch (err) {
     console.error('[fetchMyPosts] 예외 발생:', {
       error: err,
       errorMessage: err instanceof Error ? err.message : String(err),
-      userId
+      userId,
     });
     throw err;
   }
 }
-
-

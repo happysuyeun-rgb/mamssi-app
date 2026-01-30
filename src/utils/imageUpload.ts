@@ -1,5 +1,7 @@
 import { supabase } from '@lib/supabaseClient';
-import type { User } from '@supabase/supabase-js';
+
+/** Supabase Storage 에러 확장 (statusCode, error 등 런타임에 존재) */
+type StorageErrorExt = { message?: string; statusCode?: number; error?: string };
 
 const BUCKET_NAME = 'emotion-images';
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -20,7 +22,7 @@ export async function uploadEmotionImage(file: File, userId: string): Promise<Up
   if (file.size > MAX_FILE_SIZE) {
     return {
       url: null,
-      error: new Error('10MB 이하의 이미지만 업로드할 수 있어요.')
+      error: new Error('10MB 이하의 이미지만 업로드할 수 있어요.'),
     };
   }
 
@@ -28,7 +30,7 @@ export async function uploadEmotionImage(file: File, userId: string): Promise<Up
   if (!file.type.startsWith('image/')) {
     return {
       url: null,
-      error: new Error('이미지 파일만 업로드할 수 있어요.')
+      error: new Error('이미지 파일만 업로드할 수 있어요.'),
     };
   }
 
@@ -43,34 +45,43 @@ export async function uploadEmotionImage(file: File, userId: string): Promise<Up
       .from(BUCKET_NAME)
       .upload(filePath, file, {
         cacheControl: '3600',
-        upsert: false
+        upsert: false,
       });
 
     if (uploadError) {
+      const err = uploadError as StorageErrorExt;
       console.error('[uploadEmotionImage] 파일 업로드 실패:', {
         error: uploadError,
-        code: uploadError.statusCode,
+        code: err.statusCode,
         message: uploadError.message,
-        errorCode: uploadError.error
+        errorCode: err.error,
       });
-      
+
       // 버킷 관련 에러인 경우 더 명확한 메시지 제공
       let errorMessage = uploadError.message || '이미지 업로드에 실패했어요.';
-      if (uploadError.message?.includes('bucket') || uploadError.message?.includes('버킷') || uploadError.statusCode === 404) {
+      if (
+        uploadError.message?.includes('bucket') ||
+        uploadError.message?.includes('버킷') ||
+        err.statusCode === 404
+      ) {
         errorMessage = `Storage 버킷 '${BUCKET_NAME}'이 존재하지 않거나 접근할 수 없어요. Supabase Dashboard에서 버킷을 생성해주세요. (create_emotion_images_bucket.sql 실행)`;
         console.error('[uploadEmotionImage] 버킷 관련 에러 감지:', {
           error: uploadError.message,
-          statusCode: uploadError.statusCode,
-          hint: 'Supabase Dashboard > Storage에서 emotion-images 버킷 확인 필요'
+          statusCode: err.statusCode,
+          hint: 'Supabase Dashboard > Storage에서 emotion-images 버킷 확인 필요',
         });
-      } else if (uploadError.statusCode === 403 || uploadError.message?.includes('permission') || uploadError.message?.includes('권한')) {
+      } else if (
+        err.statusCode === 403 ||
+        uploadError.message?.includes('permission') ||
+        uploadError.message?.includes('권한')
+      ) {
         errorMessage = '이미지 업로드 권한이 없어요. 로그인 상태를 확인해주세요.';
         console.error('[uploadEmotionImage] 권한 관련 에러 감지:', {
           error: uploadError.message,
-          statusCode: uploadError.statusCode
+          statusCode: err.statusCode,
         });
       }
-      
+
       const error = new Error(errorMessage);
       throw error;
     }
@@ -79,25 +90,25 @@ export async function uploadEmotionImage(file: File, userId: string): Promise<Up
 
     // Public URL 가져오기
     const {
-      data: { publicUrl }
+      data: { publicUrl },
     } = supabase.storage.from(BUCKET_NAME).getPublicUrl(filePath);
 
     console.log('[uploadEmotionImage] Public URL 생성 완료:', { publicUrl, filePath });
 
     return {
       url: publicUrl,
-      error: null
+      error: null,
     };
   } catch (err) {
     const error = err instanceof Error ? err : new Error('이미지 업로드에 실패했어요.');
     console.error('[uploadEmotionImage] 업로드 중 예외 발생:', {
       error: err,
       errorMessage: error.message,
-      errorStack: error.stack
+      errorStack: error.stack,
     });
     return {
       url: null,
-      error
+      error,
     };
   }
 }
@@ -127,16 +138,3 @@ export async function deleteEmotionImage(imageUrl: string): Promise<void> {
     console.error('이미지 삭제 중 오류:', err);
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -20,7 +20,7 @@ export default function MyPage() {
       apple: 'Apple',
       kakao: 'Kakao',
       facebook: 'Facebook',
-      line: 'LINE'
+      line: 'LINE',
     };
     return providerMap[provider] || provider;
   };
@@ -57,36 +57,44 @@ export default function MyPage() {
     <section style={{ display: 'grid', gap: 16 }}>
       {/* 계정 정보 섹션 */}
       {isLoggedIn && (
-        <div style={{
-          background: '#fff',
-          border: '1px solid var(--ms-line)',
-          borderRadius: 16,
-          padding: '18px 16px',
-          boxShadow: 'var(--ms-shadow-soft)'
-        }}>
-          <div style={{ 
-            fontSize: 15, 
-            fontWeight: 700, 
-            marginBottom: 16,
-            color: 'var(--ms-text-main)'
-          }}>
+        <div
+          style={{
+            background: '#fff',
+            border: '1px solid var(--ms-line)',
+            borderRadius: 16,
+            padding: '18px 16px',
+            boxShadow: 'var(--ms-shadow-soft)',
+          }}
+        >
+          <div
+            style={{
+              fontSize: 15,
+              fontWeight: 700,
+              marginBottom: 16,
+              color: 'var(--ms-text-main)',
+            }}
+          >
             계정 정보
           </div>
 
           {/* 내 프로필 */}
           <div style={{ marginBottom: 20 }}>
-            <div style={{ 
-              fontSize: 13, 
-              fontWeight: 600, 
-              marginBottom: 10,
-              color: 'var(--ms-ink-soft)'
-            }}>
+            <div
+              style={{
+                fontSize: 13,
+                fontWeight: 600,
+                marginBottom: 10,
+                color: 'var(--ms-ink-soft)',
+              }}
+            >
               내 프로필
             </div>
             <div style={{ display: 'grid', gap: 8, fontSize: 13 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ color: 'var(--ms-ink-muted)' }}>사용자 ID</span>
-                <span style={{ color: 'var(--ms-ink-soft)', fontFamily: 'monospace', fontSize: 12 }}>
+                <span
+                  style={{ color: 'var(--ms-ink-soft)', fontFamily: 'monospace', fontSize: 12 }}
+                >
                   {user.id.substring(0, 8)}...
                 </span>
               </div>
@@ -113,12 +121,14 @@ export default function MyPage() {
 
           {/* 로그인 정보 */}
           <div>
-            <div style={{ 
-              fontSize: 13, 
-              fontWeight: 600, 
-              marginBottom: 10,
-              color: 'var(--ms-ink-soft)'
-            }}>
+            <div
+              style={{
+                fontSize: 13,
+                fontWeight: 600,
+                marginBottom: 10,
+                color: 'var(--ms-ink-soft)',
+              }}
+            >
               로그인 정보
             </div>
             <div style={{ display: 'grid', gap: 8, fontSize: 13 }}>
@@ -146,7 +156,7 @@ export default function MyPage() {
                     color: 'var(--ms-ink-soft)',
                     fontSize: 12,
                     fontWeight: 500,
-                    cursor: 'pointer'
+                    cursor: 'pointer',
                   }}
                 >
                   소셜 계정 관리
@@ -158,30 +168,20 @@ export default function MyPage() {
       )}
 
       {/* 설정 메뉴 */}
-      <SimpleCard title="프로필 설정" description="닉네임, MBTI, 프로필 사진 · 기본 이모티콘 설정" />
+      <SimpleCard
+        title="프로필 설정"
+        description="닉네임, MBTI, 프로필 사진 · 기본 이모티콘 설정"
+      />
       <SimpleCard title="알림 설정" />
       <SimpleCard title="감정꽃 앨범" />
       <SimpleCard title="감정기록 모아보기" />
       <SimpleCard title="화면 잠금" />
 
       {/* 로그아웃 버튼 */}
-      {isLoggedIn && (
-        <SimpleCard 
-          title="로그아웃" 
-          onClick={handleSignOut}
-        />
-      )}
+      {isLoggedIn && <SimpleCard title="로그아웃" onClick={handleSignOut} />}
 
       {/* 회원탈퇴 버튼 (로그인 상태에서만 표시) */}
-      {isLoggedIn && (
-        <SimpleCard 
-          title="회원탈퇴" 
-          onClick={handleDeleteAccount}
-        />
-      )}
+      {isLoggedIn && <SimpleCard title="회원탈퇴" onClick={handleDeleteAccount} />}
     </section>
   );
 }
-
-
-

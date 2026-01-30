@@ -19,7 +19,7 @@ export default function LockSetting() {
       mode: 'pattern',
       pattern: [],
       pin: '',
-      biometricEnabled: false
+      biometricEnabled: false,
     })
   );
 
@@ -53,7 +53,7 @@ export default function LockSetting() {
       mode: 'pin',
       pin: pinInput,
       enabled: true,
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     };
     if (!settings.createdAt) {
       updated.createdAt = new Date().toISOString();
@@ -78,7 +78,7 @@ export default function LockSetting() {
         ...settings,
         mode: 'pattern',
         enabled: true,
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       };
       if (!settings.createdAt) {
         updated.createdAt = new Date().toISOString();
@@ -97,7 +97,7 @@ export default function LockSetting() {
     const updated: LockSettings = {
       ...settings,
       enabled: false,
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     };
     setSettings(updated);
     lsSet(lockKey, updated);
@@ -114,7 +114,7 @@ export default function LockSetting() {
     const updated: LockSettings = {
       ...settings,
       biometricEnabled: enabled,
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     };
     setSettings(updated);
     lsSet(lockKey, updated);
@@ -128,7 +128,7 @@ export default function LockSetting() {
       const updated: LockSettings = {
         ...settings,
         mode,
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       };
       setSettings(updated);
       lsSet(lockKey, updated);
@@ -139,7 +139,9 @@ export default function LockSetting() {
     <Layout hideHeader>
       <div className="lock-setting-page">
         <div className="page-hero">
-          <div className="page-hero-icon" aria-hidden="true">🔐</div>
+          <div className="page-hero-icon" aria-hidden="true">
+            🔐
+          </div>
           <div>
             <h1 className="page-hero-title">화면 잠금 설정</h1>
             <p className="page-hero-desc">당신의 감정을 안전하게 지켜드려요.</p>
@@ -249,9 +251,7 @@ export default function LockSetting() {
               <div className="lock-toggle-row">
                 <div>
                   <div className="lock-toggle-title">화면 잠금 사용</div>
-                  <div className="lock-toggle-desc">
-                    앱을 열 때 잠금 화면이 표시돼요.
-                  </div>
+                  <div className="lock-toggle-desc">앱을 열 때 잠금 화면이 표시돼요.</div>
                 </div>
                 <label className="lock-switch">
                   <input
@@ -267,7 +267,7 @@ export default function LockSetting() {
                           const updated: LockSettings = {
                             ...settings,
                             enabled: true,
-                            updatedAt: new Date().toISOString()
+                            updatedAt: new Date().toISOString(),
                           };
                           setSettings(updated);
                           lsSet(lockKey, updated);
@@ -320,11 +320,7 @@ export default function LockSetting() {
                   </div>
 
                   {settings.mode === 'pin' && settings.pin && (
-                    <button
-                      type="button"
-                      className="lock-btn-link"
-                      onClick={resetPin}
-                    >
+                    <button type="button" className="lock-btn-link" onClick={resetPin}>
                       PIN 재설정
                     </button>
                   )}
@@ -336,9 +332,7 @@ export default function LockSetting() {
                     <div className="lock-toggle-row">
                       <div>
                         <div className="lock-toggle-title">생체인증 사용</div>
-                        <div className="lock-toggle-desc">
-                          지문 또는 Face ID로 빠르게 잠금 해제
-                        </div>
+                        <div className="lock-toggle-desc">지문 또는 Face ID로 빠르게 잠금 해제</div>
                       </div>
                       <label className="lock-switch">
                         <input
@@ -358,8 +352,7 @@ export default function LockSetting() {
                     <div className="lock-info-title">💡 잠금 해제 방법</div>
                     <div className="lock-info-text">
                       • 로그아웃 또는 앱 삭제 시 잠금 설정이 초기화돼요.
-                      <br />
-                      • PIN을 잊어버리면 앱을 재설치해야 해요.
+                      <br />• PIN을 잊어버리면 앱을 재설치해야 해요.
                     </div>
                   </div>
                 </section>
@@ -382,4 +375,3 @@ export default function LockSetting() {
     </Layout>
   );
 }
-

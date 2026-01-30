@@ -117,7 +117,9 @@
   cursor: pointer;
   background: #ffffff;
   justify-content: center;
-  transition: opacity 0.2s, transform 0.1s;
+  transition:
+    opacity 0.2s,
+    transform 0.1s;
   color: var(--ms-text-main, #16352f);
 }
 
@@ -228,4 +230,3 @@
     height: 96px;
   }
 }
-

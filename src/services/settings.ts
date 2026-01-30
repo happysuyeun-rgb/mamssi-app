@@ -7,14 +7,18 @@
 import { supabase } from '@lib/supabaseClient';
 import { AppError, type ServiceResult, success, failure } from '@lib/errors';
 import { logger } from '@lib/logger';
-import type { UserSettingsRow } from '@types/database';
+import type { UserSettingsRow } from '@domain/database';
 
-export type SettingsUpdatePayload = Partial<Omit<UserSettingsRow, 'user_id' | 'created_at' | 'updated_at'>>;
+export type SettingsUpdatePayload = Partial<
+  Omit<UserSettingsRow, 'user_id' | 'created_at' | 'updated_at'>
+>;
 
 /**
  * 사용자 설정 조회
  */
-export async function fetchUserSettings(userId: string): Promise<ServiceResult<UserSettingsRow | null>> {
+export async function fetchUserSettings(
+  userId: string
+): Promise<ServiceResult<UserSettingsRow | null>> {
   try {
     const { data, error } = await supabase
       .from('user_settings')
@@ -26,7 +30,7 @@ export async function fetchUserSettings(userId: string): Promise<ServiceResult<U
       logger.error('사용자 설정 조회 실패', {
         userId,
         operation: 'fetchUserSettings',
-        error: AppError.fromSupabaseError(error, { userId, operation: 'fetchUserSettings' })
+        error: AppError.fromSupabaseError(error, { userId, operation: 'fetchUserSettings' }),
       });
       return failure(AppError.fromSupabaseError(error, { userId, operation: 'fetchUserSettings' }));
     }
@@ -36,11 +40,9 @@ export async function fetchUserSettings(userId: string): Promise<ServiceResult<U
     logger.error('사용자 설정 조회 중 예외 발생', {
       userId,
       operation: 'fetchUserSettings',
-      error
+      error,
     });
-    return failure(
-      AppError.fromNetworkError(error, { userId, operation: 'fetchUserSettings' })
-    );
+    return failure(AppError.fromNetworkError(error, { userId, operation: 'fetchUserSettings' }));
   }
 }
 
@@ -53,20 +55,23 @@ export async function upsertUserSettings(
 ): Promise<ServiceResult<UserSettingsRow>> {
   try {
     // auth.uid() 확인
-    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user: authUser },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     if (authError || !authUser || authUser.id !== userId) {
       logger.error('인증 확인 실패', {
         userId,
         operation: 'upsertUserSettings',
-        error: authError
+        error: authError,
       });
       return failure(
         new AppError({
           code: 'AUTH_REQUIRED',
           message: '로그인이 필요해요.',
           userId,
-          operation: 'upsertUserSettings'
+          operation: 'upsertUserSettings',
         })
       );
     }
@@ -74,13 +79,13 @@ export async function upsertUserSettings(
     const upsertPayload = {
       user_id: userId,
       ...payload,
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     };
 
     const { data, error } = await supabase
       .from('user_settings')
       .upsert(upsertPayload, {
-        onConflict: 'user_id'
+        onConflict: 'user_id',
       })
       .select()
       .single();
@@ -89,14 +94,16 @@ export async function upsertUserSettings(
       logger.error('사용자 설정 저장 실패', {
         userId,
         operation: 'upsertUserSettings',
-        error: AppError.fromSupabaseError(error, { userId, operation: 'upsertUserSettings' })
+        error: AppError.fromSupabaseError(error, { userId, operation: 'upsertUserSettings' }),
       });
-      return failure(AppError.fromSupabaseError(error, { userId, operation: 'upsertUserSettings' }));
+      return failure(
+        AppError.fromSupabaseError(error, { userId, operation: 'upsertUserSettings' })
+      );
     }
 
     logger.log('사용자 설정 저장 성공', {
       userId,
-      operation: 'upsertUserSettings'
+      operation: 'upsertUserSettings',
     });
 
     return success(data as UserSettingsRow);
@@ -104,10 +111,8 @@ export async function upsertUserSettings(
     logger.error('사용자 설정 저장 중 예외 발생', {
       userId,
       operation: 'upsertUserSettings',
-      error
+      error,
     });
-    return failure(
-      AppError.fromNetworkError(error, { userId, operation: 'upsertUserSettings' })
-    );
+    return failure(AppError.fromNetworkError(error, { userId, operation: 'upsertUserSettings' }));
   }
 }

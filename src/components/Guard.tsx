@@ -21,7 +21,8 @@ const GUEST_MODE_KEY = 'isGuest';
 export default function Guard({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { session, loading, sessionInitialized, isGuest, userProfile, refreshUserProfile } = useAuth();
+  const { session, loading, sessionInitialized, isGuest, userProfile, refreshUserProfile } =
+    useAuth();
   const redirectedRef = useRef<string | null>(null);
   const loadingStartTimeRef = useRef<number | null>(null);
   const lastPathRef = useRef<string>(location.pathname);
@@ -50,7 +51,7 @@ export default function Guard({ children }: { children: React.ReactNode }) {
           elapsed,
           path: location.pathname,
           sessionInitialized,
-          hasSession: !!session
+          hasSession: !!session,
         });
       }, 10000);
       return () => clearTimeout(timeout);
@@ -62,7 +63,7 @@ export default function Guard({ children }: { children: React.ReactNode }) {
     if (lastPathRef.current !== location.pathname) {
       console.log('[Guard] 경로 변경 감지, redirectedRef 초기화:', {
         from: lastPathRef.current,
-        to: location.pathname
+        to: location.pathname,
       });
       redirectedRef.current = null;
       lastPathRef.current = location.pathname;
@@ -72,7 +73,7 @@ export default function Guard({ children }: { children: React.ReactNode }) {
     if (lastUserProfileRef.current !== userProfile) {
       console.log('[Guard] userProfile 변경 감지:', {
         from: lastUserProfileRef.current,
-        to: userProfile
+        to: userProfile,
       });
       lastUserProfileRef.current = userProfile;
       // userProfile이 null에서 값으로 변경되면 재조회 시도 플래그 초기화
@@ -90,16 +91,16 @@ export default function Guard({ children }: { children: React.ReactNode }) {
       isGuest,
       userProfile,
       redirected: redirectedRef.current,
-      refreshAttempted: refreshAttemptedRef.current
+      refreshAttempted: refreshAttemptedRef.current,
     });
-    
+
     diag.log('Guard: useEffect 진입', {
       path: location.pathname,
       loading,
       sessionInitialized,
       hasSession: !!session,
       isGuest,
-      redirected: redirectedRef.current
+      redirected: redirectedRef.current,
     });
 
     // loading=true일 때는 절대 라우팅 금지
@@ -119,7 +120,7 @@ export default function Guard({ children }: { children: React.ReactNode }) {
     // 로그인 사용자의 경우 DB의 onboarding_completed 사용 (우선순위 1)
     // 게스트 모드의 경우 localStorage 사용
     const guestMode = safeStorage.getItem(GUEST_MODE_KEY) === 'true';
-    
+
     // userProfile이 null인 경우 처리
     // - session이 있지만 userProfile이 null이면 아직 조회 중이거나 실패한 상태
     // - 이 경우 로컬 스토리지를 fallback으로 사용하되, DB와 동기화 필요
@@ -130,9 +131,9 @@ export default function Guard({ children }: { children: React.ReactNode }) {
       console.log('[Guard] userProfile에서 onboarding_completed 확인:', {
         onboarding_completed: userProfile.onboarding_completed,
         is_deleted: userProfile.is_deleted,
-        onboardingComplete
+        onboardingComplete,
       });
-      
+
       // DB 값과 로컬 스토리지 동기화 (DB 값이 우선)
       if (userProfile.onboarding_completed === true) {
         safeStorage.setItem(ONBOARDING_COMPLETE_KEY, 'true');
@@ -144,13 +145,13 @@ export default function Guard({ children }: { children: React.ReactNode }) {
       // - fetchUserProfile이 실패했거나 아직 조회 중
       // - 이 경우 로컬 스토리지를 fallback으로 사용하되, DB 재조회 시도
       const localOnboarding = safeStorage.getItem(ONBOARDING_COMPLETE_KEY) === 'true';
-      
+
       console.warn('[Guard] userProfile이 null입니다. DB 재조회 시도:', {
         localOnboarding,
         userId: session.user.id,
-        note: 'DB에서 userProfile을 다시 조회합니다...'
+        note: 'DB에서 userProfile을 다시 조회합니다...',
       });
-      
+
       // userProfile이 null이면 AuthProvider에서 재조회를 강제로 시도
       // 온보딩 라우트에서도 재조회 수행 (온보딩 완료 여부 확인 필요)
       // 단, 이미 재조회를 시도했다면 무한 루프 방지를 위해 다시 시도하지 않음
@@ -165,7 +166,7 @@ export default function Guard({ children }: { children: React.ReactNode }) {
       } else if (refreshAttemptedRef.current) {
         console.log('[Guard] 이미 재조회를 시도했으므로 skip (무한 루프 방지)');
       }
-      
+
       // 재조회 중이므로 로컬 스토리지 값을 임시로 사용
       // 다음 렌더링에서 userProfile이 업데이트되면 DB 값으로 재확인됨
       onboardingComplete = localOnboarding;
@@ -184,9 +185,9 @@ export default function Guard({ children }: { children: React.ReactNode }) {
       onboardingComplete,
       isDeleted,
       userProfile,
-      userProfileIsNull: userProfile === null
+      userProfileIsNull: userProfile === null,
     });
-    
+
     diag.log('Guard: 상태 확인', {
       path: location.pathname,
       hasSession: !!session,
@@ -194,7 +195,7 @@ export default function Guard({ children }: { children: React.ReactNode }) {
       guestMode,
       onboardingComplete,
       isDeleted,
-      userProfile
+      userProfile,
     });
 
     // 특수 경로 체크 (useEffect 내부에서 계산)
@@ -215,7 +216,7 @@ export default function Guard({ children }: { children: React.ReactNode }) {
     // 주요 화면: / (홈), /home, /record, /forest, /mypage 등
     // 탭 내비게이션으로 주요 화면에 접근하는 경우, 온보딩 완료 여부와 관계없이 허용
     const allowedPaths = ['/', '/home', '/record', '/forest', '/mypage'];
-    const isAllowedPath = allowedPaths.some(path => {
+    const isAllowedPath = allowedPaths.some((path) => {
       if (path === '/') {
         // 루트 경로는 정확히 일치해야 함
         return location.pathname === '/' || location.pathname === '';
@@ -228,7 +229,7 @@ export default function Guard({ children }: { children: React.ReactNode }) {
         path: location.pathname,
         userProfileIsNull: userProfile === null,
         userProfileOnboardingCompleted: userProfile?.onboarding_completed,
-        onboardingComplete
+        onboardingComplete,
       });
       // 주요 화면 접근 시에는 무조건 허용
       // 이유: 탭 내비게이션으로 접근하는 경우, 사용자가 이미 앱을 사용 중이므로
@@ -246,12 +247,15 @@ export default function Guard({ children }: { children: React.ReactNode }) {
       if (session && userProfile !== null && userProfile.onboarding_completed === true) {
         console.log('[Guard] 온보딩 완료 사용자가 온보딩 화면 접근 시도, 홈으로 리다이렉트:', {
           path: location.pathname,
-          userProfileOnboardingCompleted: userProfile.onboarding_completed
+          userProfileOnboardingCompleted: userProfile.onboarding_completed,
         });
         const now = Date.now();
-        if (redirectedRef.current !== '/home' && (now - lastRedirectTimeRef.current) > REDIRECT_DEBOUNCE_MS) {
-          diag.log('GUARD -> to /home', { 
-            reason: '온보딩 완료 사용자, 온보딩 화면 접근 차단' 
+        if (
+          redirectedRef.current !== '/home' &&
+          now - lastRedirectTimeRef.current > REDIRECT_DEBOUNCE_MS
+        ) {
+          diag.log('GUARD -> to /home', {
+            reason: '온보딩 완료 사용자, 온보딩 화면 접근 차단',
           });
           redirectedRef.current = '/home';
           lastRedirectTimeRef.current = now;
@@ -259,19 +263,25 @@ export default function Guard({ children }: { children: React.ReactNode }) {
         }
         return;
       }
-      
+
       // userProfile이 null이지만 로컬 스토리지에 onboarding_completed=true가 있으면
       // 온보딩 완료로 간주하고 홈으로 리다이렉트 (DB 조회 중이거나 실패한 경우 대비)
       if (session && userProfile === null) {
         const localOnboarding = safeStorage.getItem(ONBOARDING_COMPLETE_KEY) === 'true';
         if (localOnboarding) {
-          console.log('[Guard] userProfile이 null이지만 로컬 스토리지에 onboarding_completed=true 있음. 홈으로 리다이렉트:', {
-            path: location.pathname
-          });
+          console.log(
+            '[Guard] userProfile이 null이지만 로컬 스토리지에 onboarding_completed=true 있음. 홈으로 리다이렉트:',
+            {
+              path: location.pathname,
+            }
+          );
           const now = Date.now();
-          if (redirectedRef.current !== '/home' && (now - lastRedirectTimeRef.current) > REDIRECT_DEBOUNCE_MS) {
-            diag.log('GUARD -> to /home', { 
-              reason: '로컬 스토리지에 onboarding_completed=true (userProfile null)' 
+          if (
+            redirectedRef.current !== '/home' &&
+            now - lastRedirectTimeRef.current > REDIRECT_DEBOUNCE_MS
+          ) {
+            diag.log('GUARD -> to /home', {
+              reason: '로컬 스토리지에 onboarding_completed=true (userProfile null)',
             });
             redirectedRef.current = '/home';
             lastRedirectTimeRef.current = now;
@@ -280,13 +290,13 @@ export default function Guard({ children }: { children: React.ReactNode }) {
           return;
         }
       }
-      
+
       // 온보딩 미완료 사용자만 온보딩 화면 접근 허용
       console.log('[Guard] 온보딩 라우트 - 온보딩 미완료 사용자, 온보딩 진행 허용', {
         path: location.pathname,
         hasSession: !!session,
         userProfileIsNull: userProfile === null,
-        onboardingCompleted: userProfile?.onboarding_completed
+        onboardingCompleted: userProfile?.onboarding_completed,
       });
       diag.log('Guard: 온보딩 라우트, 가드 완화', { path: location.pathname });
       redirectedRef.current = null;
@@ -297,9 +307,12 @@ export default function Guard({ children }: { children: React.ReactNode }) {
     // (AuthCallback에서 이미 복구 처리하지만, 추가 안전장치)
     if (session && isDeleted && !atOnboarding) {
       const now = Date.now();
-      if (redirectedRef.current !== '/onboarding' && (now - lastRedirectTimeRef.current) > REDIRECT_DEBOUNCE_MS) {
-        diag.log('GUARD -> to /onboarding', { 
-          reason: '탈퇴된 계정, 온보딩으로 이동' 
+      if (
+        redirectedRef.current !== '/onboarding' &&
+        now - lastRedirectTimeRef.current > REDIRECT_DEBOUNCE_MS
+      ) {
+        diag.log('GUARD -> to /onboarding', {
+          reason: '탈퇴된 계정, 온보딩으로 이동',
         });
         redirectedRef.current = '/onboarding';
         lastRedirectTimeRef.current = now;
@@ -315,7 +328,7 @@ export default function Guard({ children }: { children: React.ReactNode }) {
       isGuest,
       guestMode,
       onboardingComplete,
-      isAllowedPath
+      isAllowedPath,
     });
 
     // 로그인 상태인데 onboarding_completed=false면 /home이 아니라 /onboarding으로 리다이렉트
@@ -327,12 +340,15 @@ export default function Guard({ children }: { children: React.ReactNode }) {
       if (userProfile !== null && userProfile.onboarding_completed === false) {
         console.log('[Guard] DB 값이 false, 온보딩으로 리다이렉트:', {
           userProfileOnboardingCompleted: userProfile.onboarding_completed,
-          path: location.pathname
+          path: location.pathname,
         });
         const now = Date.now();
-        if (redirectedRef.current !== '/onboarding' && (now - lastRedirectTimeRef.current) > REDIRECT_DEBOUNCE_MS) {
-          diag.log('GUARD -> to /onboarding', { 
-            reason: 'DB 값이 false (명시적 조회 완료)' 
+        if (
+          redirectedRef.current !== '/onboarding' &&
+          now - lastRedirectTimeRef.current > REDIRECT_DEBOUNCE_MS
+        ) {
+          diag.log('GUARD -> to /onboarding', {
+            reason: 'DB 값이 false (명시적 조회 완료)',
           });
           redirectedRef.current = '/onboarding';
           lastRedirectTimeRef.current = now;
@@ -340,33 +356,40 @@ export default function Guard({ children }: { children: React.ReactNode }) {
         }
         return;
       }
-      
+
       // userProfile이 null이지만 로컬 스토리지에 onboarding_completed=true가 있으면 온보딩 완료로 간주
       const localOnboardingCheck = safeStorage.getItem(ONBOARDING_COMPLETE_KEY) === 'true';
       if (userProfile === null && localOnboardingCheck) {
-        console.log('[Guard] userProfile이 null이지만 로컬 스토리지에 onboarding_completed=true 있음. 온보딩 완료로 간주 (임시)');
+        console.log(
+          '[Guard] userProfile이 null이지만 로컬 스토리지에 onboarding_completed=true 있음. 온보딩 완료로 간주 (임시)'
+        );
         // 온보딩 완료로 간주하고 리다이렉트하지 않음
         // 단, AuthProvider에서 userProfile을 재조회한 후 다시 Guard가 실행되면 DB 값으로 재확인됨
         redirectedRef.current = null;
         return;
       }
-      
+
       // userProfile이 null이고 이미 리다이렉트를 시도했다면 무한 루프 방지
       if (userProfile === null && redirectedRef.current === '/onboarding') {
-        console.warn('[Guard] userProfile이 null이고 이미 /onboarding으로 리다이렉트했음. 무한 루프 방지');
+        console.warn(
+          '[Guard] userProfile이 null이고 이미 /onboarding으로 리다이렉트했음. 무한 루프 방지'
+        );
         return;
       }
-      
+
       const now = Date.now();
-      if (redirectedRef.current !== '/onboarding' && (now - lastRedirectTimeRef.current) > REDIRECT_DEBOUNCE_MS) {
-        console.log('[Guard] -> to /onboarding', { 
+      if (
+        redirectedRef.current !== '/onboarding' &&
+        now - lastRedirectTimeRef.current > REDIRECT_DEBOUNCE_MS
+      ) {
+        console.log('[Guard] -> to /onboarding', {
           reason: '로그인 상태 + 온보딩 미완료',
           userProfileIsNull: userProfile === null,
           localOnboarding: localOnboardingCheck,
-          path: location.pathname
+          path: location.pathname,
         });
-        diag.log('GUARD -> to /onboarding', { 
-          reason: '로그인 상태 + 온보딩 미완료' 
+        diag.log('GUARD -> to /onboarding', {
+          reason: '로그인 상태 + 온보딩 미완료',
         });
         redirectedRef.current = '/onboarding';
         lastRedirectTimeRef.current = now;
@@ -378,9 +401,12 @@ export default function Guard({ children }: { children: React.ReactNode }) {
     // 온보딩 미완료 + 로그인 안됨 + 게스트 아님 → 온보딩으로
     if (!session && !guestMode && !atOnboarding && !onboardingComplete) {
       const now = Date.now();
-      if (redirectedRef.current !== '/onboarding' && (now - lastRedirectTimeRef.current) > REDIRECT_DEBOUNCE_MS) {
-        diag.log('GUARD -> to /onboarding', { 
-          reason: '온보딩 미완료 + 로그인 없음 + 게스트 아님' 
+      if (
+        redirectedRef.current !== '/onboarding' &&
+        now - lastRedirectTimeRef.current > REDIRECT_DEBOUNCE_MS
+      ) {
+        diag.log('GUARD -> to /onboarding', {
+          reason: '온보딩 미완료 + 로그인 없음 + 게스트 아님',
         });
         redirectedRef.current = '/onboarding';
         lastRedirectTimeRef.current = now;
@@ -399,10 +425,10 @@ export default function Guard({ children }: { children: React.ReactNode }) {
     // 주요 화면: /home, /record, /forest, /mypage 등
     // (위에서 이미 주요 화면 체크를 수행했으므로 여기서는 중복 체크)
     if (onboardingComplete && isAllowedPath) {
-      diag.log('Guard: 온보딩 완료 사용자, 주요 화면 진입 허용', { 
+      diag.log('Guard: 온보딩 완료 사용자, 주요 화면 진입 허용', {
         path: location.pathname,
         isGuest: guestMode,
-        hasSession: !!session
+        hasSession: !!session,
       });
       redirectedRef.current = null;
       return; // children 렌더링 허용
@@ -411,7 +437,16 @@ export default function Guard({ children }: { children: React.ReactNode }) {
     // 그 외는 허용
     diag.log('Guard: 경로 허용', { path: location.pathname });
     redirectedRef.current = null;
-  }, [location.pathname, navigate, session, sessionInitialized, loading, isGuest, userProfile, refreshUserProfile]);
+  }, [
+    location.pathname,
+    navigate,
+    session,
+    sessionInitialized,
+    loading,
+    isGuest,
+    userProfile,
+    refreshUserProfile,
+  ]);
 
   // 온보딩 라우트에서는 loading/userProfile 체크 완화
   const atOnboarding = location.pathname.startsWith('/onboarding');
@@ -443,4 +478,3 @@ export default function Guard({ children }: { children: React.ReactNode }) {
   diag.log('Guard: children 렌더링', { path: location.pathname });
   return <>{children}</>;
 }
-

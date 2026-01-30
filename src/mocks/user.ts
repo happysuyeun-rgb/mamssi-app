@@ -7,7 +7,7 @@ export function getCurrentUserProfile(): UserProfile {
     avatarEmoji: '🙂',
     bio: '오늘의 마음씨를 가볍게 돌보는 중',
     mbti: 'ENFJ',
-    joinedAt: '2025-01-03'
+    joinedAt: '2025-01-03',
   };
 }
 
@@ -16,10 +16,8 @@ export function getCurrentUserStats(): UserStats {
     totalRecords: 42,
     totalLikesReceived: 128,
     totalFlowersBloomed: 5,
-    streakDays: 7
+    streakDays: 7,
   };
 }
 
 // TODO: Replace with Supabase tables (user/profile/stats) and real queries.
-
-

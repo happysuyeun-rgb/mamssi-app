@@ -1,34 +1,34 @@
 :root {
-  --ms-bg: #F6F9F8;
-  --ms-surface: #FFFFFF;
-  --ms-surface-soft: #F2F6F5;
-  --ms-ink: #0F1730;
-  --ms-ink-soft: #4B5563;
-  --ms-ink-muted: #9CA3AF;
-  --ms-primary: #2B7A78;
-  --ms-primary-soft: #B6F0DB;
-  --ms-accent-mint: #7BDCB5;
-  --ms-line: #E5E7EB;
-  --ms-warn: #FF5C7A;
+  --ms-bg: #f6f9f8;
+  --ms-surface: #ffffff;
+  --ms-surface-soft: #f2f6f5;
+  --ms-ink: #0f1730;
+  --ms-ink-soft: #4b5563;
+  --ms-ink-muted: #9ca3af;
+  --ms-primary: #2b7a78;
+  --ms-primary-soft: #b6f0db;
+  --ms-accent-mint: #7bdcb5;
+  --ms-line: #e5e7eb;
+  --ms-warn: #ff5c7a;
   --ms-radius-md: 14px;
   --ms-radius-lg: 20px;
   --ms-radius-pill: 999px;
-  --ms-shadow-soft: 0 6px 20px rgba(15,23,42,0.10);
+  --ms-shadow-soft: 0 6px 20px rgba(15, 23, 42, 0.1);
 }
 
 :root {
-  --ms-color-bg: #F6F9F8;
-  --ms-color-surface: #FFFFFF;
-  --ms-color-surface-soft: #F2F6F5;
+  --ms-color-bg: #f6f9f8;
+  --ms-color-surface: #ffffff;
+  --ms-color-surface-soft: #f2f6f5;
 
-  --ms-color-ink: #0F1730;
-  --ms-color-ink-soft: #4B5563;
-  --ms-color-ink-muted: #9CA3AF;
+  --ms-color-ink: #0f1730;
+  --ms-color-ink-soft: #4b5563;
+  --ms-color-ink-muted: #9ca3af;
 
-  --ms-color-primary: #2B7A78;
-  --ms-color-primary-soft: #B6F0DB;
+  --ms-color-primary: #2b7a78;
+  --ms-color-primary-soft: #b6f0db;
 
-  --ms-color-border-soft: #E5E7EB;
+  --ms-color-border-soft: #e5e7eb;
 
   --ms-radius-md: 14px;
   --ms-radius-lg: 20px;
@@ -37,10 +37,8 @@
   --ms-shadow-soft: 0px 4px 14px rgba(15, 23, 42, 0.08);
 
   /* Notify 시스템 컬러 토큰 */
-  --mint-500: #39C6A5;
-  --mint-600: #24B89D;
-  --ivy-800: #144E43;
-  --ink: #0F172A;
+  --mint-500: #39c6a5;
+  --mint-600: #24b89d;
+  --ivy-800: #144e43;
+  --ink: #0f172a;
 }
-
-

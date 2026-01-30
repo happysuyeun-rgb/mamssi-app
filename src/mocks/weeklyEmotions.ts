@@ -12,8 +12,8 @@ const presetWeeks: WeekEmotions[] = [
       null,
       createRecord('2025-11-14', '😮', '설렘', '새로운 소식이 찾아와 설레던 금요일.'),
       createRecord('2025-11-15', '🙂', '차분', '느린 호흡으로 하루를 마무리했습니다.'),
-      createRecord('2025-11-16', '😴', '피곤', '휴식이 필요해서 조용히 쉬었어요.')
-    ]
+      createRecord('2025-11-16', '😴', '피곤', '휴식이 필요해서 조용히 쉬었어요.'),
+    ],
   },
   {
     weekStart: '2025-11-17',
@@ -24,9 +24,9 @@ const presetWeeks: WeekEmotions[] = [
       createRecord('2025-11-20', '😌', '안심', '일이 제자리를 찾아가고 있어요.'),
       createRecord('2025-11-21', '😍', '사랑', '따뜻한 메시지가 하루를 덮어줬어요.'),
       null,
-      createRecord('2025-11-23', '😴', '피곤', '긴 한 주의 끝이라 그런가 봐요.')
-    ]
-  }
+      createRecord('2025-11-23', '😴', '피곤', '긴 한 주의 끝이라 그런가 봐요.'),
+    ],
+  },
 ];
 
 const emojiPool: Array<Pick<CalendarEmotionRecord, 'emoji' | 'label'>> = [
@@ -35,10 +35,15 @@ const emojiPool: Array<Pick<CalendarEmotionRecord, 'emoji' | 'label'>> = [
   { emoji: '😃', label: '기쁨' },
   { emoji: '😟', label: '불안' },
   { emoji: '😴', label: '피곤' },
-  { emoji: '😍', label: '사랑' }
+  { emoji: '😍', label: '사랑' },
 ];
 
-function createRecord(date: string, emoji: string, label: string, note: string): CalendarEmotionRecord {
+function createRecord(
+  date: string,
+  emoji: string,
+  label: string,
+  note: string
+): CalendarEmotionRecord {
   return {
     recordId: `rec-${date}-${emoji}`,
     date,
@@ -47,7 +52,7 @@ function createRecord(date: string, emoji: string, label: string, note: string):
     note,
     isMine: false,
     isPublic: false,
-    createdAt: `${date}T00:00:00Z`
+    createdAt: `${date}T00:00:00Z`,
   };
 }
 
@@ -61,7 +66,7 @@ function formatDate(date: Date): string {
 function cloneWeek(week: WeekEmotions): WeekEmotions {
   return {
     weekStart: week.weekStart,
-    days: week.days.map(day => (day ? { ...day } : null))
+    days: week.days.map((day) => (day ? { ...day } : null)),
   };
 }
 
@@ -74,17 +79,21 @@ function generateWeek(weekStart: string): WeekEmotions {
     if (!shouldRecord) return null;
     const emotionSeed = (idx + date.getDate()) % emojiPool.length;
     const palette = emojiPool[emotionSeed];
-    return createRecord(iso, palette.emoji, palette.label, `${palette.label}했던 순간들을 마음에 담아봤어요.`);
+    return createRecord(
+      iso,
+      palette.emoji,
+      palette.label,
+      `${palette.label}했던 순간들을 마음에 담아봤어요.`
+    );
   });
   return {
     weekStart,
-    days
+    days,
   };
 }
 
 export function getWeekEmotions(weekStart: string): WeekEmotions {
-  const preset = presetWeeks.find(w => w.weekStart === weekStart);
+  const preset = presetWeeks.find((w) => w.weekStart === weekStart);
   if (preset) return cloneWeek(preset);
   return generateWeek(weekStart);
 }
-

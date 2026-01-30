@@ -12,23 +12,10 @@ export const diag = {
   },
   warn: (...args: unknown[]) => {
     console.warn('[MAEUMSSI][WARN]', ...args);
-  }
+  },
 };
 
 // 전역 객체로도 접근 가능 (브라우저 콘솔에서)
 if (typeof window !== 'undefined') {
   (window as any).__maeumssi_diag = diag;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

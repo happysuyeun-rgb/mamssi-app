@@ -15,9 +15,19 @@ type OnboardingStep = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 export default function OnboardingGuest() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user, session, loading, isGuest, signInWithGoogle, signInWithApple, signInWithKakao, setGuestMode, refreshUserProfile } = useAuth();
+  const {
+    user,
+    session,
+    loading,
+    isGuest,
+    signInWithGoogle,
+    signInWithApple,
+    signInWithKakao,
+    setGuestMode,
+    refreshUserProfile,
+  } = useAuth();
   const notify = useNotify();
-  
+
   const [step, setStep] = useState<OnboardingStep>(0);
   const [seedName, setSeedName] = useState('');
   const [seedError, setSeedError] = useState(false);
@@ -27,30 +37,37 @@ export default function OnboardingGuest() {
   // 내부 네비게이션(handleNext/handlePrev)은 showStep에서 URL을 업데이트하므로 여기서는 무시
   useEffect(() => {
     const stepParam = searchParams.get('step');
-    console.log('[OnboardingGuest] URL 파라미터 확인', { 
-      stepParam, 
+    console.log('[OnboardingGuest] URL 파라미터 확인', {
+      stepParam,
       currentStep: step,
       search: window.location.search,
       hash: window.location.hash,
-      pathname: window.location.pathname
+      pathname: window.location.pathname,
     });
-    diag.log('OnboardingGuest: URL 파라미터 확인', { 
-      stepParam, 
+    diag.log('OnboardingGuest: URL 파라미터 확인', {
+      stepParam,
       currentStep: step,
       search: window.location.search,
-      hash: window.location.hash
+      hash: window.location.hash,
     });
-    
+
     if (stepParam) {
       const stepValue = parseInt(stepParam, 10) as OnboardingStep;
-      console.log('[OnboardingGuest] step 파라미터 파싱', { stepParam, stepValue, isValid: !isNaN(stepValue) && stepValue >= 0 && stepValue <= 7 });
+      console.log('[OnboardingGuest] step 파라미터 파싱', {
+        stepParam,
+        stepValue,
+        isValid: !isNaN(stepValue) && stepValue >= 0 && stepValue <= 7,
+      });
       if (!isNaN(stepValue) && stepValue >= 0 && stepValue <= 7) {
         // step이 다를 때만 업데이트 (외부에서 직접 URL로 접근한 경우)
         if (stepValue !== step) {
-          console.log('[OnboardingGuest] step 변경 (URL 파라미터에서)', { from: step, to: stepValue });
-          diag.log('OnboardingGuest: step 파라미터로 step 변경', { 
-            from: step, 
-            to: stepValue 
+          console.log('[OnboardingGuest] step 변경 (URL 파라미터에서)', {
+            from: step,
+            to: stepValue,
+          });
+          diag.log('OnboardingGuest: step 파라미터로 step 변경', {
+            from: step,
+            to: stepValue,
           });
           setStep(stepValue);
         } else {
@@ -77,7 +94,9 @@ export default function OnboardingGuest() {
     if (!loading && session && user && !stepParam) {
       const onboardingComplete = safeStorage.getItem(ONBOARDING_COMPLETE_KEY) === 'true';
       if (onboardingComplete) {
-        diag.log('OnboardingGuest: 로그인 상태 + 온보딩 완료, 홈으로 리다이렉트 (step 파라미터 없음)');
+        diag.log(
+          'OnboardingGuest: 로그인 상태 + 온보딩 완료, 홈으로 리다이렉트 (step 파라미터 없음)'
+        );
         navigate('/', { replace: true });
       }
     }
@@ -89,7 +108,10 @@ export default function OnboardingGuest() {
     const newSearchParams = new URLSearchParams(searchParams);
     newSearchParams.set('step', String(s));
     navigate(`/onboarding?${newSearchParams.toString()}`, { replace: true });
-    console.log('[OnboardingGuest] showStep - step 및 URL 업데이트', { step: s, url: `/onboarding?${newSearchParams.toString()}` });
+    console.log('[OnboardingGuest] showStep - step 및 URL 업데이트', {
+      step: s,
+      url: `/onboarding?${newSearchParams.toString()}`,
+    });
   };
 
   // Step 0: 시작화면
@@ -107,7 +129,7 @@ export default function OnboardingGuest() {
       navigate('/', { replace: true });
       return;
     }
-    
+
     // 일반 온보딩 플로우에서는 이전 step으로 이동
     if (step > 0) {
       showStep((step - 1) as OnboardingStep);
@@ -129,12 +151,12 @@ export default function OnboardingGuest() {
     safeStorage.setItem(ONBOARDING_COMPLETE_KEY, 'true');
     diag.log('OnboardingGuest: 게스트 모드 플래그 저장 완료', {
       guestMode: safeStorage.getItem(GUEST_MODE_KEY),
-      onboardingComplete: safeStorage.getItem(ONBOARDING_COMPLETE_KEY)
+      onboardingComplete: safeStorage.getItem(ONBOARDING_COMPLETE_KEY),
     });
-    
+
     // 상태 업데이트
     setGuestMode(true);
-    
+
     // replace로 이동 (히스토리 스택에 추가하지 않음)
     notify.success('온보딩이 완료되었어요 🌱');
     diag.log('OnboardingGuest: 홈으로 리다이렉트');
@@ -159,7 +181,10 @@ export default function OnboardingGuest() {
         await signInWithKakao();
       } else if (provider === 'facebook' || provider === 'line') {
         // Facebook과 LINE은 아직 구현되지 않음
-        notify.info(`${provider === 'facebook' ? 'Facebook' : 'LINE'} 로그인은 준비 중이에요.`, 'ℹ️');
+        notify.info(
+          `${provider === 'facebook' ? 'Facebook' : 'LINE'} 로그인은 준비 중이에요.`,
+          'ℹ️'
+        );
         return;
       }
       // OAuth는 리다이렉트되므로 여기서는 처리하지 않음
@@ -169,7 +194,6 @@ export default function OnboardingGuest() {
       notify.error('로그인에 실패했어요. 잠시 후 다시 시도해주세요.', '❌');
     }
   };
-
 
   // Step 5: 씨앗 받기
   // Step 6: 씨앗 이름 짓기
@@ -200,22 +224,26 @@ export default function OnboardingGuest() {
   // Step 7: 완료
   const handleGoHome = async () => {
     diag.log('OnboardingGuest: handleGoHome 호출');
-    
+
     // 씨앗명이 입력되었으면 user_settings에 저장
     if (session && user && seedName.trim()) {
       try {
-        console.log('[OnboardingGuest] 씨앗명 저장 시작:', { userId: user.id, seedName: seedName.trim() });
+        console.log('[OnboardingGuest] 씨앗명 저장 시작:', {
+          userId: user.id,
+          seedName: seedName.trim(),
+        });
         const { supabase } = await import('@lib/supabaseClient');
-        const { error: seedNameError } = await supabase
-          .from('user_settings')
-          .upsert({
+        const { error: seedNameError } = await supabase.from('user_settings').upsert(
+          {
             user_id: user.id,
             seed_name: seedName.trim(),
-            updated_at: new Date().toISOString()
-          }, {
-            onConflict: 'user_id'
-          });
-        
+            updated_at: new Date().toISOString(),
+          },
+          {
+            onConflict: 'user_id',
+          }
+        );
+
         if (seedNameError) {
           console.error('[OnboardingGuest] 씨앗명 저장 실패:', seedNameError);
           diag.err('OnboardingGuest: 씨앗명 저장 실패:', seedNameError);
@@ -227,18 +255,18 @@ export default function OnboardingGuest() {
         diag.err('OnboardingGuest: 씨앗명 저장 중 오류:', seedNameErr);
       }
     }
-    
+
     // safeStorage로 확실히 기록 (게스트 모드용)
     safeStorage.setItem(ONBOARDING_COMPLETE_KEY, 'true');
     diag.log('OnboardingGuest: 온보딩 완료 플래그 저장', {
-      onboardingComplete: safeStorage.getItem(ONBOARDING_COMPLETE_KEY)
+      onboardingComplete: safeStorage.getItem(ONBOARDING_COMPLETE_KEY),
     });
-    
+
     // 게스트 모드가 아니면 해제
     if (!isGuest) {
       safeStorage.removeItem(GUEST_MODE_KEY);
     }
-    
+
     // 로그인 상태면 users 테이블에 온보딩 완료 상태 저장
     if (session && user) {
       try {
@@ -246,41 +274,41 @@ export default function OnboardingGuest() {
         const { supabase } = await import('@lib/supabaseClient');
         const { error } = await supabase
           .from('users')
-          .update({ 
+          .update({
             onboarding_completed: true,
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString(),
           })
           .eq('id', user.id);
-        
+
         if (error) {
           console.error('[OnboardingGuest] users 테이블 업데이트 실패:', error);
           diag.err('OnboardingGuest: users 테이블 업데이트 실패:', error);
         } else {
           console.log('[OnboardingGuest] users 테이블 업데이트 성공 - onboarding_completed: true');
           diag.log('OnboardingGuest: users 테이블 업데이트 완료');
-          
+
           // 로컬 스토리지도 업데이트
           safeStorage.setItem(ONBOARDING_COMPLETE_KEY, 'true');
           console.log('[OnboardingGuest] 로컬 스토리지 onboarding_completed 업데이트: true');
-          
+
           // userProfile 갱신 (DB에서 최신 상태 가져오기)
           // 완료될 때까지 대기하여 Guard가 올바른 값을 확인할 수 있도록 함
           console.log('[OnboardingGuest] userProfile 갱신 시작...');
           await refreshUserProfile();
-          
+
           // DB 업데이트가 반영될 때까지 잠시 대기 (Realtime 지연 고려)
-          await new Promise(resolve => setTimeout(resolve, 300));
-          
+          await new Promise((resolve) => setTimeout(resolve, 300));
+
           // 한 번 더 갱신하여 최신 상태 확인
           await refreshUserProfile();
-          
+
           console.log('[OnboardingGuest] userProfile 갱신 완료, /home으로 이동');
         }
       } catch (error) {
         diag.err('OnboardingGuest: users 테이블 업데이트 중 오류:', error);
       }
     }
-    
+
     notify.success('온보딩이 완료되었어요 🌱');
     diag.log('OnboardingGuest: 홈으로 리다이렉트');
     navigate('/home', { replace: true });
@@ -302,7 +330,9 @@ export default function OnboardingGuest() {
           <section className={`onboarding-panel ${step !== 0 ? 'hidden' : ''}`} data-step="0">
             <div className="onboarding-eyebrow">마음, 씨 시작하기</div>
             <h1>감정을 심고{'\n'}나를 키우다.</h1>
-            <p className="onboarding-desc">하루의 감정을 씨앗으로 기록하면, 내 정원에 작은 변화가 시작돼요.</p>
+            <p className="onboarding-desc">
+              하루의 감정을 씨앗으로 기록하면, 내 정원에 작은 변화가 시작돼요.
+            </p>
             <div className="onboarding-tags">
               <span className="onboarding-tag">#감정기록</span>
               <span className="onboarding-tag">#씨앗</span>
@@ -315,7 +345,10 @@ export default function OnboardingGuest() {
               </div>
             </div>
             <div className="onboarding-bottom onboarding-center">
-              <button className="onboarding-btn onboarding-btn-primary onboarding-btn-full" onClick={handleStart}>
+              <button
+                className="onboarding-btn onboarding-btn-primary onboarding-btn-full"
+                onClick={handleStart}
+              >
                 마음,씨 시작하기
               </button>
             </div>
@@ -342,8 +375,15 @@ export default function OnboardingGuest() {
               </div>
             </div>
             <div className="onboarding-row onboarding-bottom">
-              <button className="onboarding-btn-ghost" onClick={handlePrev}>이전</button>
-              <button className="onboarding-btn onboarding-btn-primary onboarding-btn-wide" onClick={handleNext}>다음</button>
+              <button className="onboarding-btn-ghost" onClick={handlePrev}>
+                이전
+              </button>
+              <button
+                className="onboarding-btn onboarding-btn-primary onboarding-btn-wide"
+                onClick={handleNext}
+              >
+                다음
+              </button>
             </div>
           </section>
 
@@ -355,7 +395,9 @@ export default function OnboardingGuest() {
               <div className="onboarding-dot"></div>
             </div>
             <h1>감정꽃의 개화</h1>
-            <p className="onboarding-desc">기록이 쌓이면 당신만의 감정꽃이 피어나요. 오늘의 나를 시각화해 보세요.</p>
+            <p className="onboarding-desc">
+              기록이 쌓이면 당신만의 감정꽃이 피어나요. 오늘의 나를 시각화해 보세요.
+            </p>
             <div className="onboarding-tags">
               <span className="onboarding-tag">#시각화</span>
               <span className="onboarding-tag">#성장</span>
@@ -368,8 +410,15 @@ export default function OnboardingGuest() {
               </div>
             </div>
             <div className="onboarding-row onboarding-bottom">
-              <button className="onboarding-btn-ghost" onClick={handlePrev}>이전</button>
-              <button className="onboarding-btn onboarding-btn-primary onboarding-btn-wide" onClick={handleNext}>다음</button>
+              <button className="onboarding-btn-ghost" onClick={handlePrev}>
+                이전
+              </button>
+              <button
+                className="onboarding-btn onboarding-btn-primary onboarding-btn-wide"
+                onClick={handleNext}
+              >
+                다음
+              </button>
             </div>
           </section>
 
@@ -390,10 +439,22 @@ export default function OnboardingGuest() {
             </div>
             <div className="onboarding-bottom">
               <div className="onboarding-row" style={{ marginBottom: '12px' }}>
-                <button className="onboarding-btn-ghost" onClick={handlePrev}>이전</button>
-                <button className="onboarding-btn onboarding-btn-outline onboarding-btn-wide" onClick={handleBrowse}>우선 둘러볼게요!</button>
+                <button className="onboarding-btn-ghost" onClick={handlePrev}>
+                  이전
+                </button>
+                <button
+                  className="onboarding-btn onboarding-btn-outline onboarding-btn-wide"
+                  onClick={handleBrowse}
+                >
+                  우선 둘러볼게요!
+                </button>
               </div>
-              <button className="onboarding-btn onboarding-btn-primary onboarding-btn-full" onClick={handleJoin}>회원가입하기</button>
+              <button
+                className="onboarding-btn onboarding-btn-primary onboarding-btn-full"
+                onClick={handleJoin}
+              >
+                회원가입하기
+              </button>
             </div>
           </section>
 
@@ -423,9 +484,11 @@ export default function OnboardingGuest() {
               </div>
             </div>
             <div className="onboarding-bottom onboarding-row">
-              <button className="onboarding-btn-ghost" onClick={handlePrev}>이전</button>
-              <button 
-                className="onboarding-btn onboarding-btn-primary onboarding-btn-wide" 
+              <button className="onboarding-btn-ghost" onClick={handlePrev}>
+                이전
+              </button>
+              <button
+                className="onboarding-btn onboarding-btn-primary onboarding-btn-wide"
                 onClick={(e) => {
                   console.log('[Onboarding] 씨앗 이름 짓기 버튼 클릭', { step, event: e });
                   e.preventDefault();
@@ -454,16 +517,18 @@ export default function OnboardingGuest() {
                 value={seedName}
                 onChange={(e) => handleSeedNameChange(e.target.value)}
               />
-              <div className={`onboarding-error ${seedError ? 'show' : ''}`}>이름을 1~12자의 한글/영문/숫자로 입력해 주세요.</div>
+              <div className={`onboarding-error ${seedError ? 'show' : ''}`}>
+                이름을 1~12자의 한글/영문/숫자로 입력해 주세요.
+              </div>
             </div>
             <div className="onboarding-bottom">
-              <button 
-                className="onboarding-btn onboarding-btn-primary onboarding-btn-full" 
+              <button
+                className="onboarding-btn onboarding-btn-primary onboarding-btn-full"
                 onClick={handleStep6Next}
                 disabled={seedName.trim().length === 0}
                 style={{
                   opacity: seedName.trim().length === 0 ? 0.5 : 1,
-                  cursor: seedName.trim().length === 0 ? 'not-allowed' : 'pointer'
+                  cursor: seedName.trim().length === 0 ? 'not-allowed' : 'pointer',
                 }}
               >
                 내 정원 만들기
@@ -481,9 +546,16 @@ export default function OnboardingGuest() {
               </div>
             </div>
             <h1 className="onboarding-center">당신의 정원이 준비되었어요</h1>
-            <p className="onboarding-desc onboarding-center" id="finalCopy">{finalCopy}</p>
+            <p className="onboarding-desc onboarding-center" id="finalCopy">
+              {finalCopy}
+            </p>
             <div className="onboarding-bottom">
-              <button className="onboarding-btn onboarding-btn-primary onboarding-btn-full" onClick={handleGoHome}>내 정원 바로가기</button>
+              <button
+                className="onboarding-btn onboarding-btn-primary onboarding-btn-full"
+                onClick={handleGoHome}
+              >
+                내 정원 바로가기
+              </button>
             </div>
           </section>
         </main>
@@ -491,4 +563,3 @@ export default function OnboardingGuest() {
     </div>
   );
 }
-

@@ -1,40 +1,24 @@
+export type ShareData = {
+  title?: string;
+  text?: string;
+  url?: string;
+};
+
 export async function copyToClipboard(text: string): Promise<boolean> {
   try {
-    await navigator.clipboard.writeText(text);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-export async function webShare(opts: ShareData): Promise<boolean> {
-  try {
-    if (navigator.share) {
-      await navigator.share(opts);
-      return true;
-    }
-    return false;
-  } catch {
-    return false;
-  }
-}
-
-export async function copyToClipboard(text: string) {
-  try {
-    // @ts-expect-error older types
     if (navigator.clipboard?.writeText) {
       await navigator.clipboard.writeText(text);
       return true;
     }
-  } catch {}
+  } catch (_e) {
+    void _e; // clipboard API not available or failed
+  }
   return false;
 }
 
-export async function webShare(data: ShareData) {
-  // @ts-expect-error older types
+export async function webShare(data: ShareData): Promise<boolean> {
   if (navigator.share) {
     try {
-      // @ts-expect-error older types
       await navigator.share(data);
       return true;
     } catch {
@@ -43,5 +27,3 @@ export async function webShare(data: ShareData) {
   }
   return false;
 }
-
-

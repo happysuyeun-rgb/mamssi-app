@@ -73,18 +73,5 @@ export const safeStorage = {
   getItem: safeGetItem,
   setItem: safeSetItem,
   removeItem: safeRemoveItem,
-  test: testStorageAccess
+  test: testStorageAccess,
 };
-
-
-
-
-
-
-
-
-
-
-
-
-

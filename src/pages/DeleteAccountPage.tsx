@@ -21,7 +21,7 @@ export default function DeleteAccountPage() {
     { id: 'privacy', label: '개인정보 보호가 걱정돼요' },
     { id: 'features', label: '원하는 기능이 없어요' },
     { id: 'difficult', label: '사용하기 어려워요' },
-    { id: 'other', label: '기타' }
+    { id: 'other', label: '기타' },
   ];
 
   const handleBack = () => {
@@ -43,10 +43,11 @@ export default function DeleteAccountPage() {
 
     try {
       // 탈퇴 사유 구성
-      const deleteReason = selectedReason === 'other' 
-        ? otherReason.trim() 
-        : reasons.find(r => r.id === selectedReason)?.label || selectedReason;
-      
+      const deleteReason =
+        selectedReason === 'other'
+          ? otherReason.trim()
+          : reasons.find((r) => r.id === selectedReason)?.label || selectedReason;
+
       // users 테이블에서 soft delete 처리
       // is_deleted=true, deleted_at=now(), onboarding_completed=false
       const updateData: {
@@ -59,7 +60,7 @@ export default function DeleteAccountPage() {
         is_deleted: true,
         deleted_at: new Date().toISOString(),
         onboarding_completed: false,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       };
 
       // delete_reason 필드가 있으면 저장 (없으면 무시)
@@ -83,7 +84,7 @@ export default function DeleteAccountPage() {
       try {
         await createNotification(user.id, 'account_deleted', {
           reason: selectedReason,
-          reasonText: deleteReason
+          reasonText: deleteReason,
         });
         diag.log('DeleteAccountPage: account_deleted 알림 생성 완료');
       } catch (notifError) {
@@ -94,7 +95,7 @@ export default function DeleteAccountPage() {
 
       diag.log('DeleteAccountPage: 회원탈퇴 완료');
       notify.success('회원탈퇴가 완료되었어요. 이용해 주셔서 감사합니다.', '👋');
-      
+
       // 로그아웃 처리
       await signOut();
       navigate('/login', { replace: true });
@@ -108,11 +109,7 @@ export default function DeleteAccountPage() {
   return (
     <div className="delete-account-page">
       <div className="delete-account-header">
-        <button
-          className="delete-account-back"
-          onClick={handleBack}
-          aria-label="뒤로가기"
-        >
+        <button className="delete-account-back" onClick={handleBack} aria-label="뒤로가기">
           ←
         </button>
         <h1 className="delete-account-title">회원탈퇴</h1>
@@ -131,10 +128,7 @@ export default function DeleteAccountPage() {
           <h3 className="delete-account-reasons-title">탈퇴 사유를 알려주세요</h3>
           <div className="delete-account-reasons-list">
             {reasons.map((reason) => (
-              <label
-                key={reason.id}
-                className="delete-account-reason-item"
-              >
+              <label key={reason.id} className="delete-account-reason-item">
                 <input
                   type="radio"
                   name="reason"
@@ -194,4 +188,3 @@ export default function DeleteAccountPage() {
     </div>
   );
 }
-

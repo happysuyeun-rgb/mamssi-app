@@ -5,8 +5,6 @@ export function getGardenStatus(_userId: string): GardenStatus {
   return {
     totalDays: 100,
     recordedDays: 28,
-    progressPercent: 28
+    progressPercent: 28,
   };
 }
-
-

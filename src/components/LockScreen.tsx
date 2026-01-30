@@ -10,7 +10,7 @@ type LockScreenProps = {
 const PATTERN_GRID = [
   [1, 2, 3],
   [4, 5, 6],
-  [7, 8, 9]
+  [7, 8, 9],
 ];
 
 export default function LockScreen({ onUnlock }: LockScreenProps) {
@@ -141,7 +141,11 @@ export default function LockScreen({ onUnlock }: LockScreenProps) {
           {patternError && <div className="lock-pin-error">{patternError}</div>}
 
           <div className="lock-pattern-actions">
-            <button type="button" className="lock-btn lock-btn-secondary" onClick={handlePatternReset}>
+            <button
+              type="button"
+              className="lock-btn lock-btn-secondary"
+              onClick={handlePatternReset}
+            >
               지우기
             </button>
             <button
@@ -197,4 +201,3 @@ export default function LockScreen({ onUnlock }: LockScreenProps) {
     </div>
   );
 }
-
