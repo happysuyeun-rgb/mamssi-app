@@ -8,6 +8,17 @@ const rootDir = fileURLToPath(new URL('.', import.meta.url));
 export default defineConfig({
   plugins: [react()],
   base: '/', // 서브경로 배포 시 여기 수정 (예: '/app/')
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'supabase': ['@supabase/supabase-js'],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 550,
+  },
   resolve: {
     alias: {
       '@routes': resolve(rootDir, 'src/routes'),

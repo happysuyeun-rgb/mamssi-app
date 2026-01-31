@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { supabase } from '@lib/supabaseClient';
 import { notify } from '@lib/notify';
+import { ensureFlowerRow } from '@services/flowers';
 
 export type TodayRecord = {
   id: string;
@@ -153,8 +154,6 @@ export function useHomeData(userId?: string | null) {
       if (!flowerData) {
         console.log('[useHomeData] 진행 중 꽃 없음, 생성 시도 (fallback):', { userId });
         try {
-          // ensureFlowerRow 사용 (진행 중 꽃만 생성/조회)
-          const { ensureFlowerRow } = await import('@services/flowers');
           const newFlowerResult = await ensureFlowerRow(userId);
           if (!newFlowerResult.error && newFlowerResult.data) {
             const newFlower = newFlowerResult.data;

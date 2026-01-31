@@ -61,10 +61,18 @@ http://localhost:5173/auth/callback
 
 ## 5. vercel.json (SPA rewrite)
 
-`vercel.json`에 다음 rewrite가 있어야 `/auth/callback` 요청 시 404가 발생하지 않습니다.
+`vercel.json`에 다음 설정이 있어야 `/auth/callback` 요청 시 404가 발생하지 않습니다.
+
+- **cleanUrls: false** 필수: Vercel 기본값(cleanUrls: true)이 rewrite를 무시할 수 있음
+- **rewrites**: `/auth/callback` 및 모든 경로 → `/index.html`
 
 ```json
 {
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "framework": null,
+  "cleanUrls": false,
+  "trailingSlash": false,
   "rewrites": [
     { "source": "/auth/callback", "destination": "/index.html" },
     { "source": "/(.*)", "destination": "/index.html" }
