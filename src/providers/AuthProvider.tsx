@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
 import { supabase } from '@lib/supabaseClient';
+import { getAuthCallbackUrl } from '@lib/authCallbackUrl';
 import { notify } from '@lib/notify';
 import { diag } from '@boot/diag';
 import { safeStorage } from '@lib/safeStorage';
@@ -419,7 +420,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: getAuthCallbackUrl(),
         },
       });
 
@@ -436,7 +437,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'apple',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: getAuthCallbackUrl(),
         },
       });
 

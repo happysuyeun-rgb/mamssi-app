@@ -1,4 +1,5 @@
 import { supabase, hasValidSupabaseConfig } from '@lib/supabaseClient';
+import { getAuthCallbackUrl } from '@lib/authCallbackUrl';
 import { diag } from '@boot/diag';
 import { notify } from '@lib/notify';
 
@@ -24,9 +25,7 @@ export default function SocialLoginButtons({ mode, disabled = false }: SocialLog
     }
 
     try {
-      // HashRouter를 사용하는 경우에도 Supabase OAuth는 전체 URL을 기대
-      // Supabase 대시보드에 등록된 리다이렉트 URL과 일치해야 함
-      const redirectUrl = `${window.location.origin}/auth/callback`;
+      const redirectUrl = getAuthCallbackUrl();
 
       diag.log('SocialLoginButtons: signInWithOAuth 호출 전', {
         provider: 'google',
@@ -137,13 +136,13 @@ export default function SocialLoginButtons({ mode, disabled = false }: SocialLog
     try {
       diag.log('SocialLoginButtons: signInWithOAuth 호출 전', {
         provider: 'apple',
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: getAuthCallbackUrl(),
       });
 
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'apple',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: getAuthCallbackUrl(),
         },
       });
 
