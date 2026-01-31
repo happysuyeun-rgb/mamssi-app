@@ -391,7 +391,7 @@ export default function MyPage() {
   useEffect(() => {
     if (mLock) {
       setLockEnabledDraft(lock.enabled);
-      setLockModeDraft(lock.mode === 'pattern' ? 'pin' : lock.mode);
+      setLockModeDraft('pin'); // 화면잠금은 PIN만 지원
       setPinDraft(lock.pin ?? '');
       setPinError('');
     }
@@ -1186,7 +1186,10 @@ export default function MyPage() {
                     <button
                       type="button"
                       className={`lock-mode-tab ${lockModeDraft === 'pin' ? 'active' : ''}`}
-                      onClick={() => setPinError('')}
+                      onClick={() => {
+                        setLockModeDraft('pin');
+                        setPinError('');
+                      }}
                     >
                       <span className="lock-mode-icon">🔢</span>
                       <div className="lock-mode-text">

@@ -5,6 +5,7 @@ import { safeStorage } from '@lib/safeStorage';
 
 // 로그인/가입 상태를 저장하는 키
 const AUTH_FLOW_KEY = 'authFlowType'; // 'LOGIN' | 'SIGNUP'
+const ONBOARDING_COMPLETE_KEY = 'onboardingComplete';
 
 /** HashRouter 사용 시 pathname 변경 필요 - window.location으로 전체 이동 */
 function goTo(path: string) {
@@ -21,42 +22,41 @@ export default function AuthCallback() {
 
     const handleAuthCallback = async () => {
       try {
-        // OAuth 콜백 URL 처리: initialize()로 URL의 code/hash를 먼저 처리
-        // (AuthProvider와의 경쟁 조건 방지, PKCE/implicit flow 모두 지원)
-        diag.log('AuthCallback: auth.initialize 호출 (URL 파싱)');
-        const initResult = await supabase.auth.initialize();
-        let session = initResult?.data?.session ?? null;
-        let sessionError = initResult?.error ?? null;
+        let session: Awaited<ReturnType<typeof supabase.auth.getSession>>['data']['session'] = null;
+        let sessionError: Awaited<ReturnType<typeof supabase.auth.getSession>>['error'] = null;
 
-        // PKCE flow: initialize()에서 세션 없고 URL에 ?code= 있으면 명시적으로 교환
-        if (!session?.user) {
-          const params = new URLSearchParams(window.location.search);
-          const code = params.get('code');
-          if (code) {
-            diag.log('AuthCallback: PKCE code 발견, exchangeCodeForSession 호출');
-            const { data: exchangeData, error: exchangeError } =
-              await supabase.auth.exchangeCodeForSession(code);
-            if (exchangeError) {
-              diag.err('AuthCallback: code 교환 실패:', exchangeError);
-              goTo('/login');
-              return;
-            }
-            session = exchangeData?.session ?? null;
-            sessionError = exchangeError ?? null;
+        // PKCE flow: URL에 ?code= 있으면 먼저 교환 (가장 빠른 경로)
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get('code');
+        if (code) {
+          diag.log('AuthCallback: PKCE code 발견, exchangeCodeForSession 호출');
+          const { data: exchangeData, error: exchangeError } =
+            await supabase.auth.exchangeCodeForSession(code);
+          if (exchangeError) {
+            diag.err('AuthCallback: code 교환 실패:', exchangeError);
+            goTo('/login');
+            return;
           }
+          session = exchangeData?.session ?? null;
+          sessionError = exchangeError ?? null;
         }
 
-        // 세션 확인 (URL hash 파싱 지연 시 1회 재시도)
+        // code 없으면 initialize() + getSession
         if (!session?.user) {
-          diag.log('AuthCallback: getSession 호출');
-          let getResult = await supabase.auth.getSession();
+          diag.log('AuthCallback: auth.initialize 호출');
+          const initResult = await supabase.auth.initialize();
+          session = initResult?.data?.session ?? null;
+          sessionError = initResult?.error ?? null;
+        }
+        if (!session?.user) {
+          const getResult = await supabase.auth.getSession();
           session = getResult.data.session;
           sessionError = getResult.error;
           if (!session?.user && !sessionError) {
-            await new Promise((r) => setTimeout(r, 500));
-            getResult = await supabase.auth.getSession();
-            session = getResult.data.session;
-            sessionError = getResult.error;
+            await new Promise((r) => setTimeout(r, 150));
+            const retry = await supabase.auth.getSession();
+            session = retry.data.session;
+            sessionError = retry.error;
           }
         }
 
@@ -82,15 +82,24 @@ export default function AuthCallback() {
           provider: userProvider,
         });
 
-        // public.users 테이블에서 해당 user.id row 찾기
-        console.log('[AuthCallback] users 테이블 조회 시작', { userId });
+        // public.users 테이블에서 해당 user.id row 찾기 (3초 타임아웃)
         diag.log('AuthCallback: users 테이블 조회 시작');
-
-        const { data: existingUser, error: userError } = await supabase
+        const usersQuery = supabase
           .from('users')
           .select('id, onboarding_completed, is_deleted, deleted_at')
           .eq('id', userId)
           .single();
+        const usersTimeout = new Promise<{ data: null; error: { code: string; message: string } }>(
+          (resolve) =>
+            setTimeout(
+              () => resolve({ data: null, error: { code: 'TIMEOUT', message: 'users 조회 타임아웃' } }),
+              3000
+            )
+        );
+        const { data: existingUser, error: userError } = await Promise.race([
+          usersQuery,
+          usersTimeout,
+        ]);
 
         if (userError) {
           console.error('[AuthCallback] users 테이블 조회 에러:', {
@@ -107,15 +116,16 @@ export default function AuthCallback() {
             diag.log('AuthCallback: users 테이블에 row 없음 (신규 사용자)');
           } else if (
             userError.code === '42501' ||
+            userError.code === 'TIMEOUT' ||
             userError.message?.includes('permission denied') ||
             userError.message?.includes('RLS')
           ) {
-            // RLS 정책 에러
-            console.error('[AuthCallback] RLS 정책 에러 - users 테이블 조회 권한 없음');
-            diag.err('AuthCallback: RLS 정책 에러 - users 테이블 조회 권한 없음:', userError);
-            // RLS 에러는 무시하고 계속 진행 (신규 사용자로 처리)
+            // RLS/타임아웃: 조회 실패 - 기존 회원일 수 있음. 홈으로 이동 후 AuthProvider가 재조회
+            diag.err('AuthCallback: users 조회 실패 - 홈으로 이동:', userError);
+            safeStorage.setItem(ONBOARDING_COMPLETE_KEY, 'true');
+            goTo('/home');
+            return;
           } else {
-            // 기타 에러
             diag.err('AuthCallback: users 테이블 조회 실패:', userError);
             goTo('/login');
             return;
@@ -166,9 +176,10 @@ export default function AuthCallback() {
 
           safeStorage.setItem(AUTH_FLOW_KEY, 'LOGIN');
 
-          // 온보딩 상태에 따라 라우팅
+          // 온보딩 상태에 따라 라우팅 (회원가입 완료 사용자는 바로 홈)
           if (onboardingCompleted) {
             diag.log('AuthCallback: 온보딩 완료 유저, /home으로 이동');
+            safeStorage.setItem(ONBOARDING_COMPLETE_KEY, 'true');
             goTo('/home');
           } else {
             diag.log('AuthCallback: 온보딩 미완료 유저, 온보딩 페이지로 이동');
