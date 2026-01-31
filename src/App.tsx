@@ -22,6 +22,16 @@ import './app.css';
 function AppRoutes() {
   const location = useLocation();
 
+  // OAuth 콜백: pathname이 /auth/callback이면 AuthCallback 렌더 (HashRouter 무시)
+  // Supabase OAuth는 path 기반 URL로 리다이렉트 → pathname 체크 필요
+  const isAuthCallbackPath =
+    typeof window !== 'undefined' &&
+    (window.location.pathname === '/auth/callback' ||
+      window.location.pathname.endsWith('/auth/callback'));
+  if (isAuthCallbackPath) {
+    return <AuthCallback />;
+  }
+
   const [isLocked, setIsLocked] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
 
