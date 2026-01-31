@@ -49,6 +49,12 @@ http://localhost:5173/auth/callback
 - App.tsx에서 pathname이 `/auth/callback`이면 AuthCallback 렌더.
 - 콜백 처리 후 홈(`/home`) 또는 온보딩(`/onboarding`)으로 정상 이동합니다.
 
+### detectSessionInUrl 설정 (중요)
+
+- `supabaseClient.ts`에서 `detectSessionInUrl: false`로 설정해야 합니다.
+- `true`인 경우 Supabase가 URL의 code를 자동 교환하고, AuthCallback에서도 `exchangeCodeForSession`을 호출하면 **동일 코드 2회 사용**으로 실패합니다.
+- 코드는 1회만 사용 가능하므로, AuthCallback에서 수동 교환을 사용할 때는 `detectSessionInUrl: false`가 필수입니다.
+
 ## 4. 체크리스트
 
 배포 전 확인:

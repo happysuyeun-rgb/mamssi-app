@@ -26,14 +26,27 @@ export default function AuthCallback() {
         let sessionError: Awaited<ReturnType<typeof supabase.auth.getSession>>['error'] = null;
 
         // PKCE flow: URL에 ?code= 있으면 먼저 교환 (가장 빠른 경로)
+        // search 우선, 일부 환경에서 hash에 code가 올 수 있음
         const params = new URLSearchParams(window.location.search);
-        const code = params.get('code');
+        let code = params.get('code');
+        if (!code && window.location.hash) {
+          const hashPart = window.location.hash.split('?')[1];
+          if (hashPart) {
+            code = new URLSearchParams(hashPart).get('code');
+          }
+        }
         if (code) {
           diag.log('AuthCallback: PKCE code 발견, exchangeCodeForSession 호출');
           const { data: exchangeData, error: exchangeError } =
             await supabase.auth.exchangeCodeForSession(code);
           if (exchangeError) {
             diag.err('AuthCallback: code 교환 실패:', exchangeError);
+            console.error('[AuthCallback] exchangeCodeForSession 실패:', {
+              message: exchangeError.message,
+              code: exchangeError.code,
+              status: exchangeError.status,
+              hint: 'detectSessionInUrl이 true면 Supabase가 이미 교환했을 수 있음. supabaseClient에서 false로 설정했는지 확인',
+            });
             goTo('/login');
             return;
           }

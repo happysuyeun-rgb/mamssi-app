@@ -86,7 +86,9 @@ export const supabase = createClient(finalUrl, finalKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
-    detectSessionInUrl: true,
+    // AuthCallback에서 수동으로 exchangeCodeForSession 호출하므로 false
+    // true면 Supabase가 자동 교환 + AuthCallback 수동 교환 → 코드 2회 사용 시도 → 실패 → /login 리다이렉트
+    detectSessionInUrl: false,
     flowType: 'pkce', // OAuth PKCE flow (Google 등) - 콜백 후 세션 교환
   },
   // 네트워크 에러 처리 개선
