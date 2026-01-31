@@ -844,7 +844,7 @@ export default function MyPage() {
               if (!confirm('정말 로그아웃하시겠어요?')) return;
               try {
                 await signOut();
-                navigate('/login', { replace: true });
+                navigate('/', { replace: true });
               } catch (error) {
                 console.error('로그아웃 실패:', error);
                 notify.error('로그아웃에 실패했어요. 잠시 후 다시 시도해주세요.', '❌');

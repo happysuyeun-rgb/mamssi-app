@@ -5,6 +5,7 @@ import { getAuthCallbackUrl } from '@lib/authCallbackUrl';
 import { notify } from '@lib/notify';
 import { diag } from '@boot/diag';
 import { safeStorage } from '@lib/safeStorage';
+import { clearLockOnSignOut } from '@utils/lock';
 import type { User, Session, AuthError } from '@supabase/supabase-js';
 
 type UserProfile = {
@@ -460,6 +461,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       diag.log('AuthProvider: signOut 호출');
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
+
+      // 로그아웃 시 잠금 설정 초기화 (마음을 감싸기 잠금 화면 표시 방지)
+      clearLockOnSignOut();
 
       safeStorage.removeItem(GUEST_MODE_KEY);
       setIsGuest(false);

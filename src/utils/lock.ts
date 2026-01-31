@@ -1,6 +1,6 @@
 import { lsGet, lsSet } from './storage';
 import type { LockSettings } from '@domain/lock';
-import { LOCK_STORAGE_KEY, defaultLockSettings } from '@domain/lock';
+import { LOCK_SESSION_KEY, LOCK_STORAGE_KEY, defaultLockSettings } from '@domain/lock';
 
 export function normalizeLockSettings(raw?: Partial<LockSettings> | null): LockSettings {
   if (!raw) return { ...defaultLockSettings };
@@ -35,4 +35,18 @@ export function loadLockSettings(): LockSettings {
 
 export function saveLockSettings(next: LockSettings) {
   lsSet(LOCK_STORAGE_KEY, next);
+}
+
+/**
+ * 로그아웃 시 잠금 설정 초기화
+ * - localStorage의 잠금 설정을 비활성화
+ * - sessionStorage의 잠금 해제 상태 제거
+ */
+export function clearLockOnSignOut() {
+  saveLockSettings(defaultLockSettings);
+  try {
+    sessionStorage.removeItem(LOCK_SESSION_KEY);
+  } catch {
+    // sessionStorage 접근 실패 시 무시
+  }
 }

@@ -87,6 +87,7 @@ export const supabase = createClient(finalUrl, finalKey, {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
+    flowType: 'pkce', // OAuth PKCE flow (Google 등) - 콜백 후 세션 교환
   },
   // 네트워크 에러 처리 개선
   global: {

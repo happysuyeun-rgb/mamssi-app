@@ -13,16 +13,47 @@ export default function AuthCallback() {
   useEffect(() => {
     diag.log('AuthCallback: OAuth 콜백 처리 시작');
 
+    const AUTH_CALLBACK_TIMEOUT_MS = 15000; // 15초 후 타임아웃
+
     const handleAuthCallback = async () => {
       try {
+        // OAuth 콜백 URL 처리: initialize()로 URL의 code/hash를 먼저 처리
+        // (AuthProvider와의 경쟁 조건 방지, PKCE/implicit flow 모두 지원)
+        diag.log('AuthCallback: auth.initialize 호출 (URL 파싱)');
+        const initResult = await supabase.auth.initialize();
+        let session = initResult?.data?.session ?? null;
+        let sessionError = initResult?.error ?? null;
+
+        // PKCE flow: initialize()에서 세션 없고 URL에 ?code= 있으면 명시적으로 교환
+        if (!session?.user) {
+          const params = new URLSearchParams(window.location.search);
+          const code = params.get('code');
+          if (code) {
+            diag.log('AuthCallback: PKCE code 발견, exchangeCodeForSession 호출');
+            const { data: exchangeData, error: exchangeError } =
+              await supabase.auth.exchangeCodeForSession(code);
+            if (exchangeError) {
+              diag.err('AuthCallback: code 교환 실패:', exchangeError);
+              navigate('/login', { replace: true });
+              return;
+            }
+            session = exchangeData?.session ?? null;
+            sessionError = exchangeError ?? null;
+          }
+        }
+
         // 세션 확인 (URL hash 파싱 지연 시 1회 재시도)
-        diag.log('AuthCallback: getSession 호출');
-        let { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        if (!session?.user && !sessionError) {
-          await new Promise((r) => setTimeout(r, 300));
-          const retry = await supabase.auth.getSession();
-          session = retry.data.session;
-          sessionError = retry.error;
+        if (!session?.user) {
+          diag.log('AuthCallback: getSession 호출');
+          let getResult = await supabase.auth.getSession();
+          session = getResult.data.session;
+          sessionError = getResult.error;
+          if (!session?.user && !sessionError) {
+            await new Promise((r) => setTimeout(r, 500));
+            getResult = await supabase.auth.getSession();
+            session = getResult.data.session;
+            sessionError = getResult.error;
+          }
         }
 
         if (sessionError) {
@@ -191,7 +222,16 @@ export default function AuthCallback() {
       }
     };
 
-    handleAuthCallback();
+    const timeoutPromise = new Promise<void>((_, reject) => {
+      setTimeout(() => {
+        reject(new Error('AuthCallback 타임아웃'));
+      }, AUTH_CALLBACK_TIMEOUT_MS);
+    });
+
+    Promise.race([handleAuthCallback(), timeoutPromise]).catch((err) => {
+      diag.err('AuthCallback: 타임아웃 또는 오류', err);
+      navigate('/login', { replace: true });
+    });
   }, [navigate]);
 
   return (
