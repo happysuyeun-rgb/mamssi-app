@@ -15,12 +15,15 @@ export default function AuthCallback() {
 
     const handleAuthCallback = async () => {
       try {
-        // 세션 확인
+        // 세션 확인 (URL hash 파싱 지연 시 1회 재시도)
         diag.log('AuthCallback: getSession 호출');
-        const {
-          data: { session },
-          error: sessionError,
-        } = await supabase.auth.getSession();
+        let { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        if (!session?.user && !sessionError) {
+          await new Promise((r) => setTimeout(r, 300));
+          const retry = await supabase.auth.getSession();
+          session = retry.data.session;
+          sessionError = retry.error;
+        }
 
         if (sessionError) {
           diag.err('AuthCallback: 세션 확인 실패:', sessionError);
@@ -142,40 +145,39 @@ export default function AuthCallback() {
 
           safeStorage.setItem(AUTH_FLOW_KEY, 'SIGNUP');
 
-          // users 테이블에 row 생성 (upsert 보장)
-          diag.log('AuthCallback: users 테이블에 row 생성 시작');
-          const { error: upsertError } = await supabase.from('users').upsert(
-            {
-              id: userId,
-              email: userEmail,
-              onboarding_completed: false,
-              is_deleted: false,
-              deleted_at: null,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            },
-            {
-              onConflict: 'id',
-            }
-          );
+          // users + user_settings 병렬 생성 (지연 시간 단축)
+          diag.log('AuthCallback: users, user_settings 병렬 생성 시작');
+          const now = new Date().toISOString();
+          const [usersResult, settingsResult] = await Promise.all([
+            supabase.from('users').upsert(
+              {
+                id: userId,
+                email: userEmail,
+                onboarding_completed: false,
+                is_deleted: false,
+                deleted_at: null,
+                created_at: now,
+                updated_at: now,
+              },
+              { onConflict: 'id' }
+            ),
+            supabase.from('user_settings').upsert(
+              {
+                user_id: userId,
+                nickname: '마음씨',
+                updated_at: now,
+              },
+              { onConflict: 'user_id' }
+            ),
+          ]);
 
-          if (upsertError) {
-            diag.err('AuthCallback: users 테이블 upsert 실패:', upsertError);
+          if (usersResult.error) {
+            diag.err('AuthCallback: users 테이블 upsert 실패:', usersResult.error);
             navigate('/login', { replace: true });
             return;
           }
-
-          // 신규 유저 user_settings 초기 생성 (기본 닉네임: 마음씨)
-          const { error: settingsError } = await supabase.from('user_settings').upsert(
-            {
-              user_id: userId,
-              nickname: '마음씨',
-              updated_at: new Date().toISOString(),
-            },
-            { onConflict: 'user_id' }
-          );
-          if (settingsError) {
-            diag.err('AuthCallback: user_settings 초기 생성 실패 (무시하고 진행):', settingsError);
+          if (settingsResult.error) {
+            diag.err('AuthCallback: user_settings 초기 생성 실패 (무시하고 진행):', settingsResult.error);
           } else {
             diag.log('AuthCallback: user_settings 초기 생성 완료 (nickname: 마음씨)');
           }

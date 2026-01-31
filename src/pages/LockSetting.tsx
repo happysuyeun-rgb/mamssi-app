@@ -27,7 +27,6 @@ export default function LockSetting() {
   const [pinConfirm, setPinConfirm] = useState('');
   const [pinError, setPinError] = useState('');
   const [isSettingPin, setIsSettingPin] = useState(false);
-  const [showMaeumCover, setShowMaeumCover] = useState(false);
 
   // PIN 설정 모드 진입
   const startPinSetup = () => {
@@ -66,29 +65,6 @@ export default function LockSetting() {
     setPinConfirm('');
     createNotification(CURRENT_USER_ID, 'pin_enabled', { mode: 'pin' }).catch(() => {});
     navigate('/mypage');
-  };
-
-  // 마음을 감싸기 활성화
-  const enableHugMode = () => {
-    sessionStorage.removeItem(lockSessionKey);
-    setShowMaeumCover(true);
-    const timer = setTimeout(() => {
-      setShowMaeumCover(false);
-      const updated: LockSettings = {
-        ...settings,
-        mode: 'pattern',
-        enabled: true,
-        updatedAt: new Date().toISOString(),
-      };
-      if (!settings.createdAt) {
-        updated.createdAt = new Date().toISOString();
-      }
-      setSettings(updated);
-      lsSet(lockKey, updated);
-      createNotification(CURRENT_USER_ID, 'pin_enabled', { mode: 'pattern' }).catch(() => {});
-      navigate('/mypage');
-    }, 1500);
-    return () => clearTimeout(timer);
   };
 
   // 잠금 해제
@@ -147,16 +123,6 @@ export default function LockSetting() {
             <p className="page-hero-desc">당신의 감정을 안전하게 지켜드려요.</p>
           </div>
         </div>
-
-        {/* 마음을 감싸는 중 오버레이 */}
-        {showMaeumCover && (
-          <div className="lock-maeum-cover">
-            <div className="lock-maeum-content">
-              <div className="lock-maeum-emoji">🤗</div>
-              <div className="lock-maeum-text">마음을 감싸는 중...</div>
-            </div>
-          </div>
-        )}
 
         {/* PIN 설정 모드 */}
         {isSettingPin ? (
@@ -259,9 +225,7 @@ export default function LockSetting() {
                     checked={settings.enabled}
                     onChange={(e) => {
                       if (e.target.checked) {
-                        if (settings.mode === 'pattern') {
-                          enableHugMode();
-                        } else if (!settings.pin) {
+                        if (!settings.pin) {
                           startPinSetup();
                         } else {
                           const updated: LockSettings = {
@@ -284,7 +248,7 @@ export default function LockSetting() {
 
             {settings.enabled && (
               <>
-                {/* 잠금 방식 선택 */}
+                {/* 잠금 방식 선택 (마음을 감싸기 숨김) */}
                 <section className="lock-section">
                   <div className="lock-section-title">잠금 방식</div>
                   <div className="lock-mode-options">
@@ -292,23 +256,8 @@ export default function LockSetting() {
                       <input
                         type="radio"
                         name="lockMode"
-                        value="hug"
-                        checked={settings.mode === 'pattern'}
-                        onChange={() => changeMode('pattern')}
-                      />
-                      <div className="lock-mode-content">
-                        <div className="lock-mode-icon">🤗</div>
-                        <div className="lock-mode-label">마음을 감싸기</div>
-                        <div className="lock-mode-desc">간단한 터치로 잠금 해제</div>
-                      </div>
-                    </label>
-
-                    <label className="lock-mode-option">
-                      <input
-                        type="radio"
-                        name="lockMode"
                         value="pin"
-                        checked={settings.mode === 'pin'}
+                        checked={settings.mode === 'pin' || settings.mode === 'pattern'}
                         onChange={() => changeMode('pin')}
                       />
                       <div className="lock-mode-content">
@@ -319,11 +268,16 @@ export default function LockSetting() {
                     </label>
                   </div>
 
-                  {settings.mode === 'pin' && settings.pin && (
+                  {(settings.mode === 'pin' && settings.pin && (
                     <button type="button" className="lock-btn-link" onClick={resetPin}>
                       PIN 재설정
                     </button>
-                  )}
+                  )) ||
+                    (settings.mode === 'pattern' && (
+                      <button type="button" className="lock-btn-link" onClick={startPinSetup}>
+                        PIN으로 전환
+                      </button>
+                    ))}
                 </section>
 
                 {/* 생체인증 (PIN 모드일 때만) */}

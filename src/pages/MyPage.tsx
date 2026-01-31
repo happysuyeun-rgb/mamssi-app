@@ -34,12 +34,6 @@ const profileKey = 'ms_profile';
 const setKey = 'ms_settings';
 const albumKey = 'ms_album';
 
-const PATTERN_GRID = [
-  [1, 2, 3],
-  [4, 5, 6],
-  [7, 8, 9],
-];
-
 export default function MyPage() {
   const navigate = useNavigate();
   const { user, isGuest, session, signOut } = useAuth();
@@ -391,45 +385,21 @@ export default function MyPage() {
   // Lock temp states
   const [lockEnabledDraft, setLockEnabledDraft] = useState(lock.enabled);
   const [lockModeDraft, setLockModeDraft] = useState<LockMode>(lock.mode);
-  const [patternDraft, setPatternDraft] = useState<number[]>(lock.pattern ?? []);
-  const [patternError, setPatternError] = useState('');
   const [pinDraft, setPinDraft] = useState(lock.pin ?? '');
   const [pinError, setPinError] = useState('');
 
   useEffect(() => {
     if (mLock) {
       setLockEnabledDraft(lock.enabled);
-      setLockModeDraft(lock.mode);
-      setPatternDraft(lock.pattern ?? []);
+      setLockModeDraft(lock.mode === 'pattern' ? 'pin' : lock.mode);
       setPinDraft(lock.pin ?? '');
-      setPatternError('');
       setPinError('');
     }
   }, [mLock, lock]);
 
   useEffect(() => {
-    if (!lockEnabledDraft) {
-      setPatternError('');
-      setPinError('');
-    }
+    if (!lockEnabledDraft) setPinError('');
   }, [lockEnabledDraft]);
-
-  const handlePatternNode = (point: number) => {
-    setPatternError('');
-    setPatternDraft((prev) => {
-      if (!prev.length) return [point];
-      if (prev[prev.length - 1] === point) {
-        return prev.slice(0, -1);
-      }
-      if (prev.includes(point)) return prev;
-      return [...prev, point];
-    });
-  };
-
-  const resetPatternDraft = () => {
-    setPatternDraft([]);
-    setPatternError('');
-  };
 
   const handlePinDraftChange = (value: string) => {
     const digits = value.replace(/\D/g, '').slice(0, 4);
@@ -442,11 +412,7 @@ export default function MyPage() {
       'save_lock_settings',
       async () => {
         if (lockEnabledDraft) {
-          if (lockModeDraft === 'pattern' && patternDraft.length < 4) {
-            setPatternError('패턴은 최소 4개의 점을 연결해야 해요.');
-            return;
-          }
-          if (lockModeDraft === 'pin' && pinDraft.length !== 4) {
+          if (pinDraft.length !== 4) {
             setPinError('PIN은 4자리 숫자여야 해요.');
             return;
           }
@@ -457,12 +423,8 @@ export default function MyPage() {
           let lockValue: string | null = null;
 
           if (lockEnabledDraft) {
-            lockType = lockModeDraft;
-            if (lockModeDraft === 'pattern') {
-              lockValue = await hashLockValue(patternDraft);
-            } else {
-              lockValue = await hashLockValue(pinDraft);
-            }
+            lockType = 'pin';
+            lockValue = await hashLockValue(pinDraft);
           }
 
           await updateSettings({
@@ -474,9 +436,9 @@ export default function MyPage() {
           const next: LockSettings = {
             ...lock,
             enabled: lockEnabledDraft,
-            mode: lockModeDraft,
-            pattern: lockEnabledDraft && lockModeDraft === 'pattern' ? patternDraft : [],
-            pin: lockEnabledDraft && lockModeDraft === 'pin' ? pinDraft : '',
+            mode: 'pin',
+            pattern: [],
+            pin: lockEnabledDraft ? pinDraft : '',
             updatedAt: now,
             createdAt: lock.createdAt || (lockEnabledDraft ? now : lock.createdAt),
             biometricEnabled: lock.biometricEnabled,
@@ -673,9 +635,7 @@ export default function MyPage() {
     }
   }
 
-  const canSaveLock =
-    !lockEnabledDraft ||
-    (lockModeDraft === 'pattern' ? patternDraft.length >= 4 : pinDraft.length === 4);
+  const canSaveLock = !lockEnabledDraft || pinDraft.length === 4;
 
   return (
     <Layout hideHeader>
@@ -1225,25 +1185,8 @@ export default function MyPage() {
                   <div className="lock-mode-tabs">
                     <button
                       type="button"
-                      className={`lock-mode-tab ${lockModeDraft === 'pattern' ? 'active' : ''}`}
-                      onClick={() => {
-                        setLockModeDraft('pattern');
-                        setPatternError('');
-                      }}
-                    >
-                      <span className="lock-mode-icon">🤲</span>
-                      <div className="lock-mode-text">
-                        <div className="title">마음을 감싸기</div>
-                        <div className="desc">패턴으로 잠금</div>
-                      </div>
-                    </button>
-                    <button
-                      type="button"
                       className={`lock-mode-tab ${lockModeDraft === 'pin' ? 'active' : ''}`}
-                      onClick={() => {
-                        setLockModeDraft('pin');
-                        setPinError('');
-                      }}
+                      onClick={() => setPinError('')}
                     >
                       <span className="lock-mode-icon">🔢</span>
                       <div className="lock-mode-text">
@@ -1252,48 +1195,6 @@ export default function MyPage() {
                       </div>
                     </button>
                   </div>
-
-                  {lockModeDraft === 'pattern' && (
-                    <div className="lock-pattern-panel">
-                      <div className="lock-pattern-grid">
-                        {PATTERN_GRID.flat().map((point) => {
-                          const index = patternDraft.indexOf(point);
-                          return (
-                            <button
-                              key={point}
-                              type="button"
-                              className={`lock-pattern-node ${index >= 0 ? 'active' : ''}`}
-                              onClick={() => handlePatternNode(point)}
-                            >
-                              {index >= 0 ? index + 1 : ''}
-                            </button>
-                          );
-                        })}
-                      </div>
-                      <div className="lock-pattern-seq">
-                        {patternDraft.length ? (
-                          patternDraft.map((point, idx) => (
-                            <span key={point} className="lock-seq-chip">
-                              {idx + 1}
-                            </span>
-                          ))
-                        ) : (
-                          <span className="lock-pattern-placeholder">
-                            아직 선택된 패턴이 없어요.
-                          </span>
-                        )}
-                      </div>
-                      {patternError && <div className="lock-error">{patternError}</div>}
-                      <button
-                        type="button"
-                        className="lock-pattern-reset"
-                        onClick={resetPatternDraft}
-                      >
-                        패턴 다시 그리기
-                      </button>
-                      <p className="lock-helper">최소 4개의 점을 순서대로 연결해 주세요.</p>
-                    </div>
-                  )}
 
                   {lockModeDraft === 'pin' && (
                     <div className="lock-pin-panel">
