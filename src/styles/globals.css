@@ -2,6 +2,7 @@
 
 :root {
   --tabbar-height: 72px;
+  --tabbar-clearance: calc(80px + env(safe-area-inset-bottom, 0px));
 }
 
 * {
@@ -40,7 +41,18 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  padding-bottom: 72px;
+  padding-bottom: var(--tabbar-clearance);
+}
+
+/* TabBar: 배경 없는 조용한 네비게이션 */
+.ms-tabbar-link {
+  color: var(--ms-color-ink-muted);
+}
+.ms-tabbar-link:hover {
+  color: var(--ms-color-ink-soft);
+}
+.ms-tabbar-link.active {
+  color: var(--ms-color-primary);
 }
 
 /* Utility: 3-line clamp */

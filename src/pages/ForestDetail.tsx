@@ -79,7 +79,7 @@ export default function ForestDetail() {
   if (notFound) {
     return (
       <Layout>
-        <div className="forest-detail" style={{ padding: '10px 2px 72px' }}>
+        <div className="forest-detail" style={{ padding: '10px 2px 80px' }}>
           <div style={{ textAlign: 'center', padding: '40px 16px' }}>
             <div style={{ fontSize: 16, marginBottom: 8 }}>게시글을 찾을 수 없어요</div>
             <button
@@ -102,7 +102,7 @@ export default function ForestDetail() {
   if (loading || !post) {
     return (
       <Layout>
-        <div className="forest-detail" style={{ padding: '10px 2px 72px' }}>
+        <div className="forest-detail" style={{ padding: '10px 2px 80px' }}>
           <div style={{ textAlign: 'center', padding: '40px 16px' }}>불러오는 중...</div>
         </div>
       </Layout>
@@ -180,7 +180,7 @@ export default function ForestDetail() {
 
   return (
     <Layout>
-      <div className="forest-detail" style={{ padding: '10px 2px 72px' }}>
+      <div className="forest-detail" style={{ padding: '10px 2px 80px' }}>
         {/* 상단 뒤로가기 영역 */}
         <div className="forest-detail-header" style={{ margin: '0 0 10px 0' }}>
           <button

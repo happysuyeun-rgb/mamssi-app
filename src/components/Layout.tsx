@@ -11,7 +11,7 @@ type LayoutProps = {
 export default function Layout({
   children,
   hideHeader = true,
-  contentPadding = '16px 16px 96px',
+  contentPadding = '16px 16px var(--tabbar-clearance)',
 }: LayoutProps) {
   return (
     <div className="ms-app-shell">

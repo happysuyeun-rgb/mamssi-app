@@ -9,8 +9,6 @@ const linkStyle: React.CSSProperties = {
   placeItems: 'center',
   gap: 3,
   padding: '8px 4px',
-  borderRadius: 12,
-  color: 'var(--ms-color-ink-muted)',
   textDecoration: 'none',
   fontSize: 11,
   fontWeight: 600,
@@ -19,13 +17,15 @@ const linkStyle: React.CSSProperties = {
 export default function TabBar() {
   return (
     <nav
+      className="ms-tabbar"
       style={{
         position: 'fixed',
         left: 0,
         right: 0,
         bottom: 0,
-        background: '#fff',
-        borderTop: '1px solid var(--ms-color-border-soft)',
+        background: '#FFFFFF',
+        borderTop: '1px solid var(--ms-color-border-nav, #D6E2DD)',
+        boxShadow: '0 -6px 18px rgba(0,0,0,0.04)',
         zIndex: 20,
       }}
     >
@@ -36,18 +36,16 @@ export default function TabBar() {
           display: 'grid',
           gridTemplateColumns: 'repeat(4,1fr)',
           gap: 2,
-          padding: '7px 8px 8px',
+          padding: '7px 8px calc(8px + env(safe-area-inset-bottom, 0px))',
         }}
       >
         <NavLink
           to="/"
           end
-          style={({ isActive }) => ({
-            ...linkStyle,
-            color: isActive ? 'var(--ms-color-primary)' : linkStyle.color,
-            background: isActive ? '#e0f7f5' : 'transparent',
-            border: isActive ? '1px solid #99f6e4' : '1px solid transparent',
-          })}
+          className={({ isActive }) =>
+            isActive ? 'ms-tabbar-link active' : 'ms-tabbar-link'
+          }
+          style={linkStyle}
         >
           {({ isActive }) => (
             <>
@@ -58,12 +56,10 @@ export default function TabBar() {
         </NavLink>
         <NavLink
           to="/forest"
-          style={({ isActive }) => ({
-            ...linkStyle,
-            color: isActive ? 'var(--ms-color-primary)' : linkStyle.color,
-            background: isActive ? '#e0f7f5' : 'transparent',
-            border: isActive ? '1px solid #99f6e4' : '1px solid transparent',
-          })}
+          className={({ isActive }) =>
+            isActive ? 'ms-tabbar-link active' : 'ms-tabbar-link'
+          }
+          style={linkStyle}
         >
           {({ isActive }) => (
             <>
@@ -74,12 +70,10 @@ export default function TabBar() {
         </NavLink>
         <NavLink
           to="/record"
-          style={({ isActive }) => ({
-            ...linkStyle,
-            color: isActive ? 'var(--ms-color-primary)' : linkStyle.color,
-            background: isActive ? '#e0f7f5' : 'transparent',
-            border: isActive ? '1px solid #99f6e4' : '1px solid transparent',
-          })}
+          className={({ isActive }) =>
+            isActive ? 'ms-tabbar-link active' : 'ms-tabbar-link'
+          }
+          style={linkStyle}
         >
           {({ isActive }) => (
             <>
@@ -90,12 +84,10 @@ export default function TabBar() {
         </NavLink>
         <NavLink
           to="/mypage"
-          style={({ isActive }) => ({
-            ...linkStyle,
-            color: isActive ? 'var(--ms-color-primary)' : linkStyle.color,
-            background: isActive ? '#e0f7f5' : 'transparent',
-            border: isActive ? '1px solid #99f6e4' : '1px solid transparent',
-          })}
+          className={({ isActive }) =>
+            isActive ? 'ms-tabbar-link active' : 'ms-tabbar-link'
+          }
+          style={linkStyle}
         >
           {({ isActive }) => (
             <>

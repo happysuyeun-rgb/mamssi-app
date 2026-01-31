@@ -14,7 +14,6 @@ export default function MyProfileIcon({ isActive = false, size = 24 }: MyProfile
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <rect width="24" height="24" fill="white" />
       <circle cx="12" cy="8" r="4" fill={fillColor} />
       <path
         d="M4 19C4 15.6863 6.68629 13 10 13H14C17.3137 13 20 15.6863 20 19H4Z"

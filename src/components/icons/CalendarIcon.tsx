@@ -15,7 +15,6 @@ export default function CalendarIcon({ isActive = false, size = 24 }: CalendarIc
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <rect width="24" height="24" fill="white" />
       <path
         d="M7.5 4C7.77614 4 8 4.22386 8 4.5V5H14V4.5C14 4.22386 14.2239 4 14.5 4C14.7761 4 15 4.22386 15 4.5V5H16.4443C17.3038 5 18 5.69622 18 6.55566V17.4443C18 18.3038 17.3038 19 16.4443 19H5.55566C4.69622 19 4 18.3038 4 17.4443V6.55566C4 5.69622 4.69622 5 5.55566 5H7V4.5C7 4.22386 7.22386 4 7.5 4Z"
         fill={fillColor}
