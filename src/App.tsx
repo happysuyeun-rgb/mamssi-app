@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Route, Routes, Navigate, useLocation } from 'react-router-dom';
+import { Route, Routes, Navigate } from 'react-router-dom';
 import AuthCallback from '@pages/AuthCallback';
 import Home from '@pages/Home';
 import Record from '@pages/Record';
@@ -20,8 +20,6 @@ import { diag } from '@boot/diag';
 import './app.css';
 
 function AppRoutes() {
-  const location = useLocation();
-
   // OAuth 콜백: pathname이 /auth/callback이면 AuthCallback 렌더 (HashRouter 무시)
   // Supabase OAuth는 path 기반 URL로 리다이렉트 → pathname 체크 필요
   const isAuthCallbackPath =
@@ -36,7 +34,7 @@ function AppRoutes() {
   const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    diag.log('AppRoutes: 마운트', { path: location.pathname });
+    diag.log('AppRoutes: 잠금 체크 마운트');
 
     const checkLock = () => {
       const settings = loadLockSettings();
@@ -66,7 +64,8 @@ function AppRoutes() {
 
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
-  }, [location.pathname]);
+    // pathname 제거: 탭 네비게이션 시마다 재실행되면 잠금 해제 후에도 LockScreen이 다시 표시되는 버그 발생
+  }, []);
 
   const handleUnlock = () => {
     sessionStorage.setItem(LOCK_SESSION_KEY, 'true');
