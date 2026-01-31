@@ -69,5 +69,6 @@ VITE_SUPABASE_ANON_KEY=...
 
 - [배포 게이트 요약](docs/DEPLOY_GATE_SUMMARY.md)
 - [단언(as/!) 점검](docs/ASSERTION_REVIEW.md)
+- [Vercel 빌드 수정 가이드](docs/VERCEL_BUILD_FIX.md)
 - [아키텍처 결정](docs/ARCHITECTURE_DECISIONS.md)
 - [품질 도구](docs/QUALITY_TOOLS.md)

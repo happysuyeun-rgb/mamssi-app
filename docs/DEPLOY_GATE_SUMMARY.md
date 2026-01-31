@@ -11,6 +11,8 @@
 | `src/utils/share.ts` | no-empty lint 오류 수정, 중복 함수 제거 |
 | `docs/ASSERTION_REVIEW.md` | **신규** - 단언(as/!) 점검 및 런타임 안전 근거 |
 | `src/pages/ForestDetail.tsx` | `reason as any` → `reason as ReportReason` (any 제거) |
+| `docs/VERCEL_BUILD_FIX.md` | **신규** - Vercel build Permission denied 수정 가이드 |
+| `.gitignore` | **신규** - node_modules, dist, .env 등 제외 (Vercel 빌드 안정화) |
 
 ---
 
