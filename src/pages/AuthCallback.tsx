@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { supabase } from '@lib/supabaseClient';
 import { diag } from '@boot/diag';
 import { safeStorage } from '@lib/safeStorage';
@@ -7,8 +6,13 @@ import { safeStorage } from '@lib/safeStorage';
 // 로그인/가입 상태를 저장하는 키
 const AUTH_FLOW_KEY = 'authFlowType'; // 'LOGIN' | 'SIGNUP'
 
+/** HashRouter 사용 시 pathname 변경 필요 - window.location으로 전체 이동 */
+function goTo(path: string) {
+  const hashPath = path.startsWith('/') ? path : `/${path}`;
+  window.location.replace(`${window.location.origin}/#${hashPath}`);
+}
+
 export default function AuthCallback() {
-  const navigate = useNavigate();
 
   useEffect(() => {
     diag.log('AuthCallback: OAuth 콜백 처리 시작');
@@ -34,7 +38,7 @@ export default function AuthCallback() {
               await supabase.auth.exchangeCodeForSession(code);
             if (exchangeError) {
               diag.err('AuthCallback: code 교환 실패:', exchangeError);
-              navigate('/login', { replace: true });
+              goTo('/login');
               return;
             }
             session = exchangeData?.session ?? null;
@@ -58,13 +62,13 @@ export default function AuthCallback() {
 
         if (sessionError) {
           diag.err('AuthCallback: 세션 확인 실패:', sessionError);
-          navigate('/login', { replace: true });
+          goTo('/login');
           return;
         }
 
         if (!session?.user) {
           diag.log('AuthCallback: 세션 없음, 로그인 페이지로 이동');
-          navigate('/login', { replace: true });
+          goTo('/login');
           return;
         }
 
@@ -113,7 +117,7 @@ export default function AuthCallback() {
           } else {
             // 기타 에러
             diag.err('AuthCallback: users 테이블 조회 실패:', userError);
-            navigate('/login', { replace: true });
+            goTo('/login');
             return;
           }
         }
@@ -145,12 +149,12 @@ export default function AuthCallback() {
 
             if (updateError) {
               diag.err('AuthCallback: 계정 재활성화 실패:', updateError);
-              navigate('/login', { replace: true });
+              goTo('/login');
               return;
             }
 
             diag.log('AuthCallback: 계정 재활성화 완료, 온보딩 페이지로 이동');
-            navigate('/onboarding?step=5', { replace: true });
+            goTo('/onboarding?step=5');
             return;
           }
 
@@ -165,10 +169,10 @@ export default function AuthCallback() {
           // 온보딩 상태에 따라 라우팅
           if (onboardingCompleted) {
             diag.log('AuthCallback: 온보딩 완료 유저, /home으로 이동');
-            navigate('/home', { replace: true });
+            goTo('/home');
           } else {
             diag.log('AuthCallback: 온보딩 미완료 유저, 온보딩 페이지로 이동');
-            navigate('/onboarding?step=5', { replace: true });
+            goTo('/onboarding?step=5');
           }
         } else {
           // 신규 유저: 가입으로 판단
@@ -204,7 +208,7 @@ export default function AuthCallback() {
 
           if (usersResult.error) {
             diag.err('AuthCallback: users 테이블 upsert 실패:', usersResult.error);
-            navigate('/login', { replace: true });
+            goTo('/login');
             return;
           }
           if (settingsResult.error) {
@@ -214,11 +218,11 @@ export default function AuthCallback() {
           }
 
           diag.log('AuthCallback: 신규 유저 생성 완료, 온보딩/씨앗 받기 페이지로 이동');
-          navigate('/onboarding?step=5', { replace: true });
+          goTo('/onboarding?step=5');
         }
       } catch (error) {
         diag.err('AuthCallback: 인증 콜백 처리 실패:', error);
-        navigate('/login', { replace: true });
+        goTo('/login');
       }
     };
 
@@ -230,9 +234,9 @@ export default function AuthCallback() {
 
     Promise.race([handleAuthCallback(), timeoutPromise]).catch((err) => {
       diag.err('AuthCallback: 타임아웃 또는 오류', err);
-      navigate('/login', { replace: true });
+      goTo('/login');
     });
-  }, [navigate]);
+  }, []);
 
   return (
     <div
