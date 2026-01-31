@@ -98,12 +98,12 @@ export default function MyPage() {
                   {user.id.substring(0, 8)}...
                 </span>
               </div>
-              {dbSettings?.nickname && (
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'var(--ms-ink-muted)' }}>닉네임</span>
-                  <span style={{ color: 'var(--ms-ink-soft)' }}>{dbSettings.nickname}</span>
-                </div>
-              )}
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: 'var(--ms-ink-muted)' }}>닉네임</span>
+                <span style={{ color: 'var(--ms-ink-soft)' }}>
+                  {dbSettings?.nickname?.trim() || '마음씨'}
+                </span>
+              </div>
               {dbSettings?.birthdate && (
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ color: 'var(--ms-ink-muted)' }}>생일</span>

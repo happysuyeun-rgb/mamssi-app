@@ -38,14 +38,46 @@ export function useSettings(userId?: string | null) {
 
       if (fetchError) {
         if (fetchError.code === 'PGRST116') {
-          // 레코드가 없으면 null로 설정
-          setSettings(null);
+          // 레코드가 없으면 초기 생성 (기본 닉네임: 마음씨)
+          const { data: inserted, error: insertErr } = await supabase
+            .from('user_settings')
+            .upsert(
+              {
+                user_id: userId,
+                nickname: '마음씨',
+                updated_at: new Date().toISOString(),
+              },
+              { onConflict: 'user_id' }
+            )
+            .select()
+            .single();
+          setSettings(insertErr ? null : inserted);
         } else {
           console.error('설정 조회 실패:', fetchError);
           setError(fetchError.message);
         }
       } else {
-        setSettings(data);
+        // nickname이 null 또는 빈값이면 기본값 '마음씨'로 DB 업데이트 (기존 유저 lazy 마이그레이션)
+        const needsDefaultNickname =
+          data &&
+          (data.nickname === null || (typeof data.nickname === 'string' && data.nickname.trim() === ''));
+        if (needsDefaultNickname && userId) {
+          const { data: updated } = await supabase
+            .from('user_settings')
+            .upsert(
+              {
+                user_id: userId,
+                nickname: '마음씨',
+                updated_at: new Date().toISOString(),
+              },
+              { onConflict: 'user_id' }
+            )
+            .select()
+            .single();
+          setSettings(updated || { ...data, nickname: '마음씨' });
+        } else {
+          setSettings(data);
+        }
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '설정을 불러오는데 실패했어요.';

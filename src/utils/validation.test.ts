@@ -100,7 +100,7 @@ describe('validation', () => {
     });
 
     it('1-12자는 유효해야 함', () => {
-      const result = validateNickname('수연');
+      const result = validateNickname('마음씨');
       expect(result.valid).toBe(true);
       expect(result.error).toBeUndefined();
     });

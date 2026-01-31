@@ -165,6 +165,21 @@ export default function AuthCallback() {
             return;
           }
 
+          // 신규 유저 user_settings 초기 생성 (기본 닉네임: 마음씨)
+          const { error: settingsError } = await supabase.from('user_settings').upsert(
+            {
+              user_id: userId,
+              nickname: '마음씨',
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'user_id' }
+          );
+          if (settingsError) {
+            diag.err('AuthCallback: user_settings 초기 생성 실패 (무시하고 진행):', settingsError);
+          } else {
+            diag.log('AuthCallback: user_settings 초기 생성 완료 (nickname: 마음씨)');
+          }
+
           diag.log('AuthCallback: 신규 유저 생성 완료, 온보딩/씨앗 받기 페이지로 이동');
           navigate('/onboarding?step=5', { replace: true });
         }

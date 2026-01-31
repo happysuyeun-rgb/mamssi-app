@@ -62,12 +62,12 @@ export default function MyPage() {
   const [profile, setProfile] = useState<Profile>(() => {
     if (dbSettings) {
       return {
-        name: dbSettings.nickname || '수연',
+        name: dbSettings.nickname || '마음씨',
         mbti: dbSettings.mbti || 'ENFJ',
         img: dbSettings.profile_url || null,
       };
     }
-    return lsGet<Profile>(profileKey, { name: '수연', mbti: 'ENFJ', img: null });
+    return lsGet<Profile>(profileKey, { name: '마음씨', mbti: 'ENFJ', img: null });
   });
   const [settings, setSettings] = useState<Settings>(
     lsGet<Settings>(setKey, { emp: true, time: '21:00' })
@@ -89,7 +89,7 @@ export default function MyPage() {
   useEffect(() => {
     if (dbSettings && !isGuest) {
       setProfile({
-        name: dbSettings.nickname || '수연',
+        name: dbSettings.nickname || '마음씨',
         mbti: dbSettings.mbti || 'ENFJ',
         img: dbSettings.profile_url || null,
       });
@@ -340,7 +340,7 @@ export default function MyPage() {
     requireAuthForAction(
       'edit_nickname',
       async () => {
-        const current = profile.name || '수연';
+        const current = profile.name || '마음씨';
         const next = window.prompt('사용할 닉네임을 입력해주세요 (1~12자)', current);
         if (next === null) return;
         const trimmed = next.trim();

@@ -3,7 +3,7 @@ import type { UserProfile, UserStats } from '@domain/user';
 export function getCurrentUserProfile(): UserProfile {
   return {
     id: 'me',
-    nickname: '수연',
+    nickname: '마음씨',
     avatarEmoji: '🙂',
     bio: '오늘의 마음씨를 가볍게 돌보는 중',
     mbti: 'ENFJ',
