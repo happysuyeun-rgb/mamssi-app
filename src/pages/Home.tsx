@@ -295,7 +295,7 @@ export default function Home() {
     <Layout hideHeader>
       <div className="home-page-header">
         <PageHeader
-          title="마음씨"
+          title="마음,씨"
           subtitle="씨앗 하나, 감정 하나. 매일 나를 키워요."
           rightSlot={
             <button type="button" className="notif-bell" onClick={openSheet} aria-label="알림">
