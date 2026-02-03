@@ -92,7 +92,7 @@ export default function TabBar() {
           {({ isActive }) => (
             <>
               <MyProfileIcon isActive={isActive} size={24} />
-              <div>정원</div>
+              <div>마이프로필</div>
             </>
           )}
         </NavLink>

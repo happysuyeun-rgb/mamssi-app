@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '@components/Layout';
+import PageHeader from '@components/PageHeader';
 import { useAuth } from '@hooks/useAuth';
 import { useNotify } from '@providers/NotifyProvider';
 import { useActionGuard } from '@hooks/useActionGuard';
@@ -640,6 +641,7 @@ export default function MyPage() {
   return (
     <Layout hideHeader>
       <div className="mypage-root">
+        <PageHeader title="마이프로필" />
         {/* 상단 프로필 섹션 */}
         <section className="mypage-profile">
           <div className="mypage-profile-main">

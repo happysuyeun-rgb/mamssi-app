@@ -1,5 +1,9 @@
 @import './tokens.css';
 
+.home-page-header .page-header {
+  margin-top: 4px;
+}
+
 .home-garden-card {
   background: var(--ms-surface);
   border-radius: 24px;

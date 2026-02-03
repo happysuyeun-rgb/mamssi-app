@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Layout from '@components/Layout';
+import PageHeader from '@components/PageHeader';
 import { useAuth } from '@hooks/useAuth';
 import { useEmotions } from '@hooks/useEmotions';
 import { useHomeData } from '@hooks/useHomeData';
@@ -9,7 +10,6 @@ import { useActionGuard } from '@hooks/useActionGuard';
 import { uploadEmotionImage, deleteEmotionImage } from '@utils/imageUpload';
 import { supabase } from '@lib/supabaseClient';
 import { updateFlowerGrowth } from '@services/flowers';
-import '@styles/page-hero.css';
 import '@styles/record.css';
 import { EMOTION_OPTIONS, type EmotionOption } from '@constants/emotions';
 import { createNotification } from '@services/notifications';
@@ -701,15 +701,7 @@ export default function Record() {
   return (
     <Layout hideHeader>
       <div className="record-page">
-        <div className="page-hero">
-          <div className="page-hero-icon" aria-hidden="true">
-            📝
-          </div>
-          <div>
-            <h1 className="page-hero-title">{heroTitle}</h1>
-            <p className="page-hero-desc">{heroDesc}</p>
-          </div>
-        </div>
+        <PageHeader title={heroTitle} subtitle={heroDesc} />
 
         <section className="ms-section">
           <div className="ms-section-label">

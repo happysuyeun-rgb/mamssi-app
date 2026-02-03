@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type MouseEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Layout from '@components/Layout';
 import FabMenu from '@components/FabMenu';
+import PageHeader from '@components/PageHeader';
 import { useAuth } from '@hooks/useAuth';
 import { useNotify } from '@providers/NotifyProvider';
 import { useActionGuard } from '@hooks/useActionGuard';
@@ -15,7 +16,6 @@ import { FOREST_CATEGORIES } from '@constants/forest';
 import { EMOTION_OPTIONS } from '@constants/emotions';
 import type { ForestCategory, ForestPost, ForestReportReason } from '@domain/forest';
 import '@styles/forest.css';
-import '@styles/page-hero.css';
 
 const SORT_OPTIONS: { label: string; value: SortType }[] = [
   { label: '최신순', value: 'latest' },
@@ -238,7 +238,6 @@ export default function Forest({ mode = 'all' }: ForestProps) {
     notify.toast({ type: 'warning', message: '원본 기록을 찾을 수 없어 수정할 수 없어요.' });
   };
 
-  const heroIcon = isMyPostsView ? '📘' : '🌿';
   const heroTitle = isMyPostsView ? '내가 쓴 공감 기록' : '공감숲';
   const heroDesc = isMyPostsView
     ? '공개로 남긴 나의 기록들을 한곳에서 볼 수 있어요.'
@@ -247,15 +246,7 @@ export default function Forest({ mode = 'all' }: ForestProps) {
   return (
     <Layout hideHeader>
       <section className="forest-root">
-        <div className="page-hero">
-          <div className="page-hero-icon" aria-hidden="true">
-            {heroIcon}
-          </div>
-          <div>
-            <h1 className="page-hero-title">{heroTitle}</h1>
-            <p className="page-hero-desc">{heroDesc}</p>
-          </div>
-        </div>
+        <PageHeader title={heroTitle} subtitle={heroDesc} />
 
         {/* 카테고리 탭 */}
         <div className="forest-tabs">

@@ -7,6 +7,10 @@
   padding-bottom: 96px;
 }
 
+.record-page .page-header {
+  margin-top: 4px;
+}
+
 .ms-section {
   background: #fff;
   border-radius: 20px;

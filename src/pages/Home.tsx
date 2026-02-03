@@ -1,7 +1,9 @@
 import { useMemo, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Layout from '@components/Layout';
-import HomeHeader from '@components/home/HomeHeader';
+import PageHeader from '@components/PageHeader';
+import NotificationSheet from '@components/notifications/NotificationSheet';
+import { useNotificationCenter } from '@hooks/useNotificationCenter';
 import TodayRecordCTA from '@components/home/TodayRecordCTA';
 import WeeklyMoodWidget from '@components/home/WeeklyMoodWidget';
 import FlowerBadge from '@components/home/FlowerBadge';
@@ -14,6 +16,7 @@ import { EMOTION_OPTIONS } from '@constants/emotions';
 import { safeStorage } from '@lib/safeStorage';
 import { diag } from '@boot/diag';
 import '@styles/home.css';
+import '@styles/notifications.css';
 
 // 로그인/가입 상태 키
 const AUTH_FLOW_KEY = 'authFlowType';
@@ -50,6 +53,8 @@ function clampPercent(value: number): number {
 export default function Home() {
   const [searchParams] = useSearchParams();
   const { isGuest, session, user } = useAuth();
+  const { notifications, badgeCount, isSheetOpen, openSheet, closeSheet, markAll, markRead } =
+    useNotificationCenter(user?.id || '');
   const notify = useNotify();
   const {
     today,
@@ -288,7 +293,20 @@ export default function Home() {
 
   return (
     <Layout hideHeader>
-      <HomeHeader />
+      <div className="home-page-header">
+        <PageHeader
+          title="마음씨"
+          subtitle="씨앗 하나, 감정 하나. 매일 나를 키워요."
+          rightSlot={
+            <button type="button" className="notif-bell" onClick={openSheet} aria-label="알림">
+              🔔
+              {badgeCount > 0 && (
+                <span className="notif-badge">{badgeCount > 99 ? '99+' : badgeCount}</span>
+              )}
+            </button>
+          }
+        />
+      </div>
       {guestMode && !session && (
         <div
           style={{
@@ -366,6 +384,13 @@ export default function Home() {
           <FeedPreview feedCount={feedCount} likeSum={feedSummary.likeSum} />
         </>
       )}
+      <NotificationSheet
+        isOpen={isSheetOpen}
+        notifications={notifications}
+        onClose={closeSheet}
+        onMarkAllRead={markAll}
+        onMarkRead={markRead}
+      />
     </Layout>
   );
 }

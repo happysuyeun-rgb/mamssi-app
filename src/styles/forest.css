@@ -4,6 +4,10 @@
   padding: 12px 0 96px;
 }
 
+.forest-root .page-header {
+  margin-top: -6px;
+}
+
 .forest-tabs {
   display: flex;
   gap: 8px;

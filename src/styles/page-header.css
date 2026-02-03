@@ -1,0 +1,32 @@
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 24px;
+  margin-bottom: 20px;
+}
+
+.page-header-left {
+  min-width: 0;
+}
+
+.page-header-title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: #1f2e25;
+}
+
+.page-header-subtitle {
+  margin: 8px 0 0;
+  font-size: 14px;
+  color: var(--ms-ink-soft, #4d5c53);
+}
+
+.page-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
