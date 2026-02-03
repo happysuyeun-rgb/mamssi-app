@@ -40,20 +40,6 @@ export default function SignupOnboardingStep({
     className: string;
   }[] = [
     { provider: 'google', label: 'Google로 계속하기', icon: 'G', className: 'auth-btn-google' },
-    { provider: 'apple', label: 'Apple로 계속하기', icon: '', className: 'auth-btn-apple' },
-    {
-      provider: 'kakao',
-      label: '카카오 계정으로 계속하기',
-      icon: '✉️',
-      className: 'auth-btn-kakao',
-    },
-    {
-      provider: 'facebook',
-      label: 'Facebook으로 계속하기',
-      icon: 'f',
-      className: 'auth-btn-facebook',
-    },
-    { provider: 'line', label: 'LINE 계정으로 계속하기', icon: 'L', className: 'auth-btn-line' },
   ];
 
   return (

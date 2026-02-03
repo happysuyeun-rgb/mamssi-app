@@ -203,24 +203,7 @@ export default function SocialLoginButtons({ mode, disabled = false }: SocialLog
         <span className="icon">G</span>
         <span>{mode === 'login' ? 'Google로 로그인하기' : 'Google로 계속하기'}</span>
       </button>
-      <button
-        className="auth-btn auth-btn-apple"
-        onClick={handleAppleLogin}
-        type="button"
-        disabled={disabled}
-      >
-        <span className="icon">🍎</span>
-        <span>{mode === 'login' ? 'Apple로 로그인하기' : 'Apple로 계속하기'}</span>
-      </button>
-      <button
-        className="auth-btn auth-btn-kakao"
-        onClick={handleKakaoLogin}
-        type="button"
-        disabled={disabled}
-      >
-        <span className="icon">💬</span>
-        <span>{mode === 'login' ? 'Kakao로 로그인하기' : 'Kakao로 계속하기'}</span>
-      </button>
+      {/* Apple, Kakao 버튼 숨김 */}
     </div>
   );
 }
