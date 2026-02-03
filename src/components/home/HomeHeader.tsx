@@ -45,7 +45,7 @@ export default function HomeHeader() {
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ fontWeight: 700, letterSpacing: '-0.02em', fontSize: 16 }}>
-              마음씨
+              마음,씨
               {isGuest && (
                 <span
                   style={{
