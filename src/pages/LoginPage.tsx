@@ -1,19 +1,13 @@
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@hooks/useAuth';
 import SocialLoginButtons from '@components/auth/SocialLoginButtons';
 import './LoginPage.css';
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { isGuest } = useAuth();
 
   const handleBack = () => {
-    // 게스트 상태에서 진입했을 때는 홈으로 이동
-    if (isGuest) {
-      navigate('/home', { replace: true });
-    } else {
-      navigate(-1);
-    }
+    // 뒤로가기 시 항상 홈으로 이동 (replace로 진입한 경우 navigate(-1)이 동작하지 않을 수 있음)
+    navigate('/home', { replace: true });
   };
 
   const handleGoToSignup = () => {

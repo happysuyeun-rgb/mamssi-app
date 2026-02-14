@@ -55,7 +55,11 @@ http://localhost:5173/auth/callback
 - `true`인 경우 Supabase가 URL의 code를 자동 교환하고, AuthCallback에서도 `exchangeCodeForSession`을 호출하면 **동일 코드 2회 사용**으로 실패합니다.
 - 코드는 1회만 사용 가능하므로, AuthCallback에서 수동 교환을 사용할 때는 `detectSessionInUrl: false`가 필수입니다.
 
-## 4. 체크리스트
+## 4. 네트워크 연결 오류 시
+
+공감숲 등에서 "네트워크 연결에 실패했어요"가 표시되면 → [SUPABASE_NETWORK_TROUBLESHOOTING.md](./SUPABASE_NETWORK_TROUBLESHOOTING.md) 참고
+
+## 5. 체크리스트
 
 배포 전 확인:
 
@@ -65,7 +69,7 @@ http://localhost:5173/auth/callback
 
 ---
 
-## 5. vercel.json (SPA rewrite)
+## 6. vercel.json (SPA rewrite)
 
 `vercel.json`에 다음 설정이 있어야 `/auth/callback` 요청 시 404가 발생하지 않습니다.
 

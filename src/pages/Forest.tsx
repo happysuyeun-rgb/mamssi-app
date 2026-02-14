@@ -12,6 +12,7 @@ import {
   type ReportReason,
   type SortType,
 } from '@hooks/useCommunity';
+import { SUPPORT_EMAIL } from '@constants/app';
 import { FOREST_CATEGORIES } from '@constants/forest';
 import { EMOTION_OPTIONS } from '@constants/emotions';
 import type { ForestCategory, ForestPost, ForestReportReason } from '@domain/forest';
@@ -173,8 +174,16 @@ export default function Forest({ mode = 'all' }: ForestProps) {
       'report_post',
       async () => {
         await reportPostCommunity(reportTargetId, reason, memo);
-        // 가이드: "신고 접수가 되었어요. 완전하게 살펴볼게요."
-        notify.success('신고 접수가 되었어요. 완전하게 살펴볼게요.', '✅');
+        // 신고내역을 mamssi.official@gmail.com으로 메일 발송
+        const subj = encodeURIComponent('[마음,씨] 공감숲 게시글 신고');
+        const bodyLines = [
+          `게시글 ID: ${reportTargetId}`,
+          `신고 사유: ${reason}`,
+          `추가 내용: ${memo?.trim() || '(없음)'}`,
+        ];
+        const body = encodeURIComponent(bodyLines.join('\n'));
+        location.href = `mailto:${SUPPORT_EMAIL}?subject=${subj}&body=${body}`;
+        notify.success('신고 접수가 되었어요. 이메일 앱에서 보내기를 눌러 주세요.', '✅');
         setReportTargetId(null);
         setReportDetails('');
       },
@@ -284,7 +293,7 @@ export default function Forest({ mode = 'all' }: ForestProps) {
 
         {status === 'error' && (
           <div className="forest-state error">
-            <div style={{ marginBottom: 8 }}>
+            <div style={{ marginBottom: 8, whiteSpace: 'pre-line', textAlign: 'left' }}>
               {errorMessage || '공감숲을 불러오는데 실패했어요.'}
             </div>
             {import.meta.env.DEV && errorMessage && (

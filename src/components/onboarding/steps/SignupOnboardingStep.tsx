@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import TermsModal from '@components/TermsModal';
 import '@styles/onboarding.css';
 import './SignupOnboardingStep.css';
 
@@ -19,12 +20,19 @@ export default function SignupOnboardingStep({
 }: SignupOnboardingStepProps) {
   const [agreeRequired, setAgreeRequired] = useState(false);
   const [agreeOptional, setAgreeOptional] = useState(false);
+  const [termsModalOpen, setTermsModalOpen] = useState(false);
 
   const handleAgreeRequiredChange = (checked: boolean) => {
     setAgreeRequired(checked);
   };
 
   const handleAgreeOptionalChange = (checked: boolean) => {
+    setAgreeOptional(checked);
+  };
+
+  const agreeAll = agreeRequired && agreeOptional;
+  const handleAgreeAllChange = (checked: boolean) => {
+    setAgreeRequired(checked);
     setAgreeOptional(checked);
   };
 
@@ -62,18 +70,44 @@ export default function SignupOnboardingStep({
         </p>
       </div>
 
-      {/* 약관 동의 */}
+      {/* 약관 동의 - 체크박스만 클릭 시 체크, 문구 클릭 시 약관 모달 */}
       <div className="policy-wrap">
-        <div className="policy-item">
+        <div className="policy-item policy-item-all">
+          <input
+            type="checkbox"
+            id="policy-all"
+            checked={agreeAll}
+            onChange={(e) => handleAgreeAllChange(e.target.checked)}
+          />
+          <label htmlFor="policy-all">전체동의</label>
+        </div>
+        <div className="policy-item policy-item-required">
           <input
             type="checkbox"
             id="policy-required"
             checked={agreeRequired}
             onChange={(e) => handleAgreeRequiredChange(e.target.checked)}
           />
-          <label htmlFor="policy-required">
-            (필수) 서비스 이용약관 및 개인정보 처리방침에 동의합니다.
-          </label>
+          <div className="policy-label-wrap">
+            <span>(필수) </span>
+            <button
+              type="button"
+              className="policy-terms-link"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setTermsModalOpen(true);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setTermsModalOpen(true);
+                }
+              }}
+            >
+              서비스 이용약관 및 개인정보 처리방침에 동의합니다.
+            </button>
+          </div>
         </div>
         <div className="policy-item">
           <input
@@ -107,6 +141,14 @@ export default function SignupOnboardingStep({
           로그인하기
         </button>
       </div>
+
+      <TermsModal
+        isOpen={termsModalOpen}
+        onClose={(confirmed) => {
+          setTermsModalOpen(false);
+          if (confirmed) setAgreeRequired(true);
+        }}
+      />
     </div>
   );
 }

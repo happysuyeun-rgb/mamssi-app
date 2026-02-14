@@ -17,6 +17,7 @@ import type { LockSettings, LockMode } from '../types/lock';
 import { LOCK_SESSION_KEY } from '../types/lock';
 import { loadLockSettings, saveLockSettings } from '@utils/lock';
 import { EMOTION_OPTIONS } from '@constants/emotions';
+import { SUPPORT_EMAIL } from '@constants/app';
 import { fetchBloomedFlowers } from '@services/flowers';
 import { supabase } from '@lib/supabaseClient';
 
@@ -606,7 +607,7 @@ export default function MyPage() {
     );
   }
 
-  // Support
+  // Support - 문의는 mamssi.official@gmail.com으로 발송
   const [qEmail, setQEmail] = useState('');
   const [qSubj, setQSubj] = useState('');
   const [qBody, setQBody] = useState('');
@@ -615,25 +616,15 @@ export default function MyPage() {
       notify.warning('문의 내용을 입력해주세요.', '⚠️');
       return;
     }
-    const subj = encodeURIComponent(qSubj || '마음씨 문의');
-    const body = encodeURIComponent(qBody || '');
+    const bodyParts: string[] = [];
     if (qEmail.trim()) {
-      location.href = `mailto:${qEmail}?subject=${subj}&body=${body}`;
-    } else {
-      // 이메일이 없으면 클립보드에 복사
-      const text = `제목: ${qSubj || '마음씨 문의'}\n\n${qBody}`;
-      navigator.clipboard
-        .writeText(text)
-        .then(() => {
-          notify.success(
-            '문의 내용이 클립보드에 복사되었어요. 이메일 앱에서 붙여넣기 해주세요.',
-            '✅'
-          );
-        })
-        .catch(() => {
-          notify.info('문의 내용을 직접 복사해서 이메일로 보내주세요.', 'ℹ️');
-        });
+      bodyParts.push(`회신 받을 이메일: ${qEmail.trim()}\n`);
     }
+    bodyParts.push(qBody);
+    const subj = encodeURIComponent(qSubj || '마음씨 문의');
+    const bodyEnc = encodeURIComponent(bodyParts.join('\n'));
+    location.href = `mailto:${SUPPORT_EMAIL}?subject=${subj}&body=${bodyEnc}`;
+    notify.success('이메일 앱이 열렸어요. 보내기를 눌러 주세요.', '✅');
   }
 
   const canSaveLock = !lockEnabledDraft || pinDraft.length === 4;

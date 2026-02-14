@@ -152,6 +152,33 @@ if (location.pathname === '/' || location.pathname === '') {
 2. 로컬 스토리지에 `onboarding_completed=true` 있음
 3. **예상 결과**: 홈 화면 표시 (로컬 스토리지 fallback)
 
+## 📍 가입하기 경로 구성
+
+"가입하기" 화면은 **두 개의 경로**로 노출됩니다.
+
+| 경로 | 컴포넌트 | 진입 | 용도 |
+|------|----------|------|------|
+| `/onboarding?step=4` | `SignupOnboardingStep` | 온보딩 Step 3에서 "회원가입하기" 클릭 | 온보딩 플로우(Step 0~7) 내 회원가입 |
+| `/signup` | `SignupPage` | 로그인 화면 "새 계정 만들기", 홈 CTA 등 | 온보딩 없이 바로 가입 |
+
+### 진입 경로별 상세
+
+**`/onboarding?step=4`**
+- 앱 첫 실행 후 온보딩(Step 0 → 1 → 2 → 3)을 거친 뒤
+- Step 3에서 "회원가입하기" 클릭 시
+- `OnboardingGuest` 내부의 `SignupOnboardingStep` 렌더
+
+**`/signup`**
+- `LoginPage`: "마음,씨가 처음이신가요? 새 계정 만들기" 클릭
+- `TodayRecordCTA` 등: 홈에서 로그인 유도 시
+
+### 설계 이유
+
+- **온보딩 경로**: 신규 사용자 → 소개(Step 0~3) 후 회원가입
+- **독립 경로**: 기존 사용자 또는 로그인 화면에서 바로 가입
+
+두 화면은 UI·약관 동작은 동일하도록 유지하고, 진입 맥락에 따라 다른 컴포넌트가 사용됩니다.
+
 ## 📝 참고 사항
 
 - `userProfile` 조회는 최대 3초(온보딩 라우트) 또는 10초(그 외) 타임아웃
