@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import TermsModal from '@components/TermsModal';
+import TermsModal, { type TermsModalVariant } from '@components/TermsModal';
 import '@styles/onboarding.css';
 import './SignupOnboardingStep.css';
 
@@ -18,22 +18,23 @@ export default function SignupOnboardingStep({
   onOpenLogin,
   loading = false,
 }: SignupOnboardingStepProps) {
-  const [agreeRequired, setAgreeRequired] = useState(false);
+  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [agreePrivacy, setAgreePrivacy] = useState(false);
   const [agreeOptional, setAgreeOptional] = useState(false);
   const [termsModalOpen, setTermsModalOpen] = useState(false);
+  const [termsModalVariant, setTermsModalVariant] = useState<TermsModalVariant>('terms');
 
-  const handleAgreeRequiredChange = (checked: boolean) => {
-    setAgreeRequired(checked);
-  };
-
-  const handleAgreeOptionalChange = (checked: boolean) => {
-    setAgreeOptional(checked);
-  };
-
+  const agreeRequired = agreeTerms && agreePrivacy;
   const agreeAll = agreeRequired && agreeOptional;
   const handleAgreeAllChange = (checked: boolean) => {
-    setAgreeRequired(checked);
+    setAgreeTerms(checked);
+    setAgreePrivacy(checked);
     setAgreeOptional(checked);
+  };
+
+  const openTermsModal = (variant: TermsModalVariant) => {
+    setTermsModalVariant(variant);
+    setTermsModalOpen(true);
   };
 
   const handleSocialButtonClick = (provider: SocialProvider) => {
@@ -84,9 +85,9 @@ export default function SignupOnboardingStep({
         <div className="policy-item policy-item-required">
           <input
             type="checkbox"
-            id="policy-required"
-            checked={agreeRequired}
-            onChange={(e) => handleAgreeRequiredChange(e.target.checked)}
+            id="policy-terms"
+            checked={agreeTerms}
+            onChange={(e) => setAgreeTerms(e.target.checked)}
           />
           <div className="policy-label-wrap">
             <span>(필수) </span>
@@ -96,16 +97,44 @@ export default function SignupOnboardingStep({
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                setTermsModalOpen(true);
+                openTermsModal('terms');
               }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
-                  setTermsModalOpen(true);
+                  openTermsModal('terms');
                 }
               }}
             >
-              서비스 이용약관 및 개인정보 처리방침에 동의합니다.
+              서비스 이용약관에 동의합니다.
+            </button>
+          </div>
+        </div>
+        <div className="policy-item policy-item-required">
+          <input
+            type="checkbox"
+            id="policy-privacy"
+            checked={agreePrivacy}
+            onChange={(e) => setAgreePrivacy(e.target.checked)}
+          />
+          <div className="policy-label-wrap">
+            <span>(필수) </span>
+            <button
+              type="button"
+              className="policy-terms-link"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                openTermsModal('privacy');
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  openTermsModal('privacy');
+                }
+              }}
+            >
+              개인정보 처리방침에 동의합니다.
             </button>
           </div>
         </div>
@@ -114,7 +143,7 @@ export default function SignupOnboardingStep({
             type="checkbox"
             id="policy-optional"
             checked={agreeOptional}
-            onChange={(e) => handleAgreeOptionalChange(e.target.checked)}
+            onChange={(e) => setAgreeOptional(e.target.checked)}
           />
           <label htmlFor="policy-optional">(선택) 새로운 기능·소식 알림을 받아볼게요.</label>
         </div>
@@ -144,9 +173,13 @@ export default function SignupOnboardingStep({
 
       <TermsModal
         isOpen={termsModalOpen}
+        variant={termsModalVariant}
         onClose={(confirmed) => {
           setTermsModalOpen(false);
-          if (confirmed) setAgreeRequired(true);
+          if (confirmed) {
+            if (termsModalVariant === 'terms') setAgreeTerms(true);
+            else setAgreePrivacy(true);
+          }
         }}
       />
     </div>

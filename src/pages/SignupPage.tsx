@@ -2,18 +2,19 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNotify } from '@providers/NotifyProvider';
 import SocialLoginButtons from '@components/auth/SocialLoginButtons';
-import TermsModal from '@components/TermsModal';
+import TermsModal, { type TermsModalVariant } from '@components/TermsModal';
 import './SignupPage.css';
 
 export default function SignupPage() {
   const navigate = useNavigate();
   const notify = useNotify();
-  const [agreeRequired, setAgreeRequired] = useState(false);
+  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [agreePrivacy, setAgreePrivacy] = useState(false);
   const [agreeOptional, setAgreeOptional] = useState(false);
   const [termsModalOpen, setTermsModalOpen] = useState(false);
+  const [termsModalVariant, setTermsModalVariant] = useState<TermsModalVariant>('terms');
 
   const handleBack = () => {
-    // 뒤로가기 시 항상 홈으로 이동 (replace로 진입한 경우 navigate(-1)이 동작하지 않을 수 있음)
     navigate('/home', { replace: true });
   };
 
@@ -21,10 +22,17 @@ export default function SignupPage() {
     navigate('/login', { replace: true });
   };
 
+  const agreeRequired = agreeTerms && agreePrivacy;
   const agreeAll = agreeRequired && agreeOptional;
   const handleAgreeAllChange = (checked: boolean) => {
-    setAgreeRequired(checked);
+    setAgreeTerms(checked);
+    setAgreePrivacy(checked);
     setAgreeOptional(checked);
+  };
+
+  const openTermsModal = (variant: TermsModalVariant) => {
+    setTermsModalVariant(variant);
+    setTermsModalOpen(true);
   };
 
   return (
@@ -62,9 +70,9 @@ export default function SignupPage() {
           <div className="policy-item policy-item-required">
             <input
               type="checkbox"
-              id="policy-required"
-              checked={agreeRequired}
-              onChange={(e) => setAgreeRequired(e.target.checked)}
+              id="policy-terms"
+              checked={agreeTerms}
+              onChange={(e) => setAgreeTerms(e.target.checked)}
             />
             <div className="policy-label-wrap">
               <span>(필수) </span>
@@ -74,16 +82,44 @@ export default function SignupPage() {
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  setTermsModalOpen(true);
+                  openTermsModal('terms');
                 }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
-                    setTermsModalOpen(true);
+                    openTermsModal('terms');
                   }
                 }}
               >
-                서비스 이용약관 및 개인정보 처리방침에 동의합니다.
+                서비스 이용약관에 동의합니다.
+              </button>
+            </div>
+          </div>
+          <div className="policy-item policy-item-required">
+            <input
+              type="checkbox"
+              id="policy-privacy"
+              checked={agreePrivacy}
+              onChange={(e) => setAgreePrivacy(e.target.checked)}
+            />
+            <div className="policy-label-wrap">
+              <span>(필수) </span>
+              <button
+                type="button"
+                className="policy-terms-link"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  openTermsModal('privacy');
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    openTermsModal('privacy');
+                  }
+                }}
+              >
+                개인정보 처리방침에 동의합니다.
               </button>
             </div>
           </div>
@@ -111,9 +147,13 @@ export default function SignupPage() {
 
       <TermsModal
         isOpen={termsModalOpen}
+        variant={termsModalVariant}
         onClose={(confirmed) => {
           setTermsModalOpen(false);
-          if (confirmed) setAgreeRequired(true);
+          if (confirmed) {
+            if (termsModalVariant === 'terms') setAgreeTerms(true);
+            else setAgreePrivacy(true);
+          }
         }}
       />
     </div>
