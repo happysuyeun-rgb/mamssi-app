@@ -10,6 +10,7 @@ import { useActionGuard } from '@hooks/useActionGuard';
 import { uploadEmotionImage, deleteEmotionImage } from '@utils/imageUpload';
 import { supabase } from '@lib/supabaseClient';
 import { updateFlowerGrowth } from '@services/flowers';
+import { trackEvent } from '@lib/analytics';
 import '@styles/record.css';
 import { EMOTION_OPTIONS, type EmotionOption } from '@constants/emotions';
 import { createNotification } from '@services/notifications';
@@ -493,6 +494,19 @@ export default function Record() {
               mainEmotion: data.main_emotion, // DB 스키마: main_emotion
               userId: data.user_id,
             });
+
+            trackEvent('emotion_created', {
+              is_guest: false,
+              is_public: isPublic,
+              emotion_category: payload.category ?? undefined,
+            });
+            if (isSharedToForest) {
+              trackEvent('community_post_created', {
+                is_guest: false,
+                emotion_category: payload.category ?? undefined,
+                is_public: true,
+              });
+            }
 
             // flowers 성장 업데이트 (신규 기록만 성장 증가) - 먼저 실행
             // 설계서: 공개 기록 +10pt, 개인 기록 +5pt

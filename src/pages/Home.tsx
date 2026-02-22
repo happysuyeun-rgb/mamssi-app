@@ -14,6 +14,7 @@ import { useHomeData } from '@hooks/useHomeData';
 import { useEmotions } from '@hooks/useEmotions';
 import { EMOTION_OPTIONS } from '@constants/emotions';
 import { safeStorage } from '@lib/safeStorage';
+import { trackEvent } from '@lib/analytics';
 import { diag } from '@boot/diag';
 import '@styles/home.css';
 import '@styles/notifications.css';
@@ -366,6 +367,7 @@ export default function Home() {
               console.log('[Home] 기록 삭제 시작:', { recordId, userId: user.id });
               try {
                 await deleteEmotion(recordId);
+                trackEvent('emotion_deleted', { is_guest: false });
                 // 삭제 후 목록 및 홈 데이터 갱신
                 await fetchEmotions();
                 await refetchHomeData();

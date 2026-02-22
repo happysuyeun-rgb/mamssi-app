@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { supabase } from '@lib/supabaseClient';
 import { getAuthCallbackUrl } from '@lib/authCallbackUrl';
 import { notify } from '@lib/notify';
+import { identifyUser, resetUser } from '@lib/analytics';
 import { diag } from '@boot/diag';
 import { safeStorage } from '@lib/safeStorage';
 import { clearLockOnSignOut } from '@utils/lock';
@@ -336,6 +337,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(session);
         setUser(session?.user ?? null);
 
+        // 로그인 사용자 식별 (Mixpanel 등)
+        if (session?.user?.id) {
+          identifyUser(session.user.id);
+        }
+
         // 세션이 있으면 userProfile 조회
         // 단, 온보딩 라우트에서는 skip하여 타임아웃 방지
         const isOnboardingRoute = location.pathname.startsWith('/onboarding');
@@ -376,6 +382,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         if (event === 'SIGNED_IN' && session?.user) {
+          identifyUser(session.user.id);
           console.log('[AuthProvider] SIGNED_IN 이벤트', { userId: session.user.id });
           diag.log('AuthProvider: SIGNED_IN', { userId: session.user.id });
           // 로그인 성공 시 게스트 모드 해제
@@ -383,6 +390,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setIsGuest(false);
           notify.success('반가워요! 마음,씨 정원으로 이동합니다 🌿');
         } else if (event === 'SIGNED_OUT') {
+          resetUser();
           console.log('[AuthProvider] SIGNED_OUT 이벤트');
           diag.log('AuthProvider: SIGNED_OUT');
           setIsGuest(false);

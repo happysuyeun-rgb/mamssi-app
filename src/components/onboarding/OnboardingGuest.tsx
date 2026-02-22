@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@hooks/useAuth';
 import { useNotify } from '@providers/NotifyProvider';
 import { safeStorage } from '@lib/safeStorage';
+import { trackEvent } from '@lib/analytics';
 import { diag } from '@boot/diag';
 import SignupOnboardingStep, { type SocialProvider } from './steps/SignupOnboardingStep';
 import '@styles/onboarding.css';
@@ -116,6 +117,7 @@ export default function OnboardingGuest() {
 
   // Step 0: 시작화면
   const handleStart = () => {
+    trackEvent('onboarding_start', { screen_name: 'step_0' });
     showStep(1);
   };
 
@@ -157,7 +159,7 @@ export default function OnboardingGuest() {
     // 상태 업데이트
     setGuestMode(true);
 
-    // replace로 이동 (히스토리 스택에 추가하지 않음)
+    trackEvent('onboarding_complete', { is_guest: true, screen_name: 'step_3' });
     notify.success('온보딩이 완료되었어요 🌱');
     diag.log('OnboardingGuest: 홈으로 리다이렉트');
     navigate('/home', { replace: true });
@@ -309,6 +311,7 @@ export default function OnboardingGuest() {
       }
     }
 
+    trackEvent('onboarding_complete', { is_guest: !!isGuest, screen_name: 'step_7' });
     notify.success('온보딩이 완료되었어요 🌱');
     diag.log('OnboardingGuest: 홈으로 리다이렉트');
     navigate('/home', { replace: true });

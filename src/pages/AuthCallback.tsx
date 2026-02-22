@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { supabase } from '@lib/supabaseClient';
+import { trackEvent } from '@lib/analytics';
 import { diag } from '@boot/diag';
 import { safeStorage } from '@lib/safeStorage';
 
@@ -191,6 +192,7 @@ export default function AuthCallback() {
 
           // 온보딩 상태에 따라 라우팅 (회원가입 완료 사용자는 바로 홈)
           if (onboardingCompleted) {
+            trackEvent('login_complete', { is_guest: false });
             diag.log('AuthCallback: 온보딩 완료 유저, /home으로 이동');
             safeStorage.setItem(ONBOARDING_COMPLETE_KEY, 'true');
             goTo('/home');
@@ -241,6 +243,7 @@ export default function AuthCallback() {
             diag.log('AuthCallback: user_settings 초기 생성 완료 (nickname: 마음씨)');
           }
 
+          trackEvent('sign_up_complete', { is_guest: false });
           diag.log('AuthCallback: 신규 유저 생성 완료, 온보딩/씨앗 받기 페이지로 이동');
           goTo('/onboarding?step=5');
         }

@@ -6,6 +6,7 @@ import { NotifyProvider } from '@providers/NotifyProvider';
 import ErrorBoundary from '@components/ErrorBoundary';
 import { diag } from '@boot/diag';
 import { safeStorage } from '@lib/safeStorage';
+import { initAnalytics } from '@lib/analytics';
 import App from './App';
 
 // Global Styles
@@ -13,6 +14,9 @@ import '@styles/tokens.css';
 import '@styles/globals.css';
 
 diag.log('main.tsx: 앱 부팅 시작');
+
+// Mixpanel(또는 대체 분석도구) 초기화 - app_open 이벤트 자동 전송
+initAnalytics();
 
 // Storage 접근성 테스트
 const storageTest = safeStorage.test();

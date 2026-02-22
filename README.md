@@ -65,6 +65,20 @@ VITE_SUPABASE_URL=...
 VITE_SUPABASE_ANON_KEY=...
 ```
 
+Mixpanel (선택):
+
+```
+VITE_MIXPANEL_TOKEN=your_project_token
+```
+
+## Mixpanel 이벤트 검증
+
+1. `.env`에 `VITE_MIXPANEL_TOKEN` 설정
+2. `npm install` 후 `npm run dev`로 로컬 실행
+3. Mixpanel 대시보드 → **Live View** 접속
+4. 앱 새로고침 시 `app_open` 이벤트 확인
+5. 감정 기록 저장 성공 시 `emotion_created` 이벤트 확인
+
 ## 상세 문서
 
 - [배포 게이트 요약](docs/DEPLOY_GATE_SUMMARY.md)
