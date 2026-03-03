@@ -1,23 +1,26 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, lazy, Suspense } from 'react';
 import { Route, Routes, Navigate } from 'react-router-dom';
 import AuthCallback from '@pages/AuthCallback';
-import Home from '@pages/Home';
-import Record from '@pages/Record';
-import Forest from '@pages/Forest';
-import MyPage from '@pages/MyPage';
-import ForestDetail from '@pages/ForestDetail';
-import Debug from '@pages/Debug';
-import LoginPage from '@pages/LoginPage';
-import SignupPage from '@pages/SignupPage';
-import DeleteAccountPage from '@pages/DeleteAccountPage';
 import LockScreen from '@components/LockScreen';
 import ToastHost from '@components/feedback/ToastHost';
 import OnboardingGuest from '@components/onboarding/OnboardingGuest';
 import Guard from '@components/Guard';
+import LoadingSplash from '@components/LoadingSplash';
 import { loadLockSettings } from '@utils/lock';
 import { LOCK_SESSION_KEY, LOCK_STORAGE_KEY } from './types/lock';
 import { diag } from '@boot/diag';
 import './app.css';
+
+// 라우트별 코드 스플리팅 — 첫 화면 로딩 속도 개선
+const Home = lazy(() => import('@pages/Home'));
+const Record = lazy(() => import('@pages/Record'));
+const Forest = lazy(() => import('@pages/Forest'));
+const MyPage = lazy(() => import('@pages/MyPage'));
+const ForestDetail = lazy(() => import('@pages/ForestDetail'));
+const Debug = lazy(() => import('@pages/Debug'));
+const LoginPage = lazy(() => import('@pages/LoginPage'));
+const SignupPage = lazy(() => import('@pages/SignupPage'));
+const DeleteAccountPage = lazy(() => import('@pages/DeleteAccountPage'));
 
 function AppRoutes() {
   // OAuth 콜백: pathname이 /auth/callback이면 AuthCallback 렌더 (HashRouter 무시)
@@ -87,22 +90,24 @@ function AppRoutes() {
 
   return (
     <Guard>
-      <Routes>
-        <Route path="/auth/callback" element={<AuthCallback />} />
-        <Route path="/debug" element={<Debug />} />
-        <Route path="/onboarding" element={<OnboardingGuest />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
-        <Route path="/delete-account" element={<DeleteAccountPage />} />
-        <Route path="/" element={<Home />} />
-        <Route path="/home" element={<Home />} />
-        <Route path="/record" element={<Record />} />
-        <Route path="/forest" element={<Forest />} />
-        <Route path="/forest/my-posts" element={<Forest mode="mine" />} />
-        <Route path="/forest/:postId" element={<ForestDetail />} />
-        <Route path="/mypage" element={<MyPage />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      <Suspense fallback={<LoadingSplash />}>
+        <Routes>
+          <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/debug" element={<Debug />} />
+          <Route path="/onboarding" element={<OnboardingGuest />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
+          <Route path="/delete-account" element={<DeleteAccountPage />} />
+          <Route path="/" element={<Home />} />
+          <Route path="/home" element={<Home />} />
+          <Route path="/record" element={<Record />} />
+          <Route path="/forest" element={<Forest />} />
+          <Route path="/forest/my-posts" element={<Forest mode="mine" />} />
+          <Route path="/forest/:postId" element={<ForestDetail />} />
+          <Route path="/mypage" element={<MyPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
       <ToastHost />
     </Guard>
   );

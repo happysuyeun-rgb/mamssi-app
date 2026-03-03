@@ -72,8 +72,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // 단, 타임아웃을 짧게 설정하여 빠른 응답 보장
 
     try {
-      // 타임아웃 설정 (온보딩 라우트는 3초, 그 외는 10초)
-      const timeoutMs = isOnboardingRoute ? 3000 : 10000;
+      // 타임아웃 설정 (온보딩 라우트는 5초, 그 외는 20초 - 느린 네트워크/ Supabase 대응)
+      const timeoutMs = isOnboardingRoute ? 5000 : 20000;
 
       const timeoutPromise = new Promise<never>((_, reject) => {
         setTimeout(
@@ -206,14 +206,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const storageTest = safeStorage.test();
     diag.log('AuthProvider: Storage 접근성:', storageTest);
 
-    // 무한 로딩 방지: 최대 10초 후 강제 해제
+    // 무한 로딩 방지: 최대 20초 후 강제 해제 (fetchUserProfile 타임아웃과 맞춤)
     const timeoutId = setTimeout(() => {
-      console.error('[AuthProvider] 10초 타임아웃 - 강제로 loading 해제');
+      console.warn('[AuthProvider] 로딩 타임아웃 - 강제 해제 (네트워크/서버가 느릴 수 있음)');
       setSessionInitialized(true);
       setLoading(false);
       removeLoadingBanner(); // 로딩 완료 시 배너 제거
       setUserProfile(null);
-    }, 10000);
+    }, 20000);
 
     // 초기 세션 확인
     console.log('[AuthProvider] init start', { pathname: location.pathname });
@@ -243,64 +243,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(session);
         setUser(session?.user ?? null);
 
-        // 세션이 있으면 userProfile 조회
-        // 단, 온보딩 라우트에서는 skip하여 타임아웃 방지
-        // 하지만 초기 로드 시에는 온보딩 라우트가 아니면 항상 조회
-        const isOnboardingRoute = location.pathname.startsWith('/onboarding');
-        if (session?.user?.id) {
-          if (!isOnboardingRoute) {
-            // 온보딩 라우트가 아니면 userProfile 조회 (온보딩 완료 여부 확인)
-            console.log('[AuthProvider] getUser 시작 (온보딩 라우트 아님)', {
-              userId: session.user.id,
-              pathname: location.pathname,
-            });
-            try {
-              const profile = await fetchUserProfile(session.user.id, false);
-              console.log('[AuthProvider] getUser 완료', { profile });
-              setUserProfile(profile);
+        // 로딩을 먼저 해제해 화면을 빨리 보여줌 (fetchUserProfile은 백그라운드에서 진행)
+        setSessionInitialized(true);
+        setLoading(false);
+        removeLoadingBanner();
+        diag.log('AuthProvider: 초기화 완료 (getSession 기준)', { sessionInitialized: true, loading: false });
 
-              // profile이 조회되면 로컬 스토리지와 동기화
-              if (profile) {
-                if (profile.onboarding_completed) {
-                  safeStorage.setItem(ONBOARDING_COMPLETE_KEY, 'true');
-                  console.log('[AuthProvider] 로컬 스토리지 onboarding_completed 동기화: true');
-                } else {
-                  safeStorage.removeItem(ONBOARDING_COMPLETE_KEY);
-                  console.log(
-                    '[AuthProvider] 로컬 스토리지 onboarding_completed 동기화: false (제거)'
-                  );
-                }
-              } else {
-                // profile이 null이면 로컬 스토리지 확인 (fallback)
-                const localOnboarding = safeStorage.getItem(ONBOARDING_COMPLETE_KEY) === 'true';
-                if (localOnboarding) {
-                  console.log(
-                    '[AuthProvider] profile이 null이지만 로컬 스토리지에 onboarding_completed=true 있음'
-                  );
-                }
+        // 세션이 있으면 userProfile은 백그라운드에서 조회 (블로킹 없음)
+        const isOnboardingRoute = location.pathname.startsWith('/onboarding');
+        if (session?.user?.id && !isOnboardingRoute) {
+          fetchUserProfile(session.user.id, false)
+            .then((profile) => {
+              setUserProfile(profile);
+              if (profile?.onboarding_completed === true) {
+                safeStorage.setItem(ONBOARDING_COMPLETE_KEY, 'true');
+              } else if (profile) {
+                safeStorage.removeItem(ONBOARDING_COMPLETE_KEY);
               }
-            } catch (profileErr) {
-              console.error('[AuthProvider] getUser 실패:', profileErr);
-              // fetchUserProfile 실패해도 null로 설정하고 계속 진행
-              setUserProfile(null);
-            }
-          } else {
-            // 온보딩 라우트에서는 getUser skip
-            console.log('[AuthProvider] 온보딩 라우트 감지, getUser skip', {
-              pathname: location.pathname,
-            });
-            // 온보딩 중에는 userProfile을 null로 유지하여 진행 허용
-            setUserProfile(null);
-          }
+            })
+            .catch(() => setUserProfile(null));
         } else {
           setUserProfile(null);
         }
-
-        console.log('[AuthProvider] setLoading(false) 호출 - getSession 경로');
-        setSessionInitialized(true);
-        setLoading(false);
-        removeLoadingBanner(); // 로딩 완료 시 배너 제거
-        diag.log('AuthProvider: 초기화 완료', { sessionInitialized: true, loading: false });
       })
       .catch((err) => {
         clearTimeout(timeoutId); // 에러 시에도 타임아웃 해제
@@ -342,41 +306,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           identifyUser(session.user.id);
         }
 
-        // 세션이 있으면 userProfile 조회
-        // 단, 온보딩 라우트에서는 skip하여 타임아웃 방지
+        // userProfile은 백그라운드에서 조회 (블로킹 없이 화면 먼저 표시)
         const isOnboardingRoute = location.pathname.startsWith('/onboarding');
         if (session?.user?.id && !isOnboardingRoute) {
-          console.log('[AuthProvider] onAuthStateChange: getUser 시작', {
-            userId: session.user.id,
-          });
-          try {
-            const profile = await fetchUserProfile(session.user.id, false);
-            console.log('[AuthProvider] onAuthStateChange: getUser 완료', { profile });
-            setUserProfile(profile);
-
-            // profile이 조회되면 로컬 스토리지와 동기화
-            if (profile) {
-              if (profile.onboarding_completed) {
+          fetchUserProfile(session.user.id, false)
+            .then((profile) => {
+              setUserProfile(profile);
+              if (profile?.onboarding_completed === true) {
                 safeStorage.setItem(ONBOARDING_COMPLETE_KEY, 'true');
-                console.log(
-                  '[AuthProvider] onAuthStateChange: 로컬 스토리지 onboarding_completed 동기화: true'
-                );
-              } else {
+              } else if (profile) {
                 safeStorage.removeItem(ONBOARDING_COMPLETE_KEY);
-                console.log(
-                  '[AuthProvider] onAuthStateChange: 로컬 스토리지 onboarding_completed 동기화: false (제거)'
-                );
               }
-            }
-          } catch (profileErr) {
-            console.error('[AuthProvider] onAuthStateChange: getUser 실패:', profileErr);
-            // fetchUserProfile 실패해도 null로 설정하고 계속 진행
-            setUserProfile(null);
-          }
-        } else if (isOnboardingRoute) {
-          console.log('[AuthProvider] onAuthStateChange: 온보딩 라우트 감지, getUser skip');
-          // 온보딩 중에는 userProfile을 null로 유지하여 진행 허용
-          setUserProfile(null);
+            })
+            .catch(() => setUserProfile(null));
         } else {
           setUserProfile(null);
         }

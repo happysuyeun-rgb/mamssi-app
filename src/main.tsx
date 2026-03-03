@@ -15,8 +15,12 @@ import '@styles/globals.css';
 
 diag.log('main.tsx: 앱 부팅 시작');
 
-// Mixpanel(또는 대체 분석도구) 초기화 - app_open 이벤트 자동 전송
-initAnalytics();
+// 분석 초기화는 첫 페인트 이후로 지연 (로딩 블로킹 방지)
+if (typeof requestIdleCallback !== 'undefined') {
+  requestIdleCallback(() => initAnalytics(), { timeout: 2000 });
+} else {
+  setTimeout(() => initAnalytics(), 500);
+}
 
 // Storage 접근성 테스트
 const storageTest = safeStorage.test();

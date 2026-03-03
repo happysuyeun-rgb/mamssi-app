@@ -319,6 +319,14 @@ export default function Record() {
             return;
           }
 
+          // 공개 기록은 공감숲 노출을 위해 category 필수(트리거 조건). 없으면 'daily'로 보내 트리거가 동기화하도록 함.
+          const categoryValue =
+            isPublic && selectedCategories.length > 0
+              ? selectedCategories[0]
+              : isPublic
+                ? 'daily'
+                : null;
+
           const payload: {
             emotion_type: string;
             content: string;
@@ -331,10 +339,7 @@ export default function Record() {
             content: trimmedContent,
             emotion_date: recordDate, // YYYY-MM-DD
             is_public: isPublic || null,
-            category:
-              isSharedToForest && selectedCategories.length > 0
-                ? selectedCategories[0] // 첫 번째 카테고리 영문키 (이미 id로 저장됨)
-                : null,
+            category: categoryValue,
             // image_url은 빈 문자열이 아닌 경우에만 포함
             image_url: imageUrl && imageUrl.trim() !== '' ? imageUrl : null,
           };
