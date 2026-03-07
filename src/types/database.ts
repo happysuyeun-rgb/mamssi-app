@@ -101,7 +101,7 @@ export type ReportRow = {
   post_id: string;
   reporter_id: string;
   reason: string;
-  memo: string | null;
+  note: string | null; // DB 컬럼명 (details 없음)
   status: string;
   created_at: string;
 };

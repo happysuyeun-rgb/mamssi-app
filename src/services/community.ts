@@ -34,7 +34,7 @@ export type Report = {
   post_id: string;
   reporter_id: string;
   reason: string;
-  memo: string | null;
+  note: string | null;
   status: string;
   created_at: string;
 };
@@ -179,6 +179,7 @@ export async function fetchCommunityPost(
       )
       .eq('id', postId)
       .eq('is_public', true)
+      .eq('is_hidden', false)
       .maybeSingle();
 
     if (error) {
@@ -247,9 +248,8 @@ export async function createCommunityPost(payload: {
         user_id: payload.user_id,
         content: payload.content,
         category: payload.category,
-        emotion_type: payload.emotion_type,
-        image_url: payload.image_url,
-        emotion_id: payload.emotion_id,
+        image_url: payload.image_url ?? null,
+        emotion_id: payload.emotion_id ?? null,
         is_public: true,
         is_hidden: false,
       })
@@ -296,7 +296,6 @@ export async function updateCommunityPost(
   payload: {
     content?: string;
     category?: string;
-    emotion_type?: string | null;
     image_url?: string | null;
   }
 ): Promise<CommunityPost | null> {
@@ -472,8 +471,7 @@ export async function reportPost(
         post_id: postId,
         reporter_id: reporterId,
         reason,
-        memo: memo || null,
-        status: 'pending',
+        note: memo?.trim() || null,
       })
       .select()
       .single();

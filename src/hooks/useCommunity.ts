@@ -95,8 +95,12 @@ export function useCommunity(userId?: string | null) {
         selectedCategory,
       });
 
-      // 게스트 호환: profiles JOIN 없이 조회
-      let query = supabase.from('community_posts').select('*').eq('is_public', true); // 공개 게시글만 조회
+      // 게스트 호환: profiles JOIN 없이 조회 (RLS와 동일하게 숨김글 제외)
+      let query = supabase
+        .from('community_posts')
+        .select('*')
+        .eq('is_public', true)
+        .eq('is_hidden', false);
 
       // 삭제된 게시글 제외 (is_deleted 컬럼이 있다면)
       // query = query.eq('is_deleted', false); // 필요시 주석 해제
@@ -331,9 +335,9 @@ export function useCommunity(userId?: string | null) {
       try {
         const { error: reportError } = await supabase.from('reports').insert({
           post_id: postId,
-          user_id: userId,
+          reporter_id: userId,
           reason,
-          details,
+          note: details?.trim() || null,
         });
 
         if (reportError) throw reportError;
