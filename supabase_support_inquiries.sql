@@ -3,7 +3,7 @@
 -- ============================================
 
 create table if not exists public.support_inquiries (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   user_id uuid references auth.users(id) on delete set null,
   email text not null,
   category text not null,
@@ -16,12 +16,17 @@ create table if not exists public.support_inquiries (
 -- RLS 활성화
 alter table public.support_inquiries enable row level security;
 
--- 정책: 누구나 문의 생성 가능 (INSERT)
+-- anon, authenticated 역할에 테이블 사용 권한 부여 (API/클라이언트에서 접근 가능하도록)
+grant usage on schema public to anon, authenticated;
+grant select, insert on public.support_inquiries to anon, authenticated;
+
+-- 정책은 이미 있으면 제거 후 다시 생성 (재실행 가능하도록)
+drop policy if exists "support_inquiries insert all" on public.support_inquiries;
 create policy "support_inquiries insert all"
   on public.support_inquiries for insert
   with check (true);
 
--- 정책: 본인 문의만 조회 가능 (SELECT) - 운영자 조회는 service_role 사용
+drop policy if exists "support_inquiries select own" on public.support_inquiries;
 create policy "support_inquiries select own"
   on public.support_inquiries for select
   using (auth.uid() = user_id);

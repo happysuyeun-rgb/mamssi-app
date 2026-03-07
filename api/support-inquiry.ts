@@ -37,13 +37,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const { email, category, title, content, user_id } = req.body;
 
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_ANON_KEY;
+  // Vercel에서 SUPABASE_* 또는 VITE_SUPABASE_* 둘 다 사용 가능 (Production 환경 적용 필수)
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
   const gmailUser = process.env.GMAIL_USER;
   const gmailPass = process.env.GMAIL_PASS;
 
   if (!supabaseUrl || !supabaseKey) {
-    res.status(500).json({ error: 'SUPABASE_URL, SUPABASE_ANON_KEY가 설정되지 않았습니다.' });
+    res.status(500).json({
+      error:
+        'SUPABASE_URL, SUPABASE_ANON_KEY가 설정되지 않았습니다. Vercel 환경변수에 추가하고, Environment를 Production(또는 All)으로 선택한 뒤 재배포하세요.',
+    });
     return;
   }
 
@@ -69,8 +73,42 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     .single();
 
   if (insertError) {
-    console.error('[support-inquiry] DB insert error:', insertError);
-    res.status(500).json({ error: '문의 저장에 실패했습니다.' });
+    const errMsg = String(insertError.message || '');
+    const errCode = String((insertError as { code?: string }).code ?? '');
+    console.error('[support-inquiry] DB insert error:', { code: errCode, message: errMsg, full: insertError });
+
+    // 테이블 없음 → SQL 미실행 안내
+    if (
+      errCode === '42P01' ||
+      errMsg.includes('does not exist') ||
+      errMsg.includes('relation') ||
+      errMsg.includes('존재하지 않')
+    ) {
+      res.status(500).json({
+        error:
+          'support_inquiries 테이블이 없습니다. Supabase 대시보드 → SQL Editor에서 supabase_support_inquiries.sql 파일 내용을 실행해주세요.',
+      });
+      return;
+    }
+    // RLS 등 권한 문제
+    if (
+      errCode === '42501' ||
+      errMsg.includes('policy') ||
+      errMsg.includes('permission') ||
+      errMsg.includes('권한') ||
+      errMsg.includes('row-level security') ||
+      errMsg.includes('violates row-level security')
+    ) {
+      res.status(500).json({
+        error:
+          '문의 저장 권한이 없습니다. Supabase에서 support_inquiries 테이블 RLS 정책(insert all)을 확인해주세요.',
+      });
+      return;
+    }
+    // 그 외: 실제 Supabase 메시지를 포함해 원인 파악 가능하도록
+    res.status(500).json({
+      error: errMsg ? `문의 저장에 실패했습니다. (${errMsg})` : '문의 저장에 실패했습니다.',
+    });
     return;
   }
 

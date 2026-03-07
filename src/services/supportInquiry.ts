@@ -54,8 +54,7 @@ export async function submitInquiry(
     const data = await res.json().catch(() => ({}));
 
     if (!res.ok) {
-      const message =
-        (data?.error as string) || `요청 실패 (${res.status})`;
+      const message = (data?.error as string) || `요청 실패 (${res.status})`;
       return { success: false, error: message };
     }
 
