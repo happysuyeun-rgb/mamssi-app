@@ -39,14 +39,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // Vercel에서 SUPABASE_* 또는 VITE_SUPABASE_* 둘 다 사용 가능 (Production 환경 적용 필수)
   const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+  // service_role: RLS 우회, API 서버 전용 (절대 클라이언트에 노출 금지)
+  const serviceRoleKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_SERVICE_ROLE_KEY;
+  const anonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+  const supabaseKey = serviceRoleKey || anonKey;
   const gmailUser = process.env.GMAIL_USER;
   const gmailPass = process.env.GMAIL_PASS;
 
   if (!supabaseUrl || !supabaseKey) {
     res.status(500).json({
       error:
-        'SUPABASE_URL, SUPABASE_ANON_KEY가 설정되지 않았습니다. Vercel 환경변수에 추가하고, Environment를 Production(또는 All)으로 선택한 뒤 재배포하세요.',
+        'SUPABASE_URL, SUPABASE_ANON_KEY(또는 SUPABASE_SERVICE_ROLE_KEY)가 설정되지 않았습니다. Vercel 환경변수에 추가하고 재배포하세요.',
     });
     return;
   }

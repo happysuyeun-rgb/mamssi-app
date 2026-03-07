@@ -25,7 +25,8 @@ Supabase SQL Editor에서 아래 파일 내용을 실행하세요.
 | 이름 | 값 | 비고 |
 |------|-----|------|
 | `SUPABASE_URL` | Supabase 프로젝트 URL | `.env`의 `VITE_SUPABASE_URL`과 동일 값 |
-| `SUPABASE_ANON_KEY` | Supabase anon key | `.env`의 `VITE_SUPABASE_ANON_KEY`와 동일 값 |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase **service_role** key | **권장** - RLS 우회, API 서버 전용. Supabase → Settings → API → service_role |
+| `SUPABASE_ANON_KEY` | Supabase anon key | service_role 없을 때 사용 (RLS 적용됨) |
 | `GMAIL_USER` | mamssi.official@gmail.com | 발신 Gmail 주소 |
 | `GMAIL_PASS` | Gmail 앱 비밀번호 | 일반 비밀번호 아님, [앱 비밀번호 발급](https://myaccount.google.com/apppasswords) |
 
@@ -58,6 +59,20 @@ Gmail 앱 비밀번호: Google 계정 → 보안 → 2단계 인증 사용 후 "
    - `support_inquiries` 테이블에 행 삽입
    - `mamssi.official@gmail.com`으로 위 내용 정해진 포맷으로 이메일 발송 (Gmail SMTP 465).
 4. 성공 시 프론트에서 "문의가 접수되었습니다." 토스트 표시.
+
+### "문의 저장 권한이 없습니다" (RLS) 오류 시
+
+**가장 쉬운 해결:** `SUPABASE_SERVICE_ROLE_KEY` 추가 (RLS 우회)
+
+1. Supabase 대시보드 → **Settings** → **API** → **Project API keys**  
+2. **service_role** (secret) 복사  
+3. Vercel → Settings → Environment Variables → **Add**  
+   - Key: `SUPABASE_SERVICE_ROLE_KEY`  
+   - Value: 복사한 service_role 값  
+   - Sensitive: 켜기  
+4. **Redeploy** 실행  
+
+> service_role은 **서버 전용**으로만 사용하고, 절대 클라이언트(프론트)에 노출하지 마세요.
 
 ### "문의 저장에 실패했습니다" 오류 시
 
