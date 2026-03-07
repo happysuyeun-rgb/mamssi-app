@@ -2,19 +2,19 @@ import { lsGet, lsSet } from './storage';
 import type { LockSettings } from '@domain/lock';
 import { LOCK_SESSION_KEY, LOCK_STORAGE_KEY, defaultLockSettings } from '@domain/lock';
 
-export function normalizeLockSettings(raw?: Partial<LockSettings> | null): LockSettings {
+export function normalizeLockSettings(raw?: Partial<LockSettings> & { mode?: string; pattern?: unknown } | null): LockSettings {
   if (!raw) return { ...defaultLockSettings };
-  const mode = raw.mode === 'pin' ? 'pin' : 'pattern';
-  const pattern = Array.isArray(raw.pattern) ? raw.pattern : [];
   const pin = typeof raw.pin === 'string' ? raw.pin : '';
   const biometricEnabled = Boolean(raw.biometricEnabled);
+  // 패턴 잠금 제거됨 → pattern/mode 사용 시 잠금 해제 (재설정 필요)
+  const wasPattern = raw.mode === 'pattern' || (Array.isArray(raw.pattern) && raw.pattern.length > 0);
+  const enabled = wasPattern ? false : Boolean(raw.enabled);
   return {
-    ...defaultLockSettings,
-    ...raw,
-    mode,
-    pattern,
-    pin,
+    enabled,
+    pin: wasPattern ? '' : pin,
     biometricEnabled,
+    createdAt: raw.createdAt,
+    updatedAt: raw.updatedAt,
   };
 }
 
@@ -22,11 +22,9 @@ export function loadLockSettings(): LockSettings {
   const stored = lsGet<LockSettings>(LOCK_STORAGE_KEY, defaultLockSettings);
   const normalized = normalizeLockSettings(stored);
   const requiresUpdate =
-    stored.mode !== normalized.mode ||
     stored.pin !== normalized.pin ||
     stored.enabled !== normalized.enabled ||
-    stored.biometricEnabled !== normalized.biometricEnabled ||
-    JSON.stringify(stored.pattern ?? []) !== JSON.stringify(normalized.pattern);
+    stored.biometricEnabled !== normalized.biometricEnabled;
   if (requiresUpdate) {
     saveLockSettings(normalized);
   }

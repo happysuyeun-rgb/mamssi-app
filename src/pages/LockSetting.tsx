@@ -4,7 +4,7 @@ import Layout from '@components/Layout';
 import { lsGet, lsSet } from '@utils/storage';
 import { createNotification } from '@services/notifications';
 import { CURRENT_USER_ID } from '@constants/user';
-import type { LockSettings, LockMode } from '@domain/lock';
+import type { LockSettings } from '@domain/lock';
 import '@styles/page-hero.css';
 import '@styles/lock.css';
 
@@ -16,8 +16,6 @@ export default function LockSetting() {
   const [settings, setSettings] = useState<LockSettings>(
     lsGet<LockSettings>(lockKey, {
       enabled: false,
-      mode: 'pattern',
-      pattern: [],
       pin: '',
       biometricEnabled: false,
     })
@@ -49,7 +47,6 @@ export default function LockSetting() {
     }
     const updated: LockSettings = {
       ...settings,
-      mode: 'pin',
       pin: pinInput,
       enabled: true,
       updatedAt: new Date().toISOString(),
@@ -94,21 +91,6 @@ export default function LockSetting() {
     };
     setSettings(updated);
     lsSet(lockKey, updated);
-  };
-
-  // 잠금 방식 변경
-  const changeMode = (mode: LockMode) => {
-    if (mode === 'pin' && !settings.pin) {
-      startPinSetup();
-    } else {
-      const updated: LockSettings = {
-        ...settings,
-        mode,
-        updatedAt: new Date().toISOString(),
-      };
-      setSettings(updated);
-      lsSet(lockKey, updated);
-    }
   };
 
   return (
@@ -248,41 +230,21 @@ export default function LockSetting() {
 
             {settings.enabled && (
               <>
-                {/* 잠금 방식 선택 (마음을 감싸기 숨김) */}
                 <section className="lock-section">
-                  <div className="lock-section-title">잠금 방식</div>
-                  <div className="lock-mode-options">
-                    <label className="lock-mode-option">
-                      <input
-                        type="radio"
-                        name="lockMode"
-                        value="pin"
-                        checked={settings.mode === 'pin' || settings.mode === 'pattern'}
-                        onChange={() => changeMode('pin')}
-                      />
-                      <div className="lock-mode-content">
-                        <div className="lock-mode-icon">🔢</div>
-                        <div className="lock-mode-label">PIN (4자리)</div>
-                        <div className="lock-mode-desc">숫자로 안전하게 보호</div>
-                      </div>
-                    </label>
-                  </div>
-
-                  {(settings.mode === 'pin' && settings.pin && (
+                  <div className="lock-section-title">PIN</div>
+                  {settings.pin ? (
                     <button type="button" className="lock-btn-link" onClick={resetPin}>
                       PIN 재설정
                     </button>
-                  )) ||
-                    (settings.mode === 'pattern' && (
-                      <button type="button" className="lock-btn-link" onClick={startPinSetup}>
-                        PIN으로 전환
-                      </button>
-                    ))}
+                  ) : (
+                    <button type="button" className="lock-btn-link" onClick={startPinSetup}>
+                      PIN 설정
+                    </button>
+                  )}
                 </section>
 
-                {/* 생체인증 (PIN 모드일 때만) */}
-                {settings.mode === 'pin' && (
-                  <section className="lock-section">
+                {/* 생체인증 */}
+                <section className="lock-section">
                     <div className="lock-toggle-row">
                       <div>
                         <div className="lock-toggle-title">생체인증 사용</div>
@@ -297,8 +259,7 @@ export default function LockSetting() {
                         <span className="lock-switch-slider" />
                       </label>
                     </div>
-                  </section>
-                )}
+                </section>
 
                 {/* 안내 문구 */}
                 <section className="lock-section">

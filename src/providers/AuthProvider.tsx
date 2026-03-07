@@ -412,7 +412,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
 
-      // 로그아웃 시 잠금 설정 초기화 (마음을 감싸기 잠금 화면 표시 방지)
+      // 로그아웃 시 잠금 설정 초기화
       clearLockOnSignOut();
 
       safeStorage.removeItem(GUEST_MODE_KEY);

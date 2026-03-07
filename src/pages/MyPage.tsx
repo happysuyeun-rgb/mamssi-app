@@ -13,11 +13,11 @@ import { lsGet, lsSet } from '@utils/storage';
 import '@styles/page-hero.css';
 import '@styles/mypage.css';
 import { drawFlowerCanvas } from '@canvas/drawFlowerCanvas';
-import type { LockSettings, LockMode } from '../types/lock';
+import type { LockSettings } from '../types/lock';
 import { LOCK_SESSION_KEY } from '../types/lock';
 import { loadLockSettings, saveLockSettings } from '@utils/lock';
 import { EMOTION_OPTIONS } from '@constants/emotions';
-import { SUPPORT_EMAIL } from '@constants/app';
+import { submitInquiry } from '@services/supportInquiry';
 import { fetchBloomedFlowers } from '@services/flowers';
 import { supabase } from '@lib/supabaseClient';
 
@@ -69,16 +69,11 @@ export default function MyPage() {
     lsGet<Settings>(setKey, { emp: true, time: '21:00' })
   );
   const [lock, setLock] = useState<LockSettings>(() => {
-    if (dbSettings && dbSettings.lock_type) {
-      return {
-        enabled: true,
-        mode: dbSettings.lock_type,
-        pattern: [],
-        pin: '',
-        biometricEnabled: false,
-      };
+    const local = loadLockSettings();
+    if (dbSettings?.lock_type === 'pin') {
+      return { ...local, enabled: true };
     }
-    return loadLockSettings();
+    return local;
   });
 
   // DB 설정이 로드되면 프로필 상태 동기화
@@ -89,11 +84,10 @@ export default function MyPage() {
         mbti: dbSettings.mbti || 'ENFJ',
         img: dbSettings.profile_url || null,
       });
-      if (dbSettings.lock_type) {
+      if (dbSettings.lock_type === 'pin') {
         setLock((prev) => ({
           ...prev,
           enabled: true,
-          mode: dbSettings.lock_type as LockMode,
         }));
       }
     }
@@ -386,14 +380,12 @@ export default function MyPage() {
 
   // Lock temp states
   const [lockEnabledDraft, setLockEnabledDraft] = useState(lock.enabled);
-  const [lockModeDraft, setLockModeDraft] = useState<LockMode>(lock.mode);
   const [pinDraft, setPinDraft] = useState(lock.pin ?? '');
   const [pinError, setPinError] = useState('');
 
   useEffect(() => {
     if (mLock) {
       setLockEnabledDraft(lock.enabled);
-      setLockModeDraft('pin'); // 화면잠금은 PIN만 지원
       setPinDraft(lock.pin ?? '');
       setPinError('');
     }
@@ -421,7 +413,7 @@ export default function MyPage() {
         }
 
         try {
-          let lockType: 'pattern' | 'pin' | null = null;
+          let lockType: 'pin' | null = null;
           let lockValue: string | null = null;
 
           if (lockEnabledDraft) {
@@ -438,17 +430,11 @@ export default function MyPage() {
           const next: LockSettings = {
             ...lock,
             enabled: lockEnabledDraft,
-            mode: 'pin',
-            pattern: [],
             pin: lockEnabledDraft ? pinDraft : '',
             updatedAt: now,
             createdAt: lock.createdAt || (lockEnabledDraft ? now : lock.createdAt),
             biometricEnabled: lock.biometricEnabled,
           };
-          if (!lockEnabledDraft) {
-            next.pattern = [];
-            next.pin = '';
-          }
 
           sessionStorage.removeItem(LOCK_SESSION_KEY);
           setLock(next);
@@ -607,24 +593,43 @@ export default function MyPage() {
     );
   }
 
-  // Support - 문의는 mamssi.official@gmail.com으로 발송
+  // Support - 고객 문의 (DB 저장 + 이메일 자동 발송)
   const [qEmail, setQEmail] = useState('');
+  const [qCategory, setQCategory] = useState('일반');
   const [qSubj, setQSubj] = useState('');
   const [qBody, setQBody] = useState('');
-  function sendSupport() {
+  const [supportSubmitting, setSupportSubmitting] = useState(false);
+  async function sendSupport() {
+    const email = (user?.email || qEmail || '').trim();
+    if (!email) {
+      notify.warning('이메일을 입력해주세요.', '⚠️');
+      return;
+    }
     if (!qBody.trim()) {
       notify.warning('문의 내용을 입력해주세요.', '⚠️');
       return;
     }
-    const bodyParts: string[] = [];
-    if (qEmail.trim()) {
-      bodyParts.push(`회신 받을 이메일: ${qEmail.trim()}\n`);
+    setSupportSubmitting(true);
+    const result = await submitInquiry(
+      {
+        email,
+        category: qCategory,
+        title: qSubj,
+        content: qBody,
+      },
+      user?.id
+    );
+    setSupportSubmitting(false);
+    if (result.success) {
+      setQEmail('');
+      setQCategory('일반');
+      setQSubj('');
+      setQBody('');
+      setMSupport(false);
+      notify.success('문의가 접수되었습니다.', '✅');
+    } else {
+      notify.error(result.error, '❌');
     }
-    bodyParts.push(qBody);
-    const subj = encodeURIComponent(qSubj || '마음씨 문의');
-    const bodyEnc = encodeURIComponent(bodyParts.join('\n'));
-    location.href = `mailto:${SUPPORT_EMAIL}?subject=${subj}&body=${bodyEnc}`;
-    notify.success('이메일 앱이 열렸어요. 보내기를 눌러 주세요.', '✅');
   }
 
   const canSaveLock = !lockEnabledDraft || pinDraft.length === 4;
@@ -1175,25 +1180,9 @@ export default function MyPage() {
             <div className="lock-modal-body">
               {lockEnabledDraft && (
                 <>
-                  <div className="lock-mode-tabs">
-                    <button
-                      type="button"
-                      className={`lock-mode-tab ${lockModeDraft === 'pin' ? 'active' : ''}`}
-                      onClick={() => {
-                        setLockModeDraft('pin');
-                        setPinError('');
-                      }}
-                    >
-                      <span className="lock-mode-icon">🔢</span>
-                      <div className="lock-mode-text">
-                        <div className="title">PIN (4자리)</div>
-                        <div className="desc">숫자로 안전하게 보호</div>
-                      </div>
-                    </button>
-                  </div>
-
-                  {lockModeDraft === 'pin' && (
-                    <div className="lock-pin-panel">
+                  <div className="lock-section-title">PIN (4자리)</div>
+                  <p className="lock-mode-desc">숫자로 안전하게 보호</p>
+                  <div className="lock-pin-panel">
                       <div className="lock-pin-dots">
                         {[0, 1, 2, 3].map((i) => (
                           <div
@@ -1213,7 +1202,6 @@ export default function MyPage() {
                       {pinError && <div className="lock-error">{pinError}</div>}
                       <p className="lock-helper">숫자 4자리를 입력해 주세요.</p>
                     </div>
-                  )}
                 </>
               )}
 
@@ -1221,7 +1209,7 @@ export default function MyPage() {
                 <div className="lock-info-title">잠금 해제 안내</div>
                 <div className="lock-info-text">
                   • 로그아웃 또는 앱 삭제 시 잠금 설정이 초기화돼요.
-                  <br />• PIN/패턴을 잊어버리면 앱을 재설치해야 해요.
+                  <br />• PIN을 잊어버리면 앱을 재설치해야 해요.
                 </div>
               </div>
             </div>
@@ -1257,10 +1245,27 @@ export default function MyPage() {
             <div>
               <input
                 className="input"
-                value={qEmail}
+                value={user?.email || qEmail}
                 onChange={(e) => setQEmail(e.target.value)}
-                placeholder="선택 (예: hello@maeumssi.app)"
+                placeholder="회신 받을 이메일"
+                readOnly={!!user?.email}
               />
+            </div>
+          </div>
+          <div className="row">
+            <div>문의 유형</div>
+            <div>
+              <select
+                className="input"
+                value={qCategory}
+                onChange={(e) => setQCategory(e.target.value)}
+              >
+                <option value="일반">일반</option>
+                <option value="기능 제안">기능 제안</option>
+                <option value="오류 신고">오류 신고</option>
+                <option value="계정">계정</option>
+                <option value="기타">기타</option>
+              </select>
             </div>
           </div>
           <div className="row">
@@ -1287,11 +1292,15 @@ export default function MyPage() {
             </div>
           </div>
           <div className="grid2" style={{ marginTop: 10 }}>
-            <button className="btn" onClick={() => setMSupport(false)}>
+            <button className="btn" onClick={() => setMSupport(false)} disabled={supportSubmitting}>
               닫기
             </button>
-            <button className="btn primary" onClick={sendSupport}>
-              보내기
+            <button
+              className="btn primary"
+              onClick={sendSupport}
+              disabled={supportSubmitting}
+            >
+              {supportSubmitting ? '전송 중...' : '보내기'}
             </button>
           </div>
         </Modal>

@@ -1,6 +1,6 @@
 /**
- * 잠금 설정 값(패턴/PIN)을 해시 처리
- * @param value 패턴 배열 또는 PIN 문자열
+ * 잠금 설정 값(PIN)을 해시 처리
+ * @param value PIN 문자열
  * @returns 해시된 문자열
  */
 export async function hashLockValue(value: number[] | string): Promise<string> {

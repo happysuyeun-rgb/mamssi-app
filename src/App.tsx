@@ -43,6 +43,14 @@ function AppRoutes() {
       const settings = loadLockSettings();
       const sessionUnlocked = sessionStorage.getItem(LOCK_SESSION_KEY) === 'true';
 
+      // 개발 환경에서는 잠금 화면 건너뛰기 (HMR/탭 전환 시 매번 PIN 입력 방지)
+      if (import.meta.env.DEV) {
+        setIsLocked(false);
+        setIsChecking(false);
+        diag.log('AppRoutes: 잠금 체크 완료 (DEV: 잠금 건너뜀)');
+        return;
+      }
+
       if (settings.enabled) {
         if (sessionUnlocked) {
           setIsLocked(false);

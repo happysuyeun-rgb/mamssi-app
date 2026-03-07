@@ -407,59 +407,11 @@ textarea {
   font-size: 12px;
   color: var(--ms-ink-muted);
 }
-.lock-pattern-panel,
 .lock-pin-panel {
   padding: 14px;
   border: 1px solid #edf2ef;
   border-radius: 16px;
   background: #fbfffd;
-}
-.lock-pattern-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
-  max-width: 260px;
-  margin: 0 auto;
-}
-.lock-pattern-node {
-  width: 70px;
-  height: 70px;
-  border-radius: 50%;
-  border: 2px solid #d2ded6;
-  background: #fff;
-  font-size: 18px;
-  font-weight: 600;
-  color: #94a39a;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: 0.2s;
-}
-.lock-pattern-node.active {
-  background: #dff4ea;
-  color: #21735f;
-  border-color: #21735f;
-}
-.lock-pattern-seq {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-  justify-content: center;
-  margin-top: 12px;
-}
-.lock-seq-chip {
-  min-width: 32px;
-  padding: 6px 8px;
-  border-radius: 999px;
-  background: #eaf5ef;
-  font-weight: 600;
-  color: #2c7768;
-  font-size: 12px;
-  text-align: center;
-}
-.lock-pattern-placeholder {
-  font-size: 12px;
-  color: var(--ms-ink-muted);
 }
 .lock-pin-dots {
   display: flex;
@@ -477,15 +429,6 @@ textarea {
 .lock-pin-dot.filled {
   background: #2c7768;
   border-color: #2c7768;
-}
-.lock-pattern-reset {
-  margin-top: 10px;
-  padding: 8px 14px;
-  border-radius: 10px;
-  border: 1px solid var(--ms-line);
-  background: #fff;
-  font-size: 12px;
-  cursor: pointer;
 }
 .lock-helper {
   font-size: 12px;
