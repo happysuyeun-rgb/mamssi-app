@@ -516,6 +516,7 @@ export default function Record() {
             // flowers 성장 업데이트 (신규 기록만 성장 증가) - 먼저 실행
             // 설계서: 공개 기록 +10pt, 개인 기록 +5pt
             let flowerUpdated = false;
+            let isBloomed = false;
             try {
               const updatedFlowerResult = await updateFlowerGrowth(
                 user.id,
@@ -525,6 +526,7 @@ export default function Record() {
               );
               if (!updatedFlowerResult.error && updatedFlowerResult.data) {
                 flowerUpdated = true;
+                isBloomed = updatedFlowerResult.data.is_bloomed === true;
                 console.log('[Record] flowers 성장 업데이트 성공:', {
                   userId: user.id,
                   growthPercent: updatedFlowerResult.data.growth_percent,
@@ -643,7 +645,18 @@ export default function Record() {
             setNote('');
             setPhotos([]);
             setSelectedCategories([]);
-            navigate('/');
+
+            // 개화 완료 시 축하 모달 표시
+            if (isBloomed) {
+              notify.modal({
+                title: '개화 완료! 🌸',
+                message: '축하합니다! 감정의 꽃이 환짝 피었어요.',
+                confirmLabel: '확인',
+                onConfirm: () => navigate('/'),
+              });
+            } else {
+              navigate('/');
+            }
           }
         } catch (err) {
           console.error('[Record] 저장 실패 - 상세 에러:', {

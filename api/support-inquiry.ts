@@ -120,15 +120,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     ? new Date(row.created_at).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })
     : new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' });
 
-  // 2. 이메일 발송
+  // 2. 이메일 발송 (앱 비밀번호 공백 제거, 587 포트로 시도 - Vercel에서 465가 막힌 경우 대비)
+  const pass = String(gmailPass).replace(/\s/g, '');
   const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
+    port: 587,
+    secure: false,
+    requireTLS: true,
     auth: {
-      user: gmailUser,
-      pass: gmailPass,
+      user: gmailUser.trim(),
+      pass,
     },
+    connectionTimeout: 10000,
   });
 
   const mailOptions = {
@@ -146,13 +149,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 문의시간:\n${createdAt}`,
   };
 
+  let emailSent = false;
   try {
     await transporter.sendMail(mailOptions);
+    emailSent = true;
   } catch (err) {
-    console.error('[support-inquiry] Email send error:', err);
-    // DB는 이미 저장됐으므로 200 반환, 클라이언트에는 성공으로 전달
-    // 필요 시 에러 반환: res.status(500).json({ error: '이메일 발송에 실패했습니다.' });
+    const errMsg = err instanceof Error ? err.message : String(err);
+    const errCode = err instanceof Error ? (err as { code?: string }).code : undefined;
+    const response = err instanceof Error ? (err as { response?: string }).response : undefined;
+    console.error('[support-inquiry] Email send error:', {
+      message: errMsg,
+      code: errCode,
+      response,
+      full: String(err),
+    });
   }
 
-  res.status(200).json({ success: true, id: row?.id });
+  res.status(200).json({ success: true, id: row?.id, emailSent });
 }

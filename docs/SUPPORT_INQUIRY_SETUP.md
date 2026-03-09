@@ -35,6 +35,27 @@ Supabase SQL Editor에서 아래 파일 내용을 실행하세요.
 
 Gmail 앱 비밀번호: Google 계정 → 보안 → 2단계 인증 사용 후 "앱 비밀번호"에서 생성.
 
+### 문의는 저장되는데 mamssi.official@gmail.com으로 이메일이 안 올 때
+
+1. **GMAIL_PASS = 앱 비밀번호인지 확인**  
+   일반 Gmail 비밀번호는 SMTP에서 거부됩니다.  
+   - [Google 앱 비밀번호](https://myaccount.google.com/apppasswords) 접속  
+   - 2단계 인증이 켜져 있어야 "앱 비밀번호" 메뉴가 보입니다  
+   - 앱 선택 후 생성된 **16자리 비밀번호**를 `GMAIL_PASS`에 넣기 (공백 없이)
+
+2. **GMAIL_USER와 발신 계정 일치**  
+   `GMAIL_USER`는 실제로 로그인하는 Gmail 주소(예: mamssi.official@gmail.com)여야 하고, 그 계정으로 만든 앱 비밀번호를 써야 합니다.
+
+3. **Vercel 로그로 에러 확인**  
+   - Vercel → Deployments → 최신 배포 → **Functions** 또는 **Runtime Logs**  
+   - 문의 보낸 직후 `[support-inquiry] Email send error:` 로그가 있으면, 메시지/코드를 보고 원인 확인 (인증 실패, 네트워크 등)
+
+4. **앱 비밀번호에 공백 없이**  
+   Google이 표시하는 16자리는 "xxxx xxxx xxxx xxxx" 형태인데, Vercel **GMAIL_PASS**에는 **공백 없이** 16자만 넣어야 합니다. 코드에서 공백은 자동 제거하도록 되어 있습니다.
+
+5. **스팸함 확인**  
+   받는 주소(mamssi.official@gmail.com)의 스팸함도 한 번 확인해 보세요.
+
 ### "SUPABASE_URL, SUPABASE_ANON_KEY가 설정되지 않았습니다" 오류 시
 
 1. **Environment(적용 환경) 확인**  
