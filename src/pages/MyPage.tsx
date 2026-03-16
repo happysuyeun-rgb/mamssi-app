@@ -13,6 +13,12 @@ import { lsGet, lsSet } from '@utils/storage';
 import '@styles/page-hero.css';
 import '@styles/mypage.css';
 import { drawFlowerCanvas } from '@canvas/drawFlowerCanvas';
+import {
+  FLOWER_TYPE_TO_BLOOM_CAPTION,
+  FLOWER_TYPE_TO_EMOJI,
+  FLOWER_TYPE_TO_NAME_KO,
+  type FlowerType,
+} from '@constants/flowerMap';
 import type { LockSettings } from '../types/lock';
 import { LOCK_SESSION_KEY } from '../types/lock';
 import { loadLockSettings, saveLockSettings } from '@utils/lock';
@@ -29,6 +35,9 @@ type AlbumItem = {
   date: string;
   water: number;
   emoji: string;
+  flowerType: string | null;
+  flowerName: string;
+  bloomCaption: string;
   message?: string;
 };
 
@@ -104,6 +113,36 @@ export default function MyPage() {
   const [album, setAlbum] = useState<AlbumItem[]>([]);
   const [albumLoading, setAlbumLoading] = useState(false);
 
+  function getFlowerMetaByType(flowerType: string | null | undefined) {
+    const fallbackEmoji = '🌸';
+    const fallbackName = '두근꽃';
+    const fallbackCaption = '이 시기의 나는, 설렘으로 하루를 보냈어요';
+
+    if (!flowerType) {
+      return {
+        emoji: fallbackEmoji,
+        flowerName: fallbackName,
+        bloomCaption: fallbackCaption,
+      };
+    }
+
+    const key = flowerType.toUpperCase() as FlowerType;
+
+    if (FLOWER_TYPE_TO_NAME_KO[key] && FLOWER_TYPE_TO_EMOJI[key] && FLOWER_TYPE_TO_BLOOM_CAPTION[key]) {
+      return {
+        emoji: FLOWER_TYPE_TO_EMOJI[key],
+        flowerName: FLOWER_TYPE_TO_NAME_KO[key],
+        bloomCaption: FLOWER_TYPE_TO_BLOOM_CAPTION[key],
+      };
+    }
+
+    return {
+      emoji: fallbackEmoji,
+      flowerName: fallbackName,
+      bloomCaption: fallbackCaption,
+    };
+  }
+
   useEffect(() => {
     const loadAlbum = async () => {
       if (!user || isGuest) {
@@ -132,20 +171,19 @@ export default function MyPage() {
             ? new Date(flower.bloomed_at).toISOString().split('T')[0]
             : new Date(flower.created_at).toISOString().split('T')[0];
 
-          // 성장 포인트에 따라 이모지 결정
-          let emoji = '🌸';
-          if (flower.growth_percent >= 100) emoji = '🌸';
-          else if (flower.growth_percent >= 70) emoji = '🌺';
-          else if (flower.growth_percent >= 50) emoji = '🌷';
-          else if (flower.growth_percent >= 30) emoji = '🌿';
-          else emoji = '🌱';
+          const { emoji, flowerName, bloomCaption } = getFlowerMetaByType(
+            (flower as any).flower_type ?? null
+          );
 
           return {
             id: flower.id,
             title: seedName || `감정꽃 ${index + 1}`,
             date: bloomDate,
             water: Math.floor(flower.growth_percent / 10), // 포인트를 공감 수로 변환 (대략)
-            emoji: emoji,
+            emoji,
+            flowerType: (flower as any).flower_type ?? null,
+            flowerName,
+            bloomCaption,
             message: '',
           };
         });
@@ -1074,6 +1112,16 @@ export default function MyPage() {
           <div className="row">
             <div>개화 날짜</div>
             <div id="flowerDate">{curFlower.date}</div>
+          </div>
+          <div className="row">
+            <div>꽃 이름</div>
+            <div>
+              {curFlower.emoji} {curFlower.flowerName}
+            </div>
+          </div>
+          <div className="row">
+            <div>개화 문장</div>
+            <div>{curFlower.bloomCaption}</div>
           </div>
           <div className="row">
             <div>한 줄 메시지</div>

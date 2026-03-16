@@ -309,6 +309,7 @@ export async function updateFlowerGrowth(
       growth_percent: number; // 실제로는 포인트 값 (0-100pt)
       is_bloomed?: boolean;
       bloomed_at?: string;
+      flower_type?: string;
       updated_at: string;
     } = {
       growth_percent: newGrowthPoints, // 포인트 값 저장
@@ -319,12 +320,45 @@ export async function updateFlowerGrowth(
     if (shouldBloom) {
       updatePayload.is_bloomed = true;
       updatePayload.bloomed_at = new Date().toISOString();
-      console.log('[updateFlowerGrowth] 개화 달성! 🌸:', {
-        userId,
-        growthPoints: newGrowthPoints,
-        consecutiveDays,
-        reason: newGrowthPoints >= 100 ? '100pt 달성' : '20일 연속 기록',
-      });
+
+      // 개화 시점에 감정 분포 기반으로 flower_type 결정 (에러가 나도 개화 자체는 유지)
+      try {
+        const { getEmotionDistribution, pickDominantEmotion, mapEmotionToFlowerType } =
+          await import('@lib/flowerLogic');
+
+        const distribution = await getEmotionDistribution(userId, supabase, 'current_cycle');
+        const dominantEmotion = pickDominantEmotion(distribution);
+        const flowerType = mapEmotionToFlowerType(dominantEmotion) || 'WILD_FLOWER';
+
+        updatePayload.flower_type = flowerType;
+
+        console.log('[updateFlowerGrowth] 개화 달성 🌸', {
+          userId,
+          growthPoints: newGrowthPoints,
+          consecutiveDays,
+          reason: newGrowthPoints >= 100 ? '100pt 달성' : '20일 연속 기록',
+          dominantEmotion,
+          flowerType,
+        });
+      } catch (flowerError) {
+        // 실패 시에도 개화는 진행하되, flower_type 은 WILD_FLOWER 로 설정
+        updatePayload.flower_type = 'WILD_FLOWER';
+
+        logger.error('개화 시 꽃 타입 결정 실패', {
+          userId,
+          operation: 'updateFlowerGrowth',
+          error: flowerError,
+        });
+
+        console.log('[updateFlowerGrowth] 개화 달성 🌸', {
+          userId,
+          growthPoints: newGrowthPoints,
+          consecutiveDays,
+          reason: newGrowthPoints >= 100 ? '100pt 달성' : '20일 연속 기록',
+          dominantEmotion: 'UNKNOWN',
+          flowerType: 'WILD_FLOWER',
+        });
+      }
     }
 
     // flowers 업데이트
