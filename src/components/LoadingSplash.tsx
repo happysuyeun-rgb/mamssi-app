@@ -26,7 +26,8 @@ export default function LoadingSplash({ message = '로딩 중...' }: LoadingSpla
           src={SPLASH_IMAGE}
           alt="마음,씨"
           style={{
-            width: 'min(320px, 85vw)',
+            width: 'min(92vw, 900px)',
+            maxHeight: '72vh',
             height: 'auto',
             objectFit: 'contain',
           }}
