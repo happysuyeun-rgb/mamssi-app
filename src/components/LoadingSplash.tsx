@@ -17,7 +17,7 @@ export default function LoadingSplash({ message = '로딩 중...' }: LoadingSpla
         alignItems: 'center',
         justifyContent: 'center',
         minHeight: '100vh',
-        background: 'linear-gradient(180deg, #e8f5e9 0%, #c8e6c9 50%, #a5d6a7 100%)',
+        background: '#ffffff',
         color: '#2e7d32',
       }}
     >
