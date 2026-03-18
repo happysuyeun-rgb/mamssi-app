@@ -59,7 +59,8 @@ export default function AuthCallback() {
         if (!session?.user) {
           diag.log('AuthCallback: auth.initialize 호출');
           const initResult = await supabase.auth.initialize();
-          session = initResult?.data?.session ?? null;
+          // supabase-js v2 타입에서 initialize()는 data를 노출하지 않는 경우가 있어, getSession()로 보조한다.
+          session = (initResult as any)?.data?.session ?? null;
           sessionError = initResult?.error ?? null;
         }
         if (!session?.user) {
@@ -119,8 +120,8 @@ export default function AuthCallback() {
           console.error('[AuthCallback] users 테이블 조회 에러:', {
             code: userError.code,
             message: userError.message,
-            details: userError.details,
-            hint: userError.hint,
+            details: (userError as any).details,
+            hint: (userError as any).hint,
             userId,
           });
 

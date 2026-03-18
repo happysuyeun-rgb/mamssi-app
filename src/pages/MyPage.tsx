@@ -1063,6 +1063,7 @@ export default function MyPage() {
                   <div className="flower">{it.emoji}</div>
                   <div className="meta">
                     <span>{it.title}</span>
+                    <span style={{ color: 'var(--ms-ink-muted)' }}>{it.flowerName}</span>
                   </div>
                   <div className="meta" style={{ fontWeight: 600 }}>
                     <span>{it.date}</span>

@@ -15,6 +15,10 @@ type EmotionsRow = {
   created_at: string;
 };
 
+type MaybeSingleResult<T> = {
+  data: T | null;
+};
+
 /**
  * 감정 분포를 조회한다.
  *
@@ -39,27 +43,24 @@ export async function getEmotionDistribution(
   let fromDate: string | null = null;
 
   if (range === 'current_cycle') {
-    const { data: flowersRow } = await supabase
-      .from<FlowersRow>('flowers')
+    const { data: flowersRow } = (await supabase
+      .from('flowers')
       .select('cycle_start_at')
       .eq('user_id', userId)
-      .maybeSingle();
+      .maybeSingle()) as MaybeSingleResult<FlowersRow>;
 
     if (flowersRow?.cycle_start_at) {
       fromDate = flowersRow.cycle_start_at;
     }
   }
 
-  let query = supabase
-    .from<EmotionsRow>('emotions')
-    .select('main_emotion, created_at')
-    .eq('user_id', userId);
+  let query = supabase.from('emotions').select('main_emotion, created_at').eq('user_id', userId);
 
   if (fromDate) {
     query = query.gte('created_at', fromDate);
   }
 
-  const { data, error } = await query;
+  const { data, error } = (await query) as { data: EmotionsRow[] | null; error: unknown | null };
 
   if (error || !data) {
     // 에러가 발생한 경우 빈 분포를 반환한다.
