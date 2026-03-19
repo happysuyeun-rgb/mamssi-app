@@ -290,11 +290,6 @@ export default function WeeklyMoodWidget({
                     className="forest-sheet-owner-btn"
                     onClick={onDeleteEmotion}
                     disabled={isDeleting}
-                    style={{
-                      color: '#ef4444',
-                      borderColor: '#fecaca',
-                      background: '#fff5f5',
-                    }}
                   >
                     {isDeleting ? '삭제 중...' : '삭제'}
                   </button>

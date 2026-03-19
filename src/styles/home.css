@@ -319,6 +319,46 @@
   color: var(--ms-ink-soft);
 }
 
+/* 기록 상세 모달(이번 주 감정 달력) 하단 수정/삭제 버튼 */
+.home-detail-sheet .forest-sheet-actions {
+  margin-top: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.home-detail-sheet .forest-sheet-actions .forest-sheet-owner-btn {
+  flex: 1;
+  padding: 12px 14px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+/* 수정 버튼 */
+.home-detail-sheet .forest-sheet-actions .forest-sheet-owner-btn:first-child {
+  background: #e8f3ec;
+  color: #2f6f57;
+  border: none;
+}
+
+.home-detail-sheet .forest-sheet-actions .forest-sheet-owner-btn:first-child:hover:not(:disabled) {
+  background: #ddede4;
+}
+
+/* 삭제 버튼 (두 번째 버튼) */
+.home-detail-sheet .forest-sheet-actions .forest-sheet-owner-btn:nth-child(2) {
+  background: transparent;
+  color: #a0a6ab;
+  border: 1px solid #e3e5e7;
+}
+
+.home-detail-sheet .forest-sheet-actions .forest-sheet-owner-btn:nth-child(2):hover:not(:disabled) {
+  background: #f6f7f8;
+  color: #7b8085;
+}
+
 /* 반응형: 모바일에서 패딩 조정 */
 @media (max-width: 480px) {
   .home-garden-card {
