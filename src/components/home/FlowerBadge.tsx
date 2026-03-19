@@ -1,4 +1,4 @@
-import { useState, useEffect, type MouseEvent, type CSSProperties } from 'react';
+import { useState, useEffect, type MouseEvent } from 'react';
 import { useAuth } from '@hooks/useAuth';
 import { useNotify } from '@providers/NotifyProvider';
 import { useSettings } from '@hooks/useSettings';
@@ -12,16 +12,6 @@ type FlowerBadgeProps = {
   totalDays?: number;
   recordedDays?: number;
   todayMessage?: string;
-};
-
-const ghostBtn: CSSProperties = {
-  background: 'transparent',
-  color: 'var(--ms-ink-soft)',
-  borderRadius: 999,
-  border: '1px solid var(--ms-line)',
-  padding: '4px 10px',
-  fontSize: 11,
-  cursor: 'pointer',
 };
 
 const growthLevelLabels: Record<number, string> = {
@@ -325,24 +315,15 @@ export default function FlowerBadge({
               · 10자 이내 / 공백만 입력 불가
               <br />· 예시: 봄비, 달빛산책, 조용한숲…
             </div>
-            <div
-              className="ms-modal-actions"
-              style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, flexWrap: 'wrap' }}
-            >
+            <div className="seed-modal-actions">
               <button
                 type="button"
-                className="ms-btn-ghost-sm"
+                className="seed-modal-btn"
                 onClick={() => setSeedModalOpen(false)}
-                style={ghostBtn}
               >
                 취소
               </button>
-              <button
-                type="button"
-                className="ms-btn-ghost-sm"
-                onClick={saveSeedName}
-                style={ghostBtn}
-              >
+              <button type="button" className="seed-modal-btn" onClick={saveSeedName}>
                 확인
               </button>
             </div>

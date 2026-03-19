@@ -212,6 +212,8 @@ export default function MyPage() {
   const [mExport, setMExport] = useState(false);
   const [mLock, setMLock] = useState(false);
   const [mSupport, setMSupport] = useState(false);
+  const [nicknameModalOpen, setNicknameModalOpen] = useState(false);
+  const [nicknameInputValue, setNicknameInputValue] = useState('');
 
   // Persist
   useEffect(() => {
@@ -364,33 +366,44 @@ export default function MyPage() {
       }
     );
   }
-  async function onEditName() {
+  function onEditName() {
     requireAuthForAction(
       'edit_nickname',
-      async () => {
+      () => {
         const current = profile.name || '마음씨';
-        const next = window.prompt('사용할 닉네임을 입력해주세요 (1~12자)', current);
-        if (next === null) return;
-        const trimmed = next.trim();
-        if (!trimmed) return notify.warning('닉네임을 비워둘 수는 없어요', '⚠️');
-        if (trimmed.length > 12) return notify.warning('닉네임은 1~12자로 입력해 주세요', '⚠️');
-        const forbidden = ['시발', '씨발', '개새', '좆', 'fuck', 'shit'];
-        if (forbidden.some((w) => trimmed.toLowerCase().includes(w)))
-          return notify.warning('조금 더 다정한 닉네임으로 바꿔볼까요?', '⚠️');
-
-        try {
-          await updateSettings({ nickname: trimmed });
-          setProfile((prev) => ({ ...prev, name: trimmed }));
-          notify.success('프로필이 업데이트되었습니다 ✨', '✨');
-        } catch (err) {
-          console.error('닉네임 업데이트 실패:', err);
-          notify.error('닉네임 업데이트에 실패했어요', '❌');
-        }
+        setNicknameInputValue(current);
+        setNicknameModalOpen(true);
       },
       {
         customMessage: '닉네임을 수정하려면 로그인 또는 가입이 필요해요.',
       }
     );
+  }
+
+  async function onNicknameModalConfirm() {
+    const trimmed = nicknameInputValue.trim();
+    if (!trimmed) {
+      notify.warning('닉네임을 비워둘 수는 없어요', '⚠️');
+      return;
+    }
+    if (trimmed.length > 12) {
+      notify.warning('닉네임은 1~12자로 입력해 주세요', '⚠️');
+      return;
+    }
+    const forbidden = ['시발', '씨발', '개새', '좆', 'fuck', 'shit'];
+    if (forbidden.some((w) => trimmed.toLowerCase().includes(w))) {
+      notify.warning('조금 더 다정한 닉네임으로 바꿔볼까요?', '⚠️');
+      return;
+    }
+    try {
+      await updateSettings({ nickname: trimmed });
+      setProfile((prev) => ({ ...prev, name: trimmed }));
+      setNicknameModalOpen(false);
+      notify.success('프로필이 업데이트되었습니다 ✨', '✨');
+    } catch (err) {
+      console.error('닉네임 업데이트 실패:', err);
+      notify.error('닉네임 업데이트에 실패했어요', '❌');
+    }
   }
   async function onMBTIChange(mbti: string) {
     requireAuthForAction(
@@ -996,6 +1009,36 @@ export default function MyPage() {
               disabled={isGuest}
             >
               저장
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {/* 닉네임 입력 모달 (커스텀, 브라우저 prompt 대체) */}
+      {nicknameModalOpen && (
+        <Modal onClose={() => setNicknameModalOpen(false)}>
+          <p className="hint" style={{ marginBottom: 12 }}>
+            사용할 닉네임을 입력해주세요
+          </p>
+          <input
+            type="text"
+            className="input"
+            value={nicknameInputValue}
+            onChange={(e) => setNicknameInputValue(e.target.value)}
+            placeholder="1~12자"
+            maxLength={12}
+            autoFocus
+            aria-label="닉네임 입력"
+          />
+          <p className="ms-input-help" style={{ fontSize: 12, color: 'var(--ms-ink-muted)', marginTop: 6 }}>
+            1~12자
+          </p>
+          <div className="grid2" style={{ marginTop: 16 }}>
+            <button type="button" className="btn" onClick={() => setNicknameModalOpen(false)}>
+              취소
+            </button>
+            <button type="button" className="btn primary" onClick={onNicknameModalConfirm}>
+              확인
             </button>
           </div>
         </Modal>
