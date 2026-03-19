@@ -214,30 +214,32 @@ export default function Home() {
     return 0; // Level 0: 씨앗 (0pt~9pt)
   }, [flower, user, guestMode]);
 
-  // 정원 상태 (30일 기준)
+  // 정원 상태 (30일 기준): 기록한 '날짜' 수 (emotion_date 우선, 로컬 날짜로 통일)
   const garden = useMemo(() => {
     if (guestMode || !user || emotionsLoading) {
       return { totalDays: 30, recordedDays: 0 };
     }
 
-    const now = new Date();
-    const thirtyDaysAgo = new Date(now);
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const thirtyDaysAgoDate = addDays(todayDate, -30);
+    const thirtyDaysAgoIso = formatIso(thirtyDaysAgoDate);
+
+    const recordDate = (e: (typeof emotions)[0]): string => {
+      if (e.emotion_date && /^\d{4}-\d{2}-\d{2}$/.test(e.emotion_date)) return e.emotion_date;
+      return formatIso(new Date(e.created_at));
+    };
 
     const recentEmotions = emotions.filter((e) => {
-      const emotionDate = new Date(e.created_at);
-      return emotionDate >= thirtyDaysAgo;
+      const d = recordDate(e);
+      return d >= thirtyDaysAgoIso && d <= todayIso;
     });
 
-    const uniqueDates = new Set(
-      recentEmotions.map((e) => new Date(e.created_at).toISOString().split('T')[0])
-    );
+    const uniqueDates = new Set(recentEmotions.map(recordDate));
 
     return {
       totalDays: 30,
       recordedDays: uniqueDates.size,
     };
-  }, [emotions, user, guestMode, emotionsLoading]);
+  }, [emotions, user, guestMode, emotionsLoading, todayIso, todayDate]);
 
   // 오늘 기록 여부 체크 (hasTodayEmotion 사용)
   useEffect(() => {
