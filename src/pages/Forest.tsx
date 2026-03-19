@@ -461,9 +461,7 @@ function ForestCard({
               className="forest-sheet-owner-btn danger"
               onClick={(e) => {
                 e.stopPropagation();
-                if (onDelete && confirm('정말 이 글을 삭제할까요?')) {
-                  onDelete(post.id);
-                }
+                if (onDelete) onDelete(post.id);
               }}
             >
               🗑 삭제

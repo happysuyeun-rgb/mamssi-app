@@ -98,10 +98,10 @@ export function useCommunity(userId?: string | null) {
       });
 
       // 게스트 호환: profiles JOIN 없이 조회 (RLS와 동일하게 숨김글 제외)
-      // emotions(main_emotion) 조인: emotion_type이 비어 있어도 감정 이모지 표시 가능
+      // emotions는 FK 관계 없을 수 있어 별도 조회 후 합침
       let query = supabase
         .from('community_posts')
-        .select('*, emotions(main_emotion)')
+        .select('*')
         .eq('is_public', true)
         .eq('is_hidden', false);
 
@@ -196,13 +196,29 @@ export function useCommunity(userId?: string | null) {
         return;
       }
 
-      // profiles 정보가 없는 경우 (게스트 모드) 기본값 설정
+      // emotion_type이 비어 있을 때 사용할 main_emotion: emotions 테이블 별도 조회 (FK 조인 미지원 시 대체)
+      const emotionIds = [...new Set(postsData.map((p: { emotion_id?: string | null }) => p.emotion_id).filter(Boolean))] as string[];
+      let emotionMap = new Map<string, string | null>();
+      if (emotionIds.length > 0) {
+        const { data: emotionsData } = await supabase
+          .from('emotions')
+          .select('id, main_emotion')
+          .in('id', emotionIds);
+        if (emotionsData) {
+          emotionMap = new Map(emotionsData.map((row) => [row.id, row.main_emotion ?? null]));
+        }
+      }
+
+      // profiles 정보가 없는 경우 (게스트 모드) 기본값 설정 + emotions 합침
       const postsWithProfiles = postsData.map((post: any) => ({
         ...post,
         profiles: post.profiles || {
           nickname: '익명',
           seed_name: null,
         },
+        emotions: post.emotion_id
+          ? { main_emotion: emotionMap.get(post.emotion_id) ?? null }
+          : null,
       }));
 
       // 사용자가 공감한 게시글 확인 (로그인 사용자만)

@@ -176,9 +176,6 @@ export async function fetchCommunityPost(
           nickname,
           seed_name,
           mbti
-        ),
-        emotions (
-          main_emotion
         )
       `
       )
@@ -209,6 +206,18 @@ export async function fetchCommunityPost(
         seed_name: null,
         mbti: null,
       };
+    }
+
+    // emotion_type이 비어 있을 때 사용할 main_emotion: emotions 별도 조회 (FK 조인 미지원 시 대체)
+    if (post.emotion_id) {
+      const { data: emotionRow } = await supabase
+        .from('emotions')
+        .select('main_emotion')
+        .eq('id', post.emotion_id)
+        .maybeSingle();
+      post.emotions = emotionRow ? { main_emotion: emotionRow.main_emotion ?? null } : null;
+    } else {
+      post.emotions = null;
     }
 
     // 로그인 사용자의 공감 여부 확인
