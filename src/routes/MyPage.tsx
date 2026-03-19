@@ -26,18 +26,24 @@ export default function MyPage() {
   };
 
   // 로그아웃 처리
-  const handleSignOut = async () => {
-    if (!confirm('정말 로그아웃하시겠어요?')) return;
-
-    try {
-      diag.log('MyPage: 로그아웃 시작');
-      await signOut();
-      diag.log('MyPage: 로그아웃 완료, /login으로 이동');
-      navigate('/login', { replace: true });
-    } catch (error) {
-      diag.err('MyPage: 로그아웃 실패', error);
-      notify.error('로그아웃에 실패했어요. 잠시 후 다시 시도해주세요.', '❌');
-    }
+  const handleSignOut = () => {
+    notify.modal({
+      title: '로그아웃',
+      message: '정말 로그아웃하시겠어요?',
+      confirmLabel: '로그아웃',
+      cancelLabel: '취소',
+      onConfirm: async () => {
+        try {
+          diag.log('MyPage: 로그아웃 시작');
+          await signOut();
+          diag.log('MyPage: 로그아웃 완료, /login으로 이동');
+          navigate('/login', { replace: true });
+        } catch (error) {
+          diag.err('MyPage: 로그아웃 실패', error);
+          notify.error('로그아웃에 실패했어요. 잠시 후 다시 시도해주세요.', '❌');
+        }
+      },
+    });
   };
 
   // 소셜 계정 관리 (placeholder)

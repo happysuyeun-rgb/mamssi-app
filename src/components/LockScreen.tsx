@@ -58,7 +58,7 @@ export default function LockScreen({ onUnlock }: LockScreenProps) {
 
   const handleBiometric = () => {
     if (!settings?.biometricEnabled) return;
-    alert('생체인증은 모바일 앱에서 지원됩니다.');
+    setPinError('생체인증은 모바일 앱에서 지원됩니다.');
   };
 
   if (!settings || !settings.enabled) {

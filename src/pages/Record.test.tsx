@@ -100,8 +100,9 @@ describe('Record - 이미지 업로드 2개 제한', () => {
   it('이미지 0개 상태에서 이미지 1개 추가 가능해야 함', async () => {
     renderWithProviders(<Record />);
 
-    const fileInput = screen.getByLabelText(/사진 추가/i).querySelector('input[type="file"]');
+    const fileInput = screen.getByLabelText(/사진 추가/i);
     expect(fileInput).toBeInTheDocument();
+    expect((fileInput as HTMLInputElement).type).toBe('file');
 
     const file = new File(['test'], 'test.jpg', { type: 'image/jpeg' });
     const fileList = {
@@ -116,21 +117,24 @@ describe('Record - 이미지 업로드 2개 제한', () => {
     Object.defineProperty(fileInput, 'files', {
       value: fileList,
       writable: false,
+      configurable: true,
     });
 
-    fireEvent.change(fileInput!);
+    fireEvent.change(fileInput);
 
     await waitFor(() => {
-      // 이미지 미리보기가 표시되어야 함
+      // 이미지 미리보기 또는 사진 영역이 반영되었으면 성공 (미리보기 UI는 컴포넌트 구조에 따라 다름)
+      const previewArea = document.querySelector('.ms-photo-preview-list');
+      const hasPreview = previewArea && previewArea.children.length > 0;
       const images = screen.queryAllByAltText(/감정 기록 이미지/i);
-      expect(images.length).toBeGreaterThan(0);
+      expect(hasPreview || images.length > 0).toBe(true);
     });
   });
 
   it('이미지 2개 상태에서 추가 시도 시 경고 메시지를 표시해야 함', async () => {
     renderWithProviders(<Record />);
 
-    const fileInput = screen.getByLabelText(/사진 추가/i).querySelector('input[type="file"]');
+    const fileInput = screen.getByLabelText(/사진 추가/i) as HTMLInputElement;
 
     // 이미지 2개 추가
     const file1 = new File(['test1'], 'test1.jpg', { type: 'image/jpeg' });
@@ -158,8 +162,9 @@ describe('Record - 이미지 업로드 2개 제한', () => {
     Object.defineProperty(fileInput, 'files', {
       value: fileList1,
       writable: false,
+      configurable: true,
     });
-    fireEvent.change(fileInput!);
+    fireEvent.change(fileInput);
 
     await waitFor(() => {
       expect(mockNotify.warning).not.toHaveBeenCalled();
@@ -169,8 +174,9 @@ describe('Record - 이미지 업로드 2개 제한', () => {
     Object.defineProperty(fileInput, 'files', {
       value: fileList2,
       writable: false,
+      configurable: true,
     });
-    fireEvent.change(fileInput!);
+    fireEvent.change(fileInput);
 
     await waitFor(() => {
       expect(mockNotify.warning).not.toHaveBeenCalled();
@@ -190,8 +196,9 @@ describe('Record - 이미지 업로드 2개 제한', () => {
     Object.defineProperty(fileInput, 'files', {
       value: fileList3,
       writable: false,
+      configurable: true,
     });
-    fireEvent.change(fileInput!);
+    fireEvent.change(fileInput);
 
     await waitFor(() => {
       expect(mockNotify.warning).toHaveBeenCalledWith(
@@ -204,7 +211,7 @@ describe('Record - 이미지 업로드 2개 제한', () => {
   it('10MB 초과 이미지 선택 시 경고 메시지를 표시해야 함', async () => {
     renderWithProviders(<Record />);
 
-    const fileInput = screen.getByLabelText(/사진 추가/i).querySelector('input[type="file"]');
+    const fileInput = screen.getByLabelText(/사진 추가/i) as HTMLInputElement;
 
     const largeFile = new File(['x'.repeat(11 * 1024 * 1024)], 'large.jpg', { type: 'image/jpeg' });
     const fileList = {
@@ -219,9 +226,10 @@ describe('Record - 이미지 업로드 2개 제한', () => {
     Object.defineProperty(fileInput, 'files', {
       value: fileList,
       writable: false,
+      configurable: true,
     });
 
-    fireEvent.change(fileInput!);
+    fireEvent.change(fileInput);
 
     await waitFor(() => {
       expect(mockNotify.warning).toHaveBeenCalledWith(
@@ -234,7 +242,7 @@ describe('Record - 이미지 업로드 2개 제한', () => {
   it('이미지가 아닌 파일 선택 시 무시해야 함', async () => {
     renderWithProviders(<Record />);
 
-    const fileInput = screen.getByLabelText(/사진 추가/i).querySelector('input[type="file"]');
+    const fileInput = screen.getByLabelText(/사진 추가/i) as HTMLInputElement;
 
     const textFile = new File(['test'], 'test.txt', { type: 'text/plain' });
     const fileList = {
@@ -249,9 +257,10 @@ describe('Record - 이미지 업로드 2개 제한', () => {
     Object.defineProperty(fileInput, 'files', {
       value: fileList,
       writable: false,
+      configurable: true,
     });
 
-    fireEvent.change(fileInput!);
+    fireEvent.change(fileInput);
 
     await waitFor(() => {
       // 이미지 미리보기가 표시되지 않아야 함

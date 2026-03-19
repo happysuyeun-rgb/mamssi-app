@@ -59,9 +59,11 @@ describe('WeeklyMoodWidget', () => {
         <WeeklyMoodWidget weekSummary={weekSummary} weekStart="2024-01-15" todayDate="2024-01-15" />
       );
 
-      // 날짜 클릭하여 모달 열기
-      const dayButton = screen.getByText('월');
-      fireEvent.click(dayButton);
+      // 기록이 있는 날짜 버튼(이모지 😊) 클릭하여 모달 열기 (요일 라벨 '월'이 아님)
+      const dayButtons = screen.getAllByRole('button');
+      const recordedDayButton = dayButtons.find((btn) => btn.textContent?.trim() === '😊');
+      expect(recordedDayButton).toBeTruthy();
+      fireEvent.click(recordedDayButton!);
 
       // 이미지가 표시되어야 함
       const image = screen.getByAltText('감정 기록 이미지 1');
@@ -85,9 +87,9 @@ describe('WeeklyMoodWidget', () => {
         <WeeklyMoodWidget weekSummary={weekSummary} weekStart="2024-01-15" todayDate="2024-01-15" />
       );
 
-      // 날짜 클릭하여 모달 열기
-      const dayButton = screen.getByText('월');
-      fireEvent.click(dayButton);
+      const dayButtons = screen.getAllByRole('button');
+      const recordedDayButton = dayButtons.find((btn) => btn.textContent?.trim() === '😊');
+      fireEvent.click(recordedDayButton!);
 
       // 이미지가 표시되지 않아야 함
       const image = screen.queryByAltText(/감정 기록 이미지/i);
@@ -118,20 +120,15 @@ describe('WeeklyMoodWidget', () => {
         <WeeklyMoodWidget weekSummary={weekSummary} weekStart="2024-01-15" todayDate="2024-01-15" />
       );
 
-      // 기록이 있는 날짜 버튼 찾기 (월요일)
       const dayButtons = screen.getAllByRole('button');
-      const recordedDayButton = dayButtons.find((btn) => btn.textContent?.includes('😊'));
+      const recordedDayButton = dayButtons.find((btn) => btn.textContent?.trim() === '😊');
+      expect(recordedDayButton).toBeTruthy();
+      fireEvent.click(recordedDayButton!);
 
-      if (recordedDayButton) {
-        fireEvent.click(recordedDayButton);
-
-        // emotion-record-images 클래스를 가진 컨테이너 확인
-        const container = document.querySelector('.emotion-record-images');
-        expect(container).toBeInTheDocument();
-
-        const image = screen.getByAltText('감정 기록 이미지 1');
-        expect(container).toContainElement(image);
-      }
+      const container = document.querySelector('.emotion-record-images');
+      expect(container).toBeInTheDocument();
+      const image = screen.getByAltText('감정 기록 이미지 1');
+      expect(container).toContainElement(image);
     });
   });
 

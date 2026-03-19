@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import toast from '@utils/toast';
 
 type Post = {
   id: number;
@@ -116,7 +117,7 @@ export default function Forest() {
         p.id === id ? { ...p, _liked: !p._liked, likes: p.likes + (p._liked ? -1 : 1) } : p
       )
     );
-    alert('💧 공감 한 방울이 전해졌어요');
+    toast('💧 공감 한 방울이 전해졌어요');
   }
 
   function sharePost(id: number) {
@@ -124,12 +125,12 @@ export default function Forest() {
     if (!p) return;
     const text = `마음숲 ${p.cat} ${p.emo}\n\n${p.text}\n\n#마음씨 #마음숲`;
     navigator.clipboard?.writeText(text);
-    alert('🔗 글이 복사되었어요. 원하는 곳에 붙여넣기 해보세요');
+    toast('🔗 글이 복사되었어요. 원하는 곳에 붙여넣기 해보세요');
   }
 
   function reportPost(id: number) {
     setPosts((prev) => prev.map((p) => (p.id === id ? { ...p, _reported: true } : p)));
-    alert('🚩 신고가 접수되었어요. 안전하게 살펴볼게요');
+    toast('🚩 신고가 접수되었어요. 안전하게 살펴볼게요');
   }
 
   return (

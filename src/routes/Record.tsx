@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import toast from '@utils/toast';
 
 const EMOTIONS = [
   { emoji: '😀', label: '기쁨' },
@@ -36,18 +37,18 @@ export default function Record() {
 
   function save() {
     if (!selected) {
-      alert('오늘의 대표 감정을 하나 골라주세요');
+      toast('오늘의 대표 감정을 하나 골라주세요');
       return;
     }
     if (!note || note.trim().length < 5) {
-      alert('감정을 5자 이상으로 가볍게 남겨볼까요?');
+      toast('감정을 5자 이상으로 가볍게 남겨볼까요?');
       return;
     }
     if (isPublic && shareForest && categories.length === 0) {
-      alert('공감숲에 심으려면 카테고리를 1개 이상 선택해 주세요');
+      toast('공감숲에 심으려면 카테고리를 1개 이상 선택해 주세요');
       return;
     }
-    alert(
+    toast(
       isPublic ? (shareForest ? '기록 저장+공감숲 공유' : '공개 기록 저장') : '비공개 기록 저장'
     );
   }

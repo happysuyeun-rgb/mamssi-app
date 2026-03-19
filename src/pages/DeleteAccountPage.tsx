@@ -33,77 +33,80 @@ export default function DeleteAccountPage() {
       notify.warning('탈퇴 확인을 체크해주세요.', '⚠️');
       return;
     }
+    notify.modal({
+      title: '회원탈퇴',
+      message: '정말 회원탈퇴를 진행하시겠어요?\n이 작업은 되돌릴 수 없어요.',
+      confirmLabel: '탈퇴',
+      cancelLabel: '취소',
+      onConfirm: async () => {
+        setIsDeleting(true);
+        diag.log('DeleteAccountPage: 회원탈퇴 시작', { userId: user.id, reason: selectedReason });
 
-    if (!confirm('정말 회원탈퇴를 진행하시겠어요? 이 작업은 되돌릴 수 없어요.')) {
-      return;
-    }
+        try {
+          // 탈퇴 사유 구성
+          const deleteReason =
+            selectedReason === 'other'
+              ? otherReason.trim()
+              : reasons.find((r) => r.id === selectedReason)?.label || selectedReason;
 
-    setIsDeleting(true);
-    diag.log('DeleteAccountPage: 회원탈퇴 시작', { userId: user.id, reason: selectedReason });
+          // users 테이블에서 soft delete 처리
+          // is_deleted=true, deleted_at=now(), onboarding_completed=false
+          const updateData: {
+            is_deleted: boolean;
+            deleted_at: string;
+            onboarding_completed: boolean;
+            updated_at: string;
+            delete_reason?: string;
+          } = {
+            is_deleted: true,
+            deleted_at: new Date().toISOString(),
+            onboarding_completed: false,
+            updated_at: new Date().toISOString(),
+          };
 
-    try {
-      // 탈퇴 사유 구성
-      const deleteReason =
-        selectedReason === 'other'
-          ? otherReason.trim()
-          : reasons.find((r) => r.id === selectedReason)?.label || selectedReason;
+          // delete_reason 필드가 있으면 저장 (없으면 무시)
+          if (deleteReason) {
+            updateData.delete_reason = deleteReason;
+          }
 
-      // users 테이블에서 soft delete 처리
-      // is_deleted=true, deleted_at=now(), onboarding_completed=false
-      const updateData: {
-        is_deleted: boolean;
-        deleted_at: string;
-        onboarding_completed: boolean;
-        updated_at: string;
-        delete_reason?: string;
-      } = {
-        is_deleted: true,
-        deleted_at: new Date().toISOString(),
-        onboarding_completed: false,
-        updated_at: new Date().toISOString(),
-      };
+          const { error: updateError } = await supabase
+            .from('users')
+            .update(updateData)
+            .eq('id', user.id);
 
-      // delete_reason 필드가 있으면 저장 (없으면 무시)
-      if (deleteReason) {
-        updateData.delete_reason = deleteReason;
-      }
+          if (updateError) {
+            diag.err('DeleteAccountPage: users 테이블 soft delete 실패', updateError);
+            throw updateError;
+          }
 
-      const { error: updateError } = await supabase
-        .from('users')
-        .update(updateData)
-        .eq('id', user.id);
+          diag.log('DeleteAccountPage: users 테이블 soft delete 완료', { deleteReason });
 
-      if (updateError) {
-        diag.err('DeleteAccountPage: users 테이블 soft delete 실패', updateError);
-        throw updateError;
-      }
+          // account_deleted 알림 생성 (탈퇴 전에 생성해야 함)
+          try {
+            await createNotification(user.id, 'account_deleted', {
+              reason: selectedReason,
+              reasonText: deleteReason,
+            });
+            diag.log('DeleteAccountPage: account_deleted 알림 생성 완료');
+          } catch (notifError) {
+            // 알림 생성 실패해도 탈퇴는 계속 진행
+            diag.err('DeleteAccountPage: account_deleted 알림 생성 실패', notifError);
+            console.error('탈퇴 알림 생성 실패:', notifError);
+          }
 
-      diag.log('DeleteAccountPage: users 테이블 soft delete 완료', { deleteReason });
+          diag.log('DeleteAccountPage: 회원탈퇴 완료');
+          notify.success('회원탈퇴가 완료되었어요. 이용해 주셔서 감사합니다.', '👋');
 
-      // account_deleted 알림 생성 (탈퇴 전에 생성해야 함)
-      try {
-        await createNotification(user.id, 'account_deleted', {
-          reason: selectedReason,
-          reasonText: deleteReason,
-        });
-        diag.log('DeleteAccountPage: account_deleted 알림 생성 완료');
-      } catch (notifError) {
-        // 알림 생성 실패해도 탈퇴는 계속 진행
-        diag.err('DeleteAccountPage: account_deleted 알림 생성 실패', notifError);
-        console.error('탈퇴 알림 생성 실패:', notifError);
-      }
-
-      diag.log('DeleteAccountPage: 회원탈퇴 완료');
-      notify.success('회원탈퇴가 완료되었어요. 이용해 주셔서 감사합니다.', '👋');
-
-      // 로그아웃 처리
-      await signOut();
-      navigate('/login', { replace: true });
-    } catch (error) {
-      diag.err('DeleteAccountPage: 회원탈퇴 실패', error);
-      notify.error('회원탈퇴에 실패했어요. 잠시 후 다시 시도해주세요.', '❌');
-      setIsDeleting(false);
-    }
+          // 로그아웃 처리
+          await signOut();
+          navigate('/login', { replace: true });
+        } catch (error) {
+          diag.err('DeleteAccountPage: 회원탈퇴 실패', error);
+          notify.error('회원탈퇴에 실패했어요. 잠시 후 다시 시도해주세요.', '❌');
+          setIsDeleting(false);
+        }
+      },
+    });
   };
 
   return (

@@ -140,34 +140,41 @@ export default function ForestDetail() {
 
   async function onDelete() {
     if (!post || !user) return;
-
-    if (!confirm('정말 삭제할까요?')) return;
-
-    try {
-      await deleteCommunityPost(post.id, user.id);
-      notify.success('게시글이 삭제되었어요', '✅');
-      navigate('/forest');
-    } catch (error) {
-      console.error('게시글 삭제 실패:', error);
-      notify.error('게시글 삭제에 실패했어요', '❌');
-    }
+    notify.modal({
+      title: '게시글 삭제',
+      message: '정말 이 글을 삭제할까요?',
+      confirmLabel: '삭제',
+      cancelLabel: '취소',
+      onConfirm: async () => {
+        try {
+          await deleteCommunityPost(post.id, user.id);
+          notify.success('게시글이 삭제되었어요', '✅');
+          navigate('/forest');
+        } catch (error) {
+          console.error('게시글 삭제 실패:', error);
+          notify.error('게시글 삭제에 실패했어요', '❌');
+        }
+      },
+    });
   }
 
   async function onReport() {
     if (!post || !user) return;
-
-    const reason = prompt(
-      '신고 사유를 입력해주세요:\n1. 부적절/혐오\n2. 광고/스팸\n3. 개인정보 노출\n4. 기타'
-    );
-    if (!reason) return;
-
-    try {
-      await reportPost(post.id, user.id, reason as ReportReason, '');
-      notify.success('신고가 접수되었어요. 마음씨 팀이 확인할게요.', '✅');
-    } catch (error) {
-      console.error('신고 실패:', error);
-      notify.error('신고 처리에 실패했어요', '❌');
-    }
+    notify.modal({
+      title: '게시글 신고',
+      message: '이 게시글을 신고할까요?\n신고 사유는 기타로 접수됩니다.',
+      confirmLabel: '신고',
+      cancelLabel: '취소',
+      onConfirm: async () => {
+        try {
+          await reportPost(post.id, user.id, '기타' as ReportReason, '');
+          notify.success('신고가 접수되었어요. 마음씨 팀이 확인할게요.', '✅');
+        } catch (error) {
+          console.error('신고 실패:', error);
+          notify.error('신고 처리에 실패했어요', '❌');
+        }
+      },
+    });
   }
 
   function onMore() {

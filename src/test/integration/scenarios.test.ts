@@ -4,10 +4,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
 import { AppError } from '@lib/errors';
-import { logger } from '@lib/logger';
 import * as emotionsService from '@services/emotions';
 import * as settingsService from '@services/settings';
 import * as usersService from '@services/users';
@@ -36,6 +33,47 @@ describe('통합 시나리오 테스트', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // 서비스 목 기본 반환값: { data, error: null } 형태
+    vi.mocked(usersService.createUser).mockResolvedValue({
+      data: { id: mockUserId, onboarding_completed: false, is_deleted: false } as any,
+      error: null,
+    });
+    vi.mocked(usersService.completeOnboarding).mockResolvedValue({
+      data: { id: mockUserId, onboarding_completed: true, is_deleted: false } as any,
+      error: null,
+    });
+    vi.mocked(flowersService.ensureFlowerRow).mockResolvedValue({
+      data: { id: 'flower-1', user_id: mockUserId, is_bloomed: false, growth_percent: 0 } as any,
+      error: null,
+    });
+    vi.mocked(flowersService.updateFlowerGrowth).mockResolvedValue({
+      data: { id: 'flower-1', user_id: mockUserId, growth_percent: 10 } as any,
+      error: null,
+    });
+    vi.mocked(emotionsService.createEmotion).mockResolvedValue({
+      data: { id: mockEmotionId, user_id: mockUserId, content: '', main_emotion: '기쁨', is_public: false } as any,
+      error: null,
+    });
+    vi.mocked(emotionsService.updateEmotion).mockResolvedValue({
+      data: { id: mockEmotionId, user_id: mockUserId, content: '수정된 내용', is_public: true } as any,
+      error: null,
+    });
+    vi.mocked(emotionsService.fetchEmotions).mockResolvedValue({
+      data: [{ id: mockEmotionId, user_id: mockUserId, is_public: true } as any],
+      error: null,
+    });
+    vi.mocked(emotionsService.deleteEmotion).mockResolvedValue({ data: null, error: null } as any);
+    vi.mocked(emotionsService.fetchEmotionById).mockResolvedValue({ data: null, error: null } as any);
+    vi.mocked(storageService.uploadFile).mockResolvedValue({
+      data: 'https://example.com/profile-images/xxx.jpg',
+      error: null,
+    });
+    vi.mocked(settingsService.upsertUserSettings).mockImplementation((_uid, payload) =>
+      Promise.resolve({
+        data: { user_id: mockUserId, seed_name: payload?.seed_name ?? null, profile_url: payload?.profile_url ?? null } as any,
+        error: null,
+      })
+    );
   });
 
   describe('시나리오 1: 신규 계정 - 온보딩 완료 후 첫 기록 저장', () => {
@@ -170,6 +208,11 @@ describe('통합 시나리오 테스트', () => {
     it('4-2. 파일 크기 초과 시 에러', async () => {
       const largeFile = new File(['x'.repeat(6 * 1024 * 1024)], 'large.jpg', {
         type: 'image/jpeg',
+      });
+
+      vi.mocked(storageService.uploadFile).mockResolvedValueOnce({
+        data: null,
+        error: new AppError({ code: 'VALIDATION_ERROR', message: '파일 크기 초과' }),
       });
 
       const uploadResult = await storageService.uploadFile({

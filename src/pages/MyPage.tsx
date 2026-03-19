@@ -892,15 +892,22 @@ export default function MyPage() {
         {user && session && (
           <div
             className="card"
-            onClick={async () => {
-              if (!confirm('정말 로그아웃하시겠어요?')) return;
-              try {
-                await signOut();
-                navigate('/', { replace: true });
-              } catch (error) {
-                console.error('로그아웃 실패:', error);
-                notify.error('로그아웃에 실패했어요. 잠시 후 다시 시도해주세요.', '❌');
-              }
+            onClick={() => {
+              notify.modal({
+                title: '로그아웃',
+                message: '정말 로그아웃하시겠어요?',
+                confirmLabel: '로그아웃',
+                cancelLabel: '취소',
+                onConfirm: async () => {
+                  try {
+                    await signOut();
+                    navigate('/', { replace: true });
+                  } catch (error) {
+                    console.error('로그아웃 실패:', error);
+                    notify.error('로그아웃에 실패했어요. 잠시 후 다시 시도해주세요.', '❌');
+                  }
+                },
+              });
             }}
           >
             <div className="tt">로그아웃</div>
