@@ -1073,18 +1073,10 @@ export default function MyPage() {
               ))}
             </div>
           )}
-          <div className="grid2" style={{ marginTop: 10 }}>
+          <div className="album-modal-actions" style={{ marginTop: 10 }}>
             <button className="btn" onClick={() => setMAlbum(false)}>
               닫기
             </button>
-            {album.length > 0 && (
-              <button
-                className="btn primary"
-                onClick={() => notify.info('꽃을 탭하면 상세 보기에서 저장/공유할 수 있어요', 'ℹ️')}
-              >
-                도움말
-              </button>
-            )}
           </div>
         </Modal>
       )}

@@ -305,6 +305,11 @@ textarea {
   gap: 8px;
 }
 
+/* 감정꽃 앨범 모달: 닫기 버튼 풀 너비 (좌우 여백 유지) */
+.album-modal-actions .btn {
+  width: 100%;
+}
+
 /* Flower canvas */
 .flower-canvas {
   width: 100%;
