@@ -9,6 +9,8 @@ export type CommunityPost = {
   user_id: string;
   content: string;
   emotion_type: string | null;
+  /** 조인된 emotions.main_emotion (emotion_type이 비어 있을 때 사용) */
+  emotions?: { main_emotion: string | null } | null;
   image_url: string | null;
   category: string | null;
   like_count: number;
@@ -96,9 +98,10 @@ export function useCommunity(userId?: string | null) {
       });
 
       // 게스트 호환: profiles JOIN 없이 조회 (RLS와 동일하게 숨김글 제외)
+      // emotions(main_emotion) 조인: emotion_type이 비어 있어도 감정 이모지 표시 가능
       let query = supabase
         .from('community_posts')
-        .select('*')
+        .select('*, emotions(main_emotion)')
         .eq('is_public', true)
         .eq('is_hidden', false);
 

@@ -6,6 +6,8 @@ export type CommunityPost = {
   user_id: string;
   content: string;
   emotion_type: string | null;
+  /** 조인된 emotions.main_emotion (emotion_type이 비어 있을 때 사용) */
+  emotions?: { main_emotion: string | null } | null;
   image_url: string | null;
   category: string | null;
   like_count: number;
@@ -174,6 +176,9 @@ export async function fetchCommunityPost(
           nickname,
           seed_name,
           mbti
+        ),
+        emotions (
+          main_emotion
         )
       `
       )

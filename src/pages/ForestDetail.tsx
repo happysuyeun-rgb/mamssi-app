@@ -15,13 +15,14 @@ import type { ForestPost } from '@domain/forest';
 import type { CommunityPost } from '@services/community';
 
 function communityPostToForestPost(post: CommunityPost): ForestPost {
-  const emotionOpt = EMOTION_OPTIONS.find((opt) => opt.label === post.emotion_type);
+  const emotionLabel = post.emotion_type ?? post.emotions?.main_emotion ?? null;
+  const emotionOpt = EMOTION_OPTIONS.find((opt) => opt.label === emotionLabel);
   return {
     id: post.id,
     userId: post.user_id,
     emotionCode: emotionOpt?.code || 'CALM',
     emoji: emotionOpt?.emoji || '🙂',
-    label: emotionOpt?.label || post.emotion_type || '차분',
+    label: emotionOpt?.label || emotionLabel || '차분',
     content: post.content,
     imageUrl: post.image_url || undefined,
     category: post.category || '일상',
