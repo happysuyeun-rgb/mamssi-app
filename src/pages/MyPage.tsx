@@ -1185,7 +1185,7 @@ export default function MyPage() {
                 : '아직 기록이 없어요. 첫 번째 기록을 남겨볼까요?'}
             </div>
           )}
-          <div className="grid2" style={{ marginTop: 10 }}>
+          <div className="export-modal-actions" style={{ marginTop: 10 }}>
             <button className="btn" onClick={() => setMExport(false)}>
               닫기
             </button>

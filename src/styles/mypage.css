@@ -305,8 +305,9 @@ textarea {
   gap: 8px;
 }
 
-/* 감정꽃 앨범 모달: 닫기 버튼 풀 너비 (좌우 여백 유지) */
-.album-modal-actions .btn {
+/* 감정꽃 앨범 / 감정기록 모아보기 모달: 닫기 버튼 풀 너비 (좌우 여백 유지) */
+.album-modal-actions .btn,
+.export-modal-actions .btn {
   width: 100%;
 }
 
