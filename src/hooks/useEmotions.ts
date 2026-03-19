@@ -684,6 +684,7 @@ export function useEmotions(options: UseEmotionsOptions = {}) {
   );
 
   // 오늘 감정 기록 존재 여부 체크 (boolean 반환)
+  // targetDate는 로컬 날짜(YYYY-MM-DD). 미지정 시 로컬 오늘 사용 (toISOString은 UTC라 타임존에서 하루 어긋남 방지)
   const hasTodayEmotion = useCallback(
     async (targetDate?: string): Promise<boolean> => {
       if (!userId) {
@@ -691,16 +692,25 @@ export function useEmotions(options: UseEmotionsOptions = {}) {
       }
 
       try {
-        const date = targetDate || new Date().toISOString().split('T')[0];
-        const startOfDay = new Date(`${date}T00:00:00Z`).toISOString();
-        const endOfDay = new Date(`${date}T23:59:59Z`).toISOString();
+        const date =
+          targetDate ||
+          (() => {
+            const d = new Date();
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+          })();
+        // 로컬 자정 ~ 로컬 23:59:59.999 구간으로 쿼리 (UTC가 아닌 사용자 로컬 기준 '오늘')
+        const startOfDay = new Date(`${date}T00:00:00`);
+        const endOfDay = new Date(`${date}T23:59:59.999`);
 
         const { data, error } = await supabase
           .from('emotions')
           .select('id')
           .eq('user_id', userId) // 명시적으로 user_id 필터링 (RLS 정책과 함께 이중 체크)
-          .gte('created_at', startOfDay)
-          .lte('created_at', endOfDay)
+          .gte('created_at', startOfDay.toISOString())
+          .lte('created_at', endOfDay.toISOString())
           .limit(1)
           .maybeSingle();
 

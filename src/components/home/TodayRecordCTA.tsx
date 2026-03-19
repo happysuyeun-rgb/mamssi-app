@@ -13,8 +13,13 @@ export default function TodayRecordCTA({ todayLogged, todayDate }: TodayRecordCT
   const { isGuest, session } = useAuth();
   const notify = useNotify();
 
-  // 더미 props가 없으면 실제 오늘 날짜 사용
-  const targetDate = todayDate || new Date().toISOString().split('T')[0];
+  // 더미 props가 없으면 로컬 오늘 날짜 사용 (toISOString은 UTC라 타임존에서 하루 어긋남 방지)
+  const targetDate =
+    todayDate ||
+    (() => {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    })();
   const isLogged = todayLogged !== undefined ? todayLogged : false;
   const isGuestMode = isGuest || !session;
 

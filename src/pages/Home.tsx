@@ -251,7 +251,7 @@ export default function Home() {
     const checkToday = async () => {
       setCheckingToday(true);
       try {
-        const hasEmotion = await hasTodayEmotion();
+        const hasEmotion = await hasTodayEmotion(todayIso);
         setTodayHasEmotion(hasEmotion);
       } catch (err) {
         console.error('오늘 기록 체크 실패:', err);
@@ -262,7 +262,7 @@ export default function Home() {
     };
 
     checkToday();
-  }, [user, guestMode, hasTodayEmotion]);
+  }, [user, guestMode, hasTodayEmotion, todayIso]);
 
   // emotions가 변경되면 오늘 기록 여부 다시 체크 (debounce)
   useEffect(() => {
@@ -270,7 +270,7 @@ export default function Home() {
 
     const timer = setTimeout(async () => {
       try {
-        const hasEmotion = await hasTodayEmotion();
+        const hasEmotion = await hasTodayEmotion(todayIso);
         setTodayHasEmotion(hasEmotion);
       } catch (err) {
         console.error('오늘 기록 체크 실패:', err);
@@ -278,7 +278,7 @@ export default function Home() {
     }, 300); // 300ms debounce
 
     return () => clearTimeout(timer);
-  }, [emotions, user, guestMode, hasTodayEmotion, checkingToday]);
+  }, [emotions, user, guestMode, hasTodayEmotion, todayIso, checkingToday]);
 
   // 오늘 기록 여부 (hasTodayEmotion 결과 사용)
   const todayLogged = useMemo(() => {
