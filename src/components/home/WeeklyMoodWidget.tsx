@@ -23,6 +23,14 @@ type WeeklyMoodWidgetProps = {
 
 const weekdays = ['월', '화', '수', '목', '금', '토', '일'] as const;
 
+/** 로컬 날짜를 YYYY-MM-DD로 반환 (toISOString은 UTC라 타임존에서 하루 어긋남 발생) */
+function toLocalIsoDate(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 function formatWeekRange(weekStart: string): string {
   const start = new Date(`${weekStart}T00:00:00`);
   const end = new Date(start);
@@ -34,7 +42,7 @@ function getDayIso(weekStart: string, index: number): string {
   const start = new Date(`${weekStart}T00:00:00`);
   const day = new Date(start);
   day.setDate(day.getDate() + index);
-  return day.toISOString().split('T')[0];
+  return toLocalIsoDate(day);
 }
 
 function formatDotDate(iso: string): string {
@@ -59,16 +67,16 @@ export default function WeeklyMoodWidget({
   const [isDeleting, setIsDeleting] = useState(false);
 
   // 더미 props가 없으면 실제 데이터 생성
-  const actualToday = todayDate || new Date().toISOString().split('T')[0];
+  const actualToday = todayDate || toLocalIsoDate(new Date());
   const actualWeekStart =
     weekStart ||
     (() => {
-      const today = new Date(actualToday);
-      const day = today.getDay();
+      const now = new Date();
+      const day = now.getDay();
       const diff = (day + 6) % 7;
-      const start = new Date(today);
+      const start = new Date(now);
       start.setDate(start.getDate() - diff);
-      return start.toISOString().split('T')[0];
+      return toLocalIsoDate(start);
     })();
 
   const weekData = useMemo(() => {
