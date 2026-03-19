@@ -8,7 +8,7 @@ type TodayRecordCTAProps = {
   todayDate?: string; // 더미 props (ISO 형식)
 };
 
-export default function TodayRecordCTA({ todayLogged, todayDate }: TodayRecordCTAProps) {
+export default function TodayRecordCTA({ todayDate }: TodayRecordCTAProps) {
   const navigate = useNavigate();
   const { isGuest, session } = useAuth();
   const notify = useNotify();
@@ -20,7 +20,6 @@ export default function TodayRecordCTA({ todayLogged, todayDate }: TodayRecordCT
       const d = new Date();
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     })();
-  const isLogged = todayLogged !== undefined ? todayLogged : false;
   const isGuestMode = isGuest || !session;
 
   const handleClick = () => {
@@ -73,7 +72,7 @@ export default function TodayRecordCTA({ todayLogged, todayDate }: TodayRecordCT
         opacity: 1,
       }}
     >
-      🌿 {isLogged ? '오늘의 감정 수정하기' : '오늘의 감정 기록하기'}
+      🌿 오늘의 감정 기록하기
     </button>
   );
 }

@@ -147,7 +147,13 @@ export default function Home() {
           const emotionDate = e.emotion_date || new Date(e.created_at).toISOString().split('T')[0];
           return emotionDate === iso;
         })
-        .sort((a, b) => (a.created_at > b.created_at ? -1 : 1));
+        .sort((a, b) => {
+          // 주간 감정 달력은 나만보기(비공개) 기록을 우선 표시
+          const aPrivate = a.is_public !== true;
+          const bPrivate = b.is_public !== true;
+          if (aPrivate !== bPrivate) return aPrivate ? -1 : 1;
+          return a.created_at > b.created_at ? -1 : 1;
+        });
 
       if (!dailyRecords.length) {
         return {
