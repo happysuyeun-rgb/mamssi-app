@@ -55,6 +55,7 @@ export default function Record() {
   const [searchParams] = useSearchParams();
   const editingRecordId = searchParams.get('id');
   const isEditing = Boolean(editingRecordId);
+  const openAsPublic = searchParams.get('public') === '1';
   const todayText = useMemo(() => {
     const d = new Date();
     const yyyy = d.getFullYear();
@@ -65,7 +66,7 @@ export default function Record() {
 
   const [selectedEmotion, setSelectedEmotion] = useState<EmotionOption | null>(null);
   const [note, setNote] = useState<string>('');
-  const [isPublic, setIsPublic] = useState<boolean>(false);
+  const [isPublic, setIsPublic] = useState<boolean>(openAsPublic);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
   const [isSaving, setIsSaving] = useState<boolean>(false);

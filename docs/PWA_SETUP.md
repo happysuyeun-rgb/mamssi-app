@@ -6,7 +6,7 @@
 
 ### 1. Manifest (`public/manifest.json`)
 - 앱 이름: 마음,씨
-- 짧은 이름: Mamssi
+- 짧은 이름: 마음,씨 (아이콘 아래 표시, `short_name`)
 - 설명: 당신의 감정이 꽃이 되는 시간
 - 테마/배경색: #ffffff
 - 다양한 크기의 아이콘 (72~512px)

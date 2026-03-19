@@ -51,7 +51,7 @@ export default function TodayRecordCTA({ todayDate, hasTodayPrivateRecord }: Tod
         message: '이미 오늘의 감정을 기록하였어요! 공개 감정을 기록하시겠어요?',
         cancelLabel: '아니오',
         confirmLabel: '예',
-        onConfirm: () => navigate(`/record?date=${targetDate}`),
+        onConfirm: () => navigate(`/record?date=${targetDate}&public=1`),
         onCancel: () => {},
       });
       return;
