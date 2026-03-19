@@ -361,11 +361,11 @@ export async function updateFlowerGrowth(
       }
     }
 
-    // flowers 업데이트
+    // flowers 업데이트 (진행 중 꽃 1건만 갱신: id로 지정)
     const { data: updatedFlower, error: updateError } = await supabase
       .from('flowers')
       .update(updatePayload)
-      .eq('user_id', userId)
+      .eq('id', flowerRow.id)
       .select()
       .single();
 
