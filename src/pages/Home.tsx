@@ -294,6 +294,18 @@ export default function Home() {
     return todayHasEmotion;
   }, [todayHasEmotion, user, guestMode]);
 
+  // 오늘 나만보기 기록 존재 여부 (버튼 클릭 시 공개 기록 유도 모달용)
+  const hasTodayPrivateRecord = useMemo(() => {
+    if (guestMode || !user || !emotions.length) return false;
+    return emotions.some((e) => {
+      const d =
+        e.emotion_date && /^\d{4}-\d{2}-\d{2}$/.test(e.emotion_date)
+          ? e.emotion_date
+          : formatIso(new Date(e.created_at));
+      return d === todayIso && e.is_public !== true;
+    });
+  }, [emotions, todayIso, user, guestMode]);
+
   // 공감숲 피드 요약
   const feedCount = useMemo(() => {
     if (guestMode || !user) return 0;
@@ -365,7 +377,10 @@ export default function Home() {
                   : '오늘의 정원 소식: 오늘 내 씨앗이 작은 공감들을 모으고 있어요 🌱'
             }
           />
-          <TodayRecordCTA todayLogged={todayLogged} todayDate={todayIso} />
+          <TodayRecordCTA
+            todayDate={todayIso}
+            hasTodayPrivateRecord={hasTodayPrivateRecord}
+          />
           <WeeklyMoodWidget
             weekSummary={weekSummary}
             weekStart={initialWeekStart}

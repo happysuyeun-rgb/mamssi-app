@@ -4,11 +4,11 @@ import { useNotify } from '@providers/NotifyProvider';
 import { diag } from '@boot/diag';
 
 type TodayRecordCTAProps = {
-  todayLogged?: boolean; // 더미 props
-  todayDate?: string; // 더미 props (ISO 형식)
+  todayDate?: string; // ISO 형식
+  hasTodayPrivateRecord?: boolean; // 오늘 나만보기 기록 있으면 true → 클릭 시 공개 기록 유도 모달
 };
 
-export default function TodayRecordCTA({ todayDate }: TodayRecordCTAProps) {
+export default function TodayRecordCTA({ todayDate, hasTodayPrivateRecord }: TodayRecordCTAProps) {
   const navigate = useNavigate();
   const { isGuest, session } = useAuth();
   const notify = useNotify();
@@ -41,6 +41,18 @@ export default function TodayRecordCTA({ todayDate }: TodayRecordCTAProps) {
         onCancel: () => {
           // 닫기 버튼 클릭 시 아무 동작 없음
         },
+      });
+      return;
+    }
+    // 오늘 나만보기 기록이 이미 있으면 공개 기록 유도 모달
+    if (hasTodayPrivateRecord) {
+      notify.modal({
+        title: '',
+        message: '이미 오늘의 감정을 기록하였어요! 공개 감정을 기록하시겠어요?',
+        cancelLabel: '아니오',
+        confirmLabel: '예',
+        onConfirm: () => navigate(`/record?date=${targetDate}`),
+        onCancel: () => {},
       });
       return;
     }
