@@ -562,6 +562,7 @@ export default function OnboardingGuest() {
             </div>
           </section>
         </main>
+        <p className="onboarding-ai-notice">이 서비스는 생성형 AI를 활용합니다</p>
       </div>
     </div>
   );

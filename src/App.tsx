@@ -23,16 +23,6 @@ const SignupPage = lazy(() => import('@pages/SignupPage'));
 const DeleteAccountPage = lazy(() => import('@pages/DeleteAccountPage'));
 
 function AppRoutes() {
-  // OAuth 콜백: pathname이 /auth/callback이면 AuthCallback 렌더 (HashRouter 무시)
-  // Supabase OAuth는 path 기반 URL로 리다이렉트 → pathname 체크 필요
-  const isAuthCallbackPath =
-    typeof window !== 'undefined' &&
-    (window.location.pathname === '/auth/callback' ||
-      window.location.pathname.endsWith('/auth/callback'));
-  if (isAuthCallbackPath) {
-    return <AuthCallback />;
-  }
-
   const [isLocked, setIsLocked] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
 
@@ -77,6 +67,15 @@ function AppRoutes() {
     return () => window.removeEventListener('storage', handleStorageChange);
     // pathname 제거: 탭 네비게이션 시마다 재실행되면 잠금 해제 후에도 LockScreen이 다시 표시되는 버그 발생
   }, []);
+
+  // OAuth 콜백: pathname이 /auth/callback이면 AuthCallback 렌더 (HashRouter 무시)
+  const isAuthCallbackPath =
+    typeof window !== 'undefined' &&
+    (window.location.pathname === '/auth/callback' ||
+      window.location.pathname.endsWith('/auth/callback'));
+  if (isAuthCallbackPath) {
+    return <AuthCallback />;
+  }
 
   const handleUnlock = () => {
     sessionStorage.setItem(LOCK_SESSION_KEY, 'true');
