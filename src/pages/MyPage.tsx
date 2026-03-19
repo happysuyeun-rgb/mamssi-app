@@ -692,8 +692,11 @@ export default function MyPage() {
         {/* 상단 프로필 섹션 */}
         <section className="mypage-profile">
           <div className="mypage-profile-main">
-            <div className="avatar" data-has={profile.img ? 'img' : 'emo'}>
-              {profile.img ? <img alt="프로필" src={profile.img} /> : <div className="emo">🙂</div>}
+            <div className="avatar" data-has="img">
+              <img
+                alt="프로필"
+                src={profile.img || '/assets/default-avatar.png'}
+              />
             </div>
             <div>
               <div className="nickname-row">
