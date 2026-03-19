@@ -85,7 +85,7 @@ export default function Modal({ notification, onClose }: ModalProps) {
         ref={modalRef}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="modal-title"
+        aria-labelledby={notification.title ? 'modal-title' : undefined}
         aria-describedby="modal-description"
         className="notify-modal"
         style={{
@@ -99,18 +99,20 @@ export default function Modal({ notification, onClose }: ModalProps) {
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2
-          id="modal-title"
-          style={{
-            fontSize: 20,
-            fontWeight: 700,
-            color: 'var(--ink, #0F172A)',
-            marginBottom: 12,
-            letterSpacing: '-0.02em',
-          }}
-        >
-          {notification.title}
-        </h2>
+        {notification.title ? (
+          <h2
+            id="modal-title"
+            style={{
+              fontSize: 20,
+              fontWeight: 700,
+              color: 'var(--ink, #0F172A)',
+              marginBottom: 12,
+              letterSpacing: '-0.02em',
+            }}
+          >
+            {notification.title}
+          </h2>
+        ) : null}
         <p
           id="modal-description"
           style={{

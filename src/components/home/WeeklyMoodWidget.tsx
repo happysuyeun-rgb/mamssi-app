@@ -138,28 +138,34 @@ export default function WeeklyMoodWidget({
     navigate(`/record?id=${modalRecord.recordId}&date=${modalRecord.date}`);
   }
 
-  async function onDeleteEmotion() {
+  function onDeleteEmotion() {
     if (!modalRecord || !modalRecord.recordId || !onDeleteRecord) return;
 
-    const confirmed = window.confirm('정말 이 기록을 삭제할까요?');
-    if (!confirmed) return;
-
-    setIsDeleting(true);
-    try {
-      console.log('[WeeklyMoodWidget] 삭제 시작:', { recordId: modalRecord.recordId });
-      await onDeleteRecord(modalRecord.recordId);
-      console.log('[WeeklyMoodWidget] 삭제 완료:', { recordId: modalRecord.recordId });
-      setEmotionModalOpen(false);
-    } catch (err) {
-      console.error('[WeeklyMoodWidget] 삭제 실패:', {
-        recordId: modalRecord.recordId,
-        error: err,
-        errorMessage: err instanceof Error ? err.message : String(err),
-      });
-      alert('기록 삭제에 실패했어요. 잠시 후 다시 시도해주세요.');
-    } finally {
-      setIsDeleting(false);
-    }
+    const recordId = modalRecord.recordId;
+    notify.modal({
+      title: '',
+      message: '이 감정 기록을 삭제할까요?',
+      confirmLabel: '확인',
+      cancelLabel: '취소',
+      onConfirm: async () => {
+        setIsDeleting(true);
+        try {
+          console.log('[WeeklyMoodWidget] 삭제 시작:', { recordId });
+          await onDeleteRecord(recordId);
+          console.log('[WeeklyMoodWidget] 삭제 완료:', { recordId });
+          setEmotionModalOpen(false);
+        } catch (err) {
+          console.error('[WeeklyMoodWidget] 삭제 실패:', {
+            recordId,
+            error: err,
+            errorMessage: err instanceof Error ? err.message : String(err),
+          });
+          notify.error('기록 삭제에 실패했어요. 잠시 후 다시 시도해주세요.', '❌');
+        } finally {
+          setIsDeleting(false);
+        }
+      },
+    });
   }
 
   return (
