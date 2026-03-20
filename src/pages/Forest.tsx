@@ -49,7 +49,7 @@ function communityPostToForestPost(post: CommunityPost): ForestPost {
     createdAt: post.created_at,
     updatedAt: post.updated_at,
     nickname: post.profiles?.nickname || post.profiles?.seed_name || '익명',
-    mbti: undefined,
+    mbti: post.profiles?.mbti ?? undefined,
     recordId: post.emotion_id || undefined,
     emotionEmoji: emotionOpt?.emoji || '🙂',
   };
@@ -433,27 +433,16 @@ function ForestCard({
         </div>
       )}
 
-      <div className="forest-card-author-line">
-        <span className="forest-card-author">{post.nickname}</span>
-        <span className="forest-card-dot">·</span>
-        <span className="forest-card-time">{formatRelativeTime(post.createdAt ?? '')}</span>
-      </div>
-
       <div className="forest-card-footer">
         <div className="forest-card-footer-left">
-          {/* 목록에서는 수정/삭제를 숨김 (상세보기에서만 제공) */}
-          {!post.isMine && (
-            <button
-              type="button"
-              className="forest-report-pill"
-              onClick={(e) => {
-                e.stopPropagation();
-                onReport(post.id);
-              }}
-            >
-              🚨 신고하기
-            </button>
-          )}
+          {/* 목록에서는 신고하기 버튼을 숨김 (상세보기에서만 제공) */}
+          <div className="forest-card-author-line">
+            <span className="forest-card-author">{post.nickname}</span>
+            <span className="forest-card-dot">·</span>
+            <span className="forest-card-time">
+              {formatRelativeTime(post.createdAt ?? '')}
+            </span>
+          </div>
         </div>
 
         {!post.isMine && (
@@ -510,7 +499,6 @@ function ForestPostSheet({
         <div className="forest-sheet-top">
           <div>
             <p className="forest-sheet-label">마음 기록 보기</p>
-            <h2 className="forest-sheet-title">{post.nickname}</h2>
             <p className="forest-sheet-meta">
               {mbtiLabel} · {formatRelativeTime(post.createdAt ?? '')}
             </p>

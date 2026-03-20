@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '@lib/supabaseClient';
 import { diag } from '@boot/diag';
 import type { User } from '@supabase/supabase-js';
@@ -19,6 +19,7 @@ export type CommunityPost = {
   profiles?: {
     nickname: string | null;
     seed_name: string | null;
+    mbti?: string | null;
   } | null;
   is_liked_by_me?: boolean;
   is_mine?: boolean;
@@ -49,6 +50,12 @@ export function useCommunity(userId?: string | null) {
     posts: [],
     errorMessage: null,
   });
+  // 좋아요 토글 직후, 서버 트리거(community_posts.like_count 갱신)가 늦게 반영되는 레이스를 방지하기 위한 임시값
+  const optimisticLikeRef = useRef<
+    Map<string, { like_count: number; is_liked_by_me: boolean; ts: number }>
+  >(new Map());
+
+  const OPTIMISTIC_LIKE_WINDOW_MS = 2000;
   const [sortType, setSortType] = useState<SortType>('latest');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
@@ -97,8 +104,8 @@ export function useCommunity(userId?: string | null) {
         selectedCategory,
       });
 
-      // 게스트 호환: profiles JOIN 없이 조회 (RLS와 동일하게 숨김글 제외)
-      // emotions는 FK 관계 없을 수 있어 별도 조회 후 합침
+      // 게스트/로그인 공통: community_posts는 먼저 조인 없이 조회
+      // (profiles 조인은 스키마 캐시 FK 탐색 실패로 조회 자체가 깨지는 이슈가 있어 별도 쿼리로 합침)
       let query = supabase
         .from('community_posts')
         .select('*')
@@ -186,7 +193,9 @@ export function useCommunity(userId?: string | null) {
       }
 
       // data가 0건이면 status = 'empty'
-      const postsData = data || [];
+      // select() 파라미터가 조건부(join 포함)이라 Supabase 타입 추론이 ParserError로 섞일 수 있어
+      // 여기서는 런타임 데이터 구조를 기준으로 방어 캐스팅합니다.
+      const postsData = (data || []) as any[];
       if (postsData.length === 0) {
         setState({
           status: 'empty',
@@ -209,17 +218,69 @@ export function useCommunity(userId?: string | null) {
         }
       }
 
-      // profiles 정보가 없는 경우 (게스트 모드) 기본값 설정 + emotions 합침
-      const postsWithProfiles = postsData.map((post: any) => ({
-        ...post,
-        profiles: post.profiles || {
-          nickname: '익명',
-          seed_name: null,
-        },
-        emotions: post.emotion_id
-          ? { main_emotion: emotionMap.get(post.emotion_id) ?? null }
-          : null,
-      }));
+      // like_count은 community_posts에 트리거 지연/미적용 시 0으로 보일 수 있어,
+      // community_likes에서 post_id별 개수를 계산해서 클라이언트에 확정 반영합니다.
+      const postIds = postsData.map((p: { id: string }) => p.id);
+      const likeCountMap = new Map<string, number>();
+      if (postIds.length > 0) {
+        const { data: likesRows, error: likesRowsError } = await supabase
+          .from('community_likes')
+          .select('post_id')
+          .in('post_id', postIds);
+
+        if (likesRowsError) {
+          console.error('[useCommunity] likes count 조회 실패:', likesRowsError);
+          // 실패해도 목록 렌더링은 계속 (fallback: community_posts.like_count 사용)
+        } else if (likesRows) {
+          for (const row of likesRows as Array<{ post_id: string }>) {
+            likeCountMap.set(row.post_id, (likeCountMap.get(row.post_id) ?? 0) + 1);
+          }
+        }
+      }
+
+      // writer의 profiles 정보를 별도 쿼리로 가져와서 MBTI/닉네임 표시
+      // (로그인 상태에서만 시도하고, 실패하면 기본값으로 폴백)
+      const writerIds = [...new Set(postsData.map((post: any) => post.user_id).filter(Boolean))] as string[];
+      let profileMap = new Map<string, { nickname: string | null; seed_name: string | null; mbti: string | null }>();
+      if (userId && writerIds.length > 0) {
+        try {
+          const { data: profilesData, error: profilesError } = await supabase
+            .from('profiles')
+            .select('id, nickname, seed_name, mbti')
+            .in('id', writerIds);
+
+          if (profilesError) {
+            console.error('[useCommunity] profiles 조회 실패:', profilesError);
+            diag.err('useCommunity: profiles 조회 실패', profilesError);
+          }
+
+          if (profilesData) {
+            profileMap = new Map(
+              profilesData.map((row: any) => [row.id as string, { nickname: row.nickname, seed_name: row.seed_name, mbti: row.mbti }])
+            );
+          }
+        } catch (e) {
+          console.error('[useCommunity] profiles 조회 예외:', e);
+          diag.err('useCommunity: profiles 조회 예외', e);
+        }
+      }
+
+      // profiles 정보가 없는 경우(게스트/권한없음) 기본값 설정 + emotions 합침
+      const postsWithProfiles = postsData.map((post: any) => {
+        const profile = profileMap.get(post.user_id);
+        return {
+          ...post,
+          like_count: likeCountMap.has(post.id) ? likeCountMap.get(post.id) : post.like_count ?? 0,
+          profiles:
+            profile ||
+            ({
+              nickname: '익명',
+              seed_name: null,
+              mbti: null,
+            } as any),
+          emotions: post.emotion_id ? { main_emotion: emotionMap.get(post.emotion_id) ?? null } : null,
+        };
+      });
 
       // 사용자가 공감한 게시글 확인 (로그인 사용자만)
       if (userId && postsWithProfiles.length > 0) {
@@ -243,15 +304,35 @@ export function useCommunity(userId?: string | null) {
           is_mine: post.user_id === userId,
         }));
 
+        // realtime/fetch가 들어오는 타이밍에서 서버 like_count가 아직 갱신 전이면,
+        // 아주 짧은 시간 동안은 로컬 optimistic 값을 덮어써서 숫자가 0으로 떨어지는 것을 방지한다.
+        const now = Date.now();
+        const postsWithOptimisticLikes = postsWithLikes.map((post: any) => {
+          const optimistic = optimisticLikeRef.current.get(post.id);
+          if (optimistic && now - optimistic.ts <= OPTIMISTIC_LIKE_WINDOW_MS) {
+            return {
+              ...post,
+              like_count: optimistic.like_count,
+              is_liked_by_me: optimistic.is_liked_by_me,
+            };
+          }
+          // 만료된 optimistic 값 정리
+          if (optimistic && now - optimistic.ts > OPTIMISTIC_LIKE_WINDOW_MS) {
+            optimisticLikeRef.current.delete(post.id);
+          }
+          return post;
+        });
+
         setState({
           status: 'success',
-          posts: postsWithLikes as CommunityPost[],
+          posts: postsWithOptimisticLikes as CommunityPost[],
           errorMessage: null,
         });
       } else {
         // 게스트 모드
         setState({
           status: 'success',
+          // 게스트 모드에서는 optimistic like 적용하지 않는다.
           posts: postsWithProfiles as CommunityPost[],
           errorMessage: null,
         });
@@ -313,11 +394,17 @@ export function useCommunity(userId?: string | null) {
 
           setState((prev) => ({
             ...prev,
-            posts: prev.posts.map((post) =>
-              post.id === postId
-                ? { ...post, is_liked_by_me: false, like_count: Math.max(0, post.like_count - 1) }
-                : post
-            ),
+            posts: prev.posts.map((post) => {
+              if (post.id !== postId) return post;
+              const nextLikeCount = Math.max(0, (post.like_count ?? 0) - 1);
+              const nextPost = { ...post, is_liked_by_me: false, like_count: nextLikeCount };
+              optimisticLikeRef.current.set(postId, {
+                like_count: nextLikeCount,
+                is_liked_by_me: false,
+                ts: Date.now(),
+              });
+              return nextPost;
+            }),
           }));
         } else {
           // 공감 추가
@@ -329,11 +416,17 @@ export function useCommunity(userId?: string | null) {
 
           setState((prev) => ({
             ...prev,
-            posts: prev.posts.map((post) =>
-              post.id === postId
-                ? { ...post, is_liked_by_me: true, like_count: post.like_count + 1 }
-                : post
-            ),
+            posts: prev.posts.map((post) => {
+              if (post.id !== postId) return post;
+              const nextLikeCount = (post.like_count ?? 0) + 1;
+              const nextPost = { ...post, is_liked_by_me: true, like_count: nextLikeCount };
+              optimisticLikeRef.current.set(postId, {
+                like_count: nextLikeCount,
+                is_liked_by_me: true,
+                ts: Date.now(),
+              });
+              return nextPost;
+            }),
           }));
         }
       } catch (err) {

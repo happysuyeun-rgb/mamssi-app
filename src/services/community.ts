@@ -169,16 +169,7 @@ export async function fetchCommunityPost(
   try {
     const { data, error } = await supabase
       .from('community_posts')
-      .select(
-        `
-        *,
-        profiles:user_id (
-          nickname,
-          seed_name,
-          mbti
-        )
-      `
-      )
+      .select('*')
       .eq('id', postId)
       .eq('is_public', true)
       .eq('is_hidden', false)
@@ -206,6 +197,27 @@ export async function fetchCommunityPost(
         seed_name: null,
         mbti: null,
       };
+    }
+
+    // writer profiles를 별도 조회해서 MBTI 표시
+    if (userId && post.user_id) {
+      try {
+        const { data: profileRow } = await supabase
+          .from('profiles')
+          .select('id, nickname, seed_name, mbti')
+          .eq('id', post.user_id)
+          .maybeSingle();
+
+        if (profileRow) {
+          post.profiles = {
+            nickname: profileRow.nickname,
+            seed_name: profileRow.seed_name,
+            mbti: profileRow.mbti,
+          };
+        }
+      } catch (profileErr) {
+        console.error('[fetchCommunityPost] profiles 조회 실패:', profileErr);
+      }
     }
 
     // emotion_type이 비어 있을 때 사용할 main_emotion: emotions 별도 조회 (FK 조인 미지원 시 대체)
