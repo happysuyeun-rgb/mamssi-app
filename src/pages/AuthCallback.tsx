@@ -48,11 +48,14 @@ export default function AuthCallback() {
               status: exchangeError.status,
               hint: 'detectSessionInUrl이 true면 Supabase가 이미 교환했을 수 있음. supabaseClient에서 false로 설정했는지 확인',
             });
-            goTo('/login');
-            return;
+            // exchangeCodeForSession이 실패해도, 이미 세션이 만들어진 케이스일 수 있어
+            // 즉시 /login으로 보내지 않고 아래에서 getSession/initialize 재시도를 허용한다.
+            session = null;
+            sessionError = null;
+          } else {
+            session = exchangeData?.session ?? null;
+            sessionError = null;
           }
-          session = exchangeData?.session ?? null;
-          sessionError = exchangeError ?? null;
         }
 
         // code 없으면 initialize() + getSession

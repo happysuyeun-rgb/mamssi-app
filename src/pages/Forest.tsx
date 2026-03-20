@@ -482,16 +482,6 @@ function ForestCard({
         )}
         <button
           type="button"
-          className="forest-share-btn"
-          onClick={(e) => {
-            e.stopPropagation();
-            onShare(post);
-          }}
-        >
-          🔗 공유하기
-        </button>
-        <button
-          type="button"
           disabled={post.isMine}
           className={`forest-like-chip ${post.isLikedByMe ? 'active' : ''}`}
           onClick={(e) => {
@@ -515,7 +505,7 @@ function ForestPostSheet({
   onLike,
   onReport,
   onDelete,
-  onShare,
+  onShare: _onShare,
   onEdit,
 }: {
   post: ForestPost | null;
@@ -574,9 +564,6 @@ function ForestPostSheet({
               신고하기
             </button>
           )}
-          <button type="button" className="forest-share-btn" onClick={() => onShare(post)}>
-            🔗 공유하기
-          </button>
           <button
             type="button"
             disabled={post.isMine}
