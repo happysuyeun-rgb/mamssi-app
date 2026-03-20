@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
-import { supabase } from '@lib/supabaseClient';
+import { getSupabaseAuthStorageKey, supabase } from '@lib/supabaseClient';
 import { getAuthCallbackUrl } from '@lib/authCallbackUrl';
 import { notify } from '@lib/notify';
 import { identifyUser, resetUser } from '@lib/analytics';
@@ -409,6 +409,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     try {
       diag.log('AuthProvider: signOut 호출');
+
+      // Supabase signOut은 내부적으로 현재 세션이 필요합니다.
+      // 로컬에서 OAuth 직후/라우팅 전환 중에 세션이 아직 없으면 AuthSessionMissingError가 발생하고,
+      // 이 경우에도 "로그아웃"이 완료된 상태로 정리되도록 로컬 토큰을 강제로 제거합니다.
+      const { data: sessionData, error: sessionCheckError } = await supabase.auth.getSession();
+      if (sessionCheckError) {
+        diag.err('AuthProvider: signOut 전 getSession 에러', sessionCheckError);
+      }
+
+      const hasSession = !!sessionData?.session?.user;
+      if (!hasSession) {
+        const storageKey = getSupabaseAuthStorageKey();
+        safeStorage.removeItem(storageKey);
+        safeStorage.removeItem(`${storageKey}-code-verifier`);
+        safeStorage.removeItem(`${storageKey}-user`);
+
+        clearLockOnSignOut();
+        safeStorage.removeItem(GUEST_MODE_KEY);
+        setIsGuest(false);
+        setUser(null);
+        setSession(null);
+        setUserProfile(null);
+        notify.info('로그아웃되었어요.', '👋');
+        diag.log('AuthProvider: signOut - 세션 없음, 로컬 토큰 강제 정리 완료');
+        return;
+      }
+
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
 
@@ -419,10 +446,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsGuest(false);
       setUser(null);
       setSession(null);
+      setUserProfile(null);
       diag.log('AuthProvider: 로그아웃 완료');
       notify.info('로그아웃되었어요.', '👋');
     } catch (error) {
-      const authError = error as AuthError;
+      const authError = error as AuthError & { name?: string };
+      const message = String((authError as any)?.message ?? '');
+      const isSessionMissing =
+        authError?.name === 'AuthSessionMissingError' || message.includes('Auth session missing');
+
+      if (isSessionMissing) {
+        // getSession/signOut 동시 타이밍 이슈로 signOut만 실패하는 케이스 대응
+        const storageKey = getSupabaseAuthStorageKey();
+        safeStorage.removeItem(storageKey);
+        safeStorage.removeItem(`${storageKey}-code-verifier`);
+        safeStorage.removeItem(`${storageKey}-user`);
+
+        clearLockOnSignOut();
+        safeStorage.removeItem(GUEST_MODE_KEY);
+        setIsGuest(false);
+        setUser(null);
+        setSession(null);
+        setUserProfile(null);
+        notify.info('로그아웃되었어요.', '👋');
+        diag.log('AuthProvider: 로그아웃 실패(AuthSessionMissingError) - 로컬 토큰 강제 정리 완료');
+        return;
+      }
+
       diag.err('AuthProvider: 로그아웃 실패', authError);
       console.error('로그아웃 실패:', authError);
       notify.error('로그아웃에 실패했어요. 잠시 후 다시 시도해주세요.', '❌');

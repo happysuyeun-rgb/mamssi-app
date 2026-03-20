@@ -276,24 +276,24 @@ export default function WeeklyMoodWidget({
 
             {modalRecord.recordId && (
               <div className="forest-sheet-actions">
-                <button
-                  type="button"
-                  className="forest-sheet-owner-btn"
-                  onClick={onEditEmotion}
-                  disabled={isDeleting}
-                >
-                  수정
-                </button>
                 {onDeleteRecord && (
                   <button
                     type="button"
-                    className="forest-sheet-owner-btn"
+                    className="forest-sheet-owner-btn forest-mine-action-btn forest-mine-action-delete"
                     onClick={onDeleteEmotion}
                     disabled={isDeleting}
                   >
                     {isDeleting ? '삭제 중...' : '삭제'}
                   </button>
                 )}
+                <button
+                  type="button"
+                  className="forest-sheet-owner-btn forest-mine-action-btn forest-mine-action-edit"
+                  onClick={onEditEmotion}
+                  disabled={isDeleting}
+                >
+                  수정
+                </button>
               </div>
             )}
           </div>

@@ -99,4 +99,18 @@ export const supabase = createClient(finalUrl, finalKey, {
   },
 });
 
+/**
+ * Supabase auth-js가 브라우저에 저장하는 토큰 storageKey를 계산합니다.
+ * (signOut()이 `AuthSessionMissingError`로 실패하는 케이스에서 로컬 토큰을 강제로 정리하기 위함)
+ */
+export function getSupabaseAuthStorageKey(): string {
+  try {
+    const hostnamePrefix = new URL(finalUrl).hostname.split('.')[0];
+    return `sb-${hostnamePrefix}-auth-token`;
+  } catch {
+    // URL 파싱 실패 등 극단 케이스에 대비해 placeholder로부터 최대한 안전하게 처리
+    return 'sb-auth-token';
+  }
+}
+
 diag.log('supabaseClient: 초기화 완료');

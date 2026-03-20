@@ -327,38 +327,6 @@
   gap: 10px;
 }
 
-.home-detail-sheet .forest-sheet-actions .forest-sheet-owner-btn {
-  flex: 1;
-  padding: 12px 14px;
-  font-size: 14px;
-  font-weight: 500;
-  border-radius: 8px;
-  transition: all 0.2s ease;
-}
-
-/* 수정 버튼 */
-.home-detail-sheet .forest-sheet-actions .forest-sheet-owner-btn:first-child {
-  background: #e8f3ec;
-  color: #2f6f57;
-  border: none;
-}
-
-.home-detail-sheet .forest-sheet-actions .forest-sheet-owner-btn:first-child:hover:not(:disabled) {
-  background: #ddede4;
-}
-
-/* 삭제 버튼 (두 번째 버튼) */
-.home-detail-sheet .forest-sheet-actions .forest-sheet-owner-btn:nth-child(2) {
-  background: transparent;
-  color: #a0a6ab;
-  border: 1px solid #e3e5e7;
-}
-
-.home-detail-sheet .forest-sheet-actions .forest-sheet-owner-btn:nth-child(2):hover:not(:disabled) {
-  background: #f6f7f8;
-  color: #7b8085;
-}
-
 /* 씨앗 이름 수정 모달 버튼 (이번 주 감정 달력 상세 모달과 동일 스타일) */
 .seed-modal-actions {
   display: flex;

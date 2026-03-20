@@ -42,8 +42,8 @@ function communityPostToForestPost(post: CommunityPost): ForestPost {
     content: post.content,
     imageUrl: post.image_url || undefined,
     category: forestCategory,
-    likeCount: post.like_count,
-    isLikedByMe: post.is_liked_by_me || false,
+    likeCount: post.like_count ?? 0,
+    isLikedByMe: post.is_liked_by_me === true,
     isMine: post.is_mine || false,
     isReported: false,
     createdAt: post.created_at,
@@ -440,60 +440,37 @@ function ForestCard({
       </div>
 
       <div className="forest-card-footer">
-        {post.isMine && (
-          <>
+        <div className="forest-card-footer-left">
+          {/* 목록에서는 수정/삭제를 숨김 (상세보기에서만 제공) */}
+          {!post.isMine && (
             <button
               type="button"
-              className="forest-sheet-owner-btn"
+              className="forest-report-pill"
               onClick={(e) => {
                 e.stopPropagation();
-                // 수정 기능은 emotion_id로 연결
-                if (post.recordId) {
-                  navigate(`/record?id=${post.recordId}`);
-                }
-              }}
-              style={{ marginRight: 8 }}
-            >
-              ✏️ 수정
-            </button>
-            <button
-              type="button"
-              className="forest-sheet-owner-btn danger"
-              onClick={(e) => {
-                e.stopPropagation();
-                if (onDelete) onDelete(post.id);
+                onReport(post.id);
               }}
             >
-              🗑 삭제
+              🚨 신고하기
             </button>
-          </>
-        )}
+          )}
+        </div>
+
         {!post.isMine && (
           <button
             type="button"
-            className="forest-report-pill"
+            className={`forest-like-chip ${post.isLikedByMe ? 'active' : ''}`}
             onClick={(e) => {
               e.stopPropagation();
-              onReport(post.id);
+              onLike(post.id);
             }}
           >
-            🚨 신고하기
+            <span role="img" aria-label="like drop">
+              💧
+            </span>
+            <span className="forest-like-count">{post.likeCount}</span>
           </button>
         )}
-        <button
-          type="button"
-          disabled={post.isMine}
-          className={`forest-like-chip ${post.isLikedByMe ? 'active' : ''}`}
-          onClick={(e) => {
-            e.stopPropagation();
-            onLike(post.id);
-          }}
-        >
-          <span role="img" aria-label="like drop">
-            💧
-          </span>
-          {post.likeCount}
-        </button>
       </div>
     </article>
   );
@@ -559,32 +536,44 @@ function ForestPostSheet({
         </div>
 
         <div className="forest-sheet-actions">
+          <div className="forest-sheet-actions-left">
+            {!isMine && (
+              <button type="button" className="forest-report-pill" onClick={onReport}>
+              <span role="img" aria-label="report">🚨</span> 신고하기
+              </button>
+            )}
+
+            {isMine && (
+              <>
+                <button
+                  type="button"
+                  className="forest-sheet-owner-btn forest-mine-action-btn forest-mine-action-edit"
+                  onClick={() => onEdit(post)}
+                >
+                  수정
+                </button>
+                <button
+                  type="button"
+                  className="forest-sheet-owner-btn forest-mine-action-btn forest-mine-action-delete"
+                  onClick={() => onDelete(post.id)}
+                >
+                  삭제
+                </button>
+              </>
+            )}
+          </div>
+
           {!isMine && (
-            <button type="button" className="forest-report-pill" onClick={onReport}>
-              신고하기
+            <button
+              type="button"
+              className={`forest-like-chip ${post.isLikedByMe ? 'active' : ''}`}
+              onClick={() => onLike(post.id)}
+            >
+              <span role="img" aria-label="like drop">
+                💧
+              </span>
+              <span className="forest-like-count">{post.likeCount}</span>
             </button>
-          )}
-          <button
-            type="button"
-            disabled={post.isMine}
-            className={`forest-like-chip ${post.isLikedByMe ? 'active' : ''}`}
-            onClick={() => onLike(post.id)}
-          >
-            💧 {post.likeCount}
-          </button>
-          {isMine && (
-            <>
-              <button type="button" className="forest-sheet-owner-btn" onClick={() => onEdit(post)}>
-                수정
-              </button>
-              <button
-                type="button"
-                className="forest-sheet-owner-btn danger"
-                onClick={() => onDelete(post.id)}
-              >
-                삭제
-              </button>
-            </>
           )}
         </div>
       </div>

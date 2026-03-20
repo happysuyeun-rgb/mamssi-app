@@ -183,6 +183,13 @@
 
 .forest-card-footer {
   margin-top: 16px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.forest-card-footer-left {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -232,6 +239,9 @@
   color: #c24174;
   font-size: 13px;
   font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .forest-like-btn {
@@ -379,9 +389,17 @@
 
 .forest-sheet-actions {
   margin-top: 16px;
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
   gap: 10px;
+}
+
+.forest-sheet-actions-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .forest-sheet-owner-btn {
@@ -391,6 +409,42 @@
   font-size: 13px;
   padding: 8px 14px;
   color: #2c7768;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+
+.forest-mine-action-btn {
+  /* 공감숲(내 글) / 홈 주간기록 상세 모달에서 공통으로 쓰는 버튼 스타일 */
+  flex: 1;
+  padding: 12px 14px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  min-width: 120px;
+}
+
+.forest-mine-action-edit {
+  background: #e8f3ec;
+  color: #2f6f57;
+  border: none;
+}
+
+.forest-mine-action-edit:hover:not(:disabled) {
+  background: #ddede4;
+}
+
+.forest-mine-action-delete {
+  background: transparent;
+  color: #a0a6ab;
+  border: 1px solid #e3e5e7;
+}
+
+.forest-mine-action-delete:hover:not(:disabled) {
+  background: #f6f7f8;
+  color: #7b8085;
 }
 
 .forest-sheet-owner-btn.danger {

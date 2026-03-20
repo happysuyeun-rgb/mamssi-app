@@ -26,8 +26,8 @@ function communityPostToForestPost(post: CommunityPost): ForestPost {
     content: post.content,
     imageUrl: post.image_url || undefined,
     category: post.category || '일상',
-    likeCount: post.like_count,
-    isLikedByMe: post.is_liked_by_me || false,
+    likeCount: post.like_count ?? 0,
+    isLikedByMe: post.is_liked_by_me === true,
     isMine: post.is_mine || false,
     isReported: false,
     createdAt: post.created_at,
@@ -72,9 +72,10 @@ export default function ForestDetail() {
     loadPost();
   }, [postId, user?.id, notify]);
 
-  const dateText = useMemo(() => {
+  const mbtiLabel = post?.mbti ?? 'INFJ';
+  const timeText = useMemo(() => {
     if (!post) return '';
-    return (post.createdAt ?? '').split('T')[0].replace(/-/g, '.');
+    return formatRelativeTime(post.createdAt ?? '');
   }, [post]);
 
   if (notFound) {
@@ -213,8 +214,9 @@ export default function ForestDetail() {
         >
           <div style={{ fontSize: 20 }}>{post.emotionEmoji}</div>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <div style={{ fontSize: 14, fontWeight: 600 }}>{post.nickname}</div>
-            <div style={{ fontSize: 12, color: 'var(--ms-ink-muted)' }}>{dateText}</div>
+            <div style={{ fontSize: 14, fontWeight: 600 }}>
+              {mbtiLabel} · {timeText}
+            </div>
           </div>
           <button
             onClick={onMore}
@@ -286,27 +288,6 @@ export default function ForestDetail() {
           className="forest-detail-actions"
           style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12 }}
         >
-          {!isMine && (
-            <button
-              onClick={onToggleLike}
-              className={`forest-like ${post.isLikedByMe ? 'active' : ''}`}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '7px 11px',
-                borderRadius: 999,
-                border: `1px solid ${post.isLikedByMe ? 'var(--ms-primary)' : 'var(--ms-line)'}`,
-                background: post.isLikedByMe ? 'var(--ms-primary-soft)' : '#fff',
-                color: post.isLikedByMe ? 'var(--ms-primary)' : 'var(--ms-ink-soft)',
-                fontSize: 12,
-                cursor: 'pointer',
-              }}
-            >
-              <span>❤️</span>
-              <span style={{ fontWeight: 700, fontSize: 13 }}>{post.likeCount}</span>
-            </button>
-          )}
           <button
             onClick={onMore}
             style={{
@@ -320,8 +301,47 @@ export default function ForestDetail() {
           >
             더보기
           </button>
+
+          {!isMine && (
+            <button
+              onClick={onToggleLike}
+              className={`forest-like ${post.isLikedByMe ? 'active' : ''}`}
+              style={{
+                marginLeft: 'auto',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '7px 11px',
+                borderRadius: 999,
+                border: `1px solid ${
+                  post.isLikedByMe ? 'var(--ms-primary)' : 'var(--ms-line)'
+                }`,
+                background: post.isLikedByMe ? 'var(--ms-primary-soft)' : '#fff',
+                color: post.isLikedByMe ? 'var(--ms-primary)' : 'var(--ms-ink-soft)',
+                fontSize: 12,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              <span>💧</span>
+              <span style={{ fontWeight: 700, fontSize: 13 }}>{post.likeCount}</span>
+            </button>
+          )}
         </div>
       </div>
     </Layout>
   );
+}
+
+function formatRelativeTime(iso: string) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 1) return '방금 전';
+  if (minutes < 60) return `${minutes}분 전`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}시간 전`;
+  const days = Math.floor(hours / 24);
+  if (days === 1) return '어제';
+  if (days < 7) return `${days}일 전`;
+  return iso.split('T')[0].replace(/-/g, '.');
 }
