@@ -20,7 +20,7 @@
 ### 3. Service Worker (vite-plugin-pwa)
 - 오프라인 지원
 - 자동 업데이트
-- Supabase API 캐싱
+- Supabase **GET** 요청만 선택적 캐시 (`NetworkFirst`). **`/storage/v1/`(이미지 업로드)·`/auth/v1/`·비GET** 은 SW가 가로채지 않음 → 감정 기록 사진 업로드가 `Failed to fetch`로 깨지는 것을 방지.
 
 ### 4. 메타 태그 (`index.html`)
 - `theme-color`

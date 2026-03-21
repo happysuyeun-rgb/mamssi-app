@@ -15,6 +15,9 @@ import '@styles/record.css';
 import { EMOTION_OPTIONS, type EmotionOption } from '@constants/emotions';
 import { createNotification } from '@services/notifications';
 
+/** 감정기록 작성·수정 화면에서 사진 첨부 UI 표시 여부 (false면 업로드 입력·미리보기 숨김, 기존 image_url은 저장 시 유지) */
+export const SHOW_EMOTION_RECORD_PHOTO_ATTACHMENT = false;
+
 type PhotoItem = { id: string; file: File | null; url: string };
 
 const CATEGORIES = [
@@ -789,44 +792,48 @@ export default function Record() {
           />
           <div className="ms-textarea-count">{note.length} / 1000</div>
 
-          <div className="ms-photo-row">
-            <div className="ms-photo-text">
-              <div className="ms-photo-title">사진 첨부 (선택)</div>
-              <div className="ms-photo-helper">
-                오늘을 떠올리게 하는 사진이 있다면 함께 남겨보세요. (JPG, PNG / 10MB 이하 / 최대
-                2개)
+          {SHOW_EMOTION_RECORD_PHOTO_ATTACHMENT && (
+            <>
+              <div className="ms-photo-row">
+                <div className="ms-photo-text">
+                  <div className="ms-photo-title">사진 첨부 (선택)</div>
+                  <div className="ms-photo-helper">
+                    오늘을 떠올리게 하는 사진이 있다면 함께 남겨보세요. (JPG, PNG / 10MB 이하 / 최대
+                    2개)
+                  </div>
+                </div>
+                <label className="ms-photo-upload">
+                  <span>📷 사진 추가</span>
+                  <input
+                    type="file"
+                    className="ms-photo-hidden-input"
+                    accept="image/*"
+                    multiple
+                    onChange={onPhotosChange}
+                  />
+                </label>
               </div>
-            </div>
-            <label className="ms-photo-upload">
-              <span>📷 사진 추가</span>
-              <input
-                type="file"
-                className="ms-photo-hidden-input"
-                accept="image/*"
-                multiple
-                onChange={onPhotosChange}
-              />
-            </label>
-          </div>
 
-          <div className="ms-photo-preview-list">
-            {photos.map((p) => (
-              <div
-                key={p.id}
-                className="ms-photo-thumb"
-                style={{ backgroundImage: `url(${p.url})` }}
-              >
-                <button
-                  type="button"
-                  className="ms-photo-thumb-remove"
-                  onClick={() => onRemovePhoto(p.id)}
-                  aria-label="사진 삭제"
-                >
-                  ×
-                </button>
+              <div className="ms-photo-preview-list">
+                {photos.map((p) => (
+                  <div
+                    key={p.id}
+                    className="ms-photo-thumb"
+                    style={{ backgroundImage: `url(${p.url})` }}
+                  >
+                    <button
+                      type="button"
+                      className="ms-photo-thumb-remove"
+                      onClick={() => onRemovePhoto(p.id)}
+                      aria-label="사진 삭제"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </>
+          )}
         </section>
 
         <section className="ms-section">

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
-import Record from './Record';
+import Record, { SHOW_EMOTION_RECORD_PHOTO_ATTACHMENT } from './Record';
 import { NotifyProvider } from '@providers/NotifyProvider';
 
 // Mock dependencies
@@ -89,7 +89,7 @@ const renderWithProviders = (component: React.ReactElement) => {
   );
 };
 
-describe('Record - 이미지 업로드 2개 제한', () => {
+describe.skipIf(!SHOW_EMOTION_RECORD_PHOTO_ATTACHMENT)('Record - 이미지 업로드 2개 제한', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // URL.createObjectURL mock

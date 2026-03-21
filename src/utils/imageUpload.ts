@@ -6,6 +6,26 @@ type StorageErrorExt = { message?: string; statusCode?: number; error?: string }
 const BUCKET_NAME = 'emotion-images';
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
+/** DB 버킷 allowed_mime_types와 동일. HEIC는 미포함 → 업로드 전에 안내 */
+const HEIC_LIKE = new Set(['image/heic', 'image/heif']);
+
+function mapNetworkOrUnknownUploadError(err: unknown): Error {
+  const raw = err instanceof Error ? err.message : String(err);
+  const lower = raw.toLowerCase();
+  // 주의: "upload failed"에 "load failed"가 부분 문자열로 들어가므로 "load failed" 단독 매칭은 쓰지 않음
+  if (
+    lower.includes('failed to fetch') ||
+    lower.includes('networkerror') ||
+    lower.includes('network request failed') ||
+    (err instanceof Error && err.name === 'TypeError' && lower.includes('fetch'))
+  ) {
+    return new Error(
+      '서버에 연결하지 못했어요. Wi-Fi·데이터 연결을 확인하고, 앱을 완전히 닫았다가 다시 열어보세요. (PWA 설치 시 이전 버전이면 업데이트 후 재시도)'
+    );
+  }
+  return err instanceof Error ? err : new Error('이미지 업로드에 실패했어요.');
+}
+
 export type UploadResult = {
   url: string | null;
   error: Error | null;
@@ -34,6 +54,15 @@ export async function uploadEmotionImage(file: File, userId: string): Promise<Up
     };
   }
 
+  if (HEIC_LIKE.has(file.type.toLowerCase())) {
+    return {
+      url: null,
+      error: new Error(
+        'HEIC(아이폰 기본 사진) 형식은 아직 지원하지 않아요. 사진 앱에서 JPG로 보내기 하거나, 카메라 설정에서 “가장 호환성이 높은 형식”으로 촬영해 주세요.'
+      ),
+    };
+  }
+
   try {
     // 파일명 생성: {user_id}/{uuid}.{extension}
     const fileExt = file.name.split('.').pop() || 'jpg';
@@ -59,6 +88,15 @@ export async function uploadEmotionImage(file: File, userId: string): Promise<Up
 
       // 버킷 관련 에러인 경우 더 명확한 메시지 제공
       let errorMessage = uploadError.message || '이미지 업로드에 실패했어요.';
+      const em = (uploadError.message || '').toLowerCase();
+      if (
+        em.includes('failed to fetch') ||
+        em.includes('networkerror') ||
+        em.includes('network request failed') ||
+        /\bnetwork\b/.test(em)
+      ) {
+        errorMessage = mapNetworkOrUnknownUploadError(new Error(uploadError.message)).message;
+      }
       if (
         uploadError.message?.includes('bucket') ||
         uploadError.message?.includes('버킷') ||
@@ -100,7 +138,7 @@ export async function uploadEmotionImage(file: File, userId: string): Promise<Up
       error: null,
     };
   } catch (err) {
-    const error = err instanceof Error ? err : new Error('이미지 업로드에 실패했어요.');
+    const error = mapNetworkOrUnknownUploadError(err);
     console.error('[uploadEmotionImage] 업로드 중 예외 발생:', {
       error: err,
       errorMessage: error.message,

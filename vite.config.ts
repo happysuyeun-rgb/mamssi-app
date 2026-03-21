@@ -17,7 +17,19 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
+            /**
+             * Supabase는 GET만 캐시 후보로 제한하고, 아래는 Service Worker가 절대 가로채지 않음:
+             * - /storage/v1/ (이미지 업로드 POST 등 → SW가 끼면 "Failed to fetch" 발생 가능)
+             * - /auth/v1/ (세션·토큰)
+             * - POST/PUT/PATCH/DELETE (전부)
+             */
+            urlPattern: ({ url, request }: { url: URL; request: Request }) => {
+              if (!url.hostname.endsWith('.supabase.co')) return false;
+              if (url.pathname.startsWith('/storage/v1/')) return false;
+              if (url.pathname.startsWith('/auth/v1/')) return false;
+              if (request.method !== 'GET') return false;
+              return true;
+            },
             handler: 'NetworkFirst',
             options: {
               cacheName: 'supabase-cache',

@@ -47,6 +47,13 @@ describe('imageUpload', () => {
       expect(result.url).toBeNull();
     });
 
+    it('HEIC 형식은 버킷 미지원이므로 사전에 안내해야 함', async () => {
+      const heic = new File(['x'], 'photo.heic', { type: 'image/heic' });
+      const result = await uploadEmotionImage(heic, 'user-1');
+      expect(result.url).toBeNull();
+      expect(result.error?.message).toMatch(/HEIC/);
+    });
+
     it('유효한 이미지 파일은 업로드를 시도해야 함', async () => {
       const imageFile = new File(['test'], 'test.jpg', { type: 'image/jpeg' });
       const userId = 'test-user-id';
