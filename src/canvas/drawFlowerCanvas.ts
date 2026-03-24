@@ -9,6 +9,7 @@ export type FlowerData = {
 
 const canvasRenderVersion = new WeakMap<HTMLCanvasElement, number>();
 const imageCache = new Map<string, HTMLImageElement>();
+const imageContentBoundsCache = new Map<string, { x: number; y: number; width: number; height: number }>();
 
 function getCachedImage(src: string): HTMLImageElement {
   const cached = imageCache.get(src);
@@ -17,6 +18,69 @@ function getCachedImage(src: string): HTMLImageElement {
   image.src = src;
   imageCache.set(src, image);
   return image;
+}
+
+function getImageContentBounds(image: HTMLImageElement): { x: number; y: number; width: number; height: number } {
+  const key = image.currentSrc || image.src;
+  const cached = imageContentBoundsCache.get(key);
+  if (cached) return cached;
+
+  const w = image.naturalWidth || 0;
+  const h = image.naturalHeight || 0;
+  if (w === 0 || h === 0) {
+    return { x: 0, y: 0, width: 1, height: 1 };
+  }
+
+  const off = document.createElement('canvas');
+  off.width = w;
+  off.height = h;
+  const ctx = off.getContext('2d');
+  if (!ctx) {
+    return { x: 0, y: 0, width: w, height: h };
+  }
+
+  ctx.drawImage(image, 0, 0, w, h);
+  const pixels = ctx.getImageData(0, 0, w, h).data;
+
+  let minX = w;
+  let minY = h;
+  let maxX = -1;
+  let maxY = -1;
+
+  // 흰 배경 꽃 에셋 기준: 거의 흰색/투명 픽셀은 배경으로 간주
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4;
+      const r = pixels[i];
+      const g = pixels[i + 1];
+      const b = pixels[i + 2];
+      const a = pixels[i + 3];
+      const nearWhite = r >= 246 && g >= 246 && b >= 246;
+      if (a > 10 && !nearWhite) {
+        if (x < minX) minX = x;
+        if (y < minY) minY = y;
+        if (x > maxX) maxX = x;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+
+  let bounds: { x: number; y: number; width: number; height: number };
+  if (maxX < minX || maxY < minY) {
+    bounds = { x: 0, y: 0, width: w, height: h };
+  } else {
+    // 가장자리 여유를 조금 남겨 자연스럽게 보정
+    const padX = Math.round((maxX - minX + 1) * 0.06);
+    const padY = Math.round((maxY - minY + 1) * 0.06);
+    const x = Math.max(0, minX - padX);
+    const y = Math.max(0, minY - padY);
+    const right = Math.min(w - 1, maxX + padX);
+    const bottom = Math.min(h - 1, maxY + padY);
+    bounds = { x, y, width: right - x + 1, height: bottom - y + 1 };
+  }
+
+  imageContentBoundsCache.set(key, bounds);
+  return bounds;
 }
 
 export function drawFlowerCanvas(canvas: HTMLCanvasElement, data: FlowerData) {
@@ -45,20 +109,27 @@ export function drawFlowerCanvas(canvas: HTMLCanvasElement, data: FlowerData) {
     g.fillStyle = '#ffffff';
     g.fillRect(0, 0, cssWidth, cssHeight);
 
-    // 기존(96px) 대비 2배+α 크기(220px)로 중앙 배치
-    const flowerSize = 220;
-    const flowerX = Math.floor((cssWidth - flowerSize) / 2);
-    const flowerY = 62;
+    // 꽃 표시 박스(콘텐츠 기준으로 자동 크롭하여 박스 안에 배치)
+    const flowerBoxWidth = 220;
+    const flowerBoxHeight = 196;
+    const flowerBoxX = Math.floor((cssWidth - flowerBoxWidth) / 2);
+    const flowerBoxY = 46;
 
     if (flowerImage) {
       g.imageSmoothingEnabled = true;
       g.imageSmoothingQuality = 'high';
-      g.drawImage(flowerImage, flowerX, flowerY, flowerSize, flowerSize);
+      const b = getImageContentBounds(flowerImage);
+      const scale = Math.min(flowerBoxWidth / b.width, flowerBoxHeight / b.height);
+      const drawW = Math.round(b.width * scale);
+      const drawH = Math.round(b.height * scale);
+      const drawX = flowerBoxX + Math.floor((flowerBoxWidth - drawW) / 2);
+      const drawY = flowerBoxY + Math.floor((flowerBoxHeight - drawH) / 2);
+      g.drawImage(flowerImage, b.x, b.y, b.width, b.height, drawX, drawY, drawW, drawH);
     } else {
       g.fillStyle = '#0f766e';
       g.font = '84px serif';
       g.textAlign = 'center';
-      g.fillText(data.emoji, cssWidth / 2, flowerY + flowerSize * 0.75);
+      g.fillText(data.emoji, cssWidth / 2, flowerBoxY + flowerBoxHeight * 0.75);
       g.textAlign = 'left';
     }
 
@@ -73,7 +144,7 @@ export function drawFlowerCanvas(canvas: HTMLCanvasElement, data: FlowerData) {
         text = text.slice(0, -2) + '…”';
       }
       // 꽃 이미지 위 중앙
-      g.fillText(text, cssWidth / 2, flowerY - 12);
+      g.fillText(text, cssWidth / 2, flowerBoxY - 12);
       g.textAlign = 'left';
     }
 

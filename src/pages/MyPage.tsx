@@ -720,6 +720,7 @@ export default function MyPage() {
             <div className="avatar" data-has="img">
               <img
                 alt="프로필"
+                className={!profile.img ? 'default-avatar-img' : undefined}
                 src={profile.img || '/assets/default-avatar.png'}
               />
             </div>
