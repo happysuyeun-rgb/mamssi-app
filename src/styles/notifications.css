@@ -120,6 +120,22 @@
   color: var(--ms-ink-muted);
 }
 
+.notif-more-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 6px 0 2px;
+}
+
+.notif-more-btn {
+  border: 1px solid var(--ms-line);
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 8px 14px;
+  font-size: 12px;
+  color: var(--ms-ink-soft);
+  cursor: pointer;
+}
+
 .notif-sheet-footer {
   border-top: 1px solid rgba(15, 23, 42, 0.08);
   padding-top: 14px;

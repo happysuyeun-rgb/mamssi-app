@@ -1,4 +1,5 @@
 import type { NotificationRecord } from '@domain/notification';
+import { useMemo, useState } from 'react';
 import '@styles/notifications.css';
 
 type Props = {
@@ -18,7 +19,18 @@ export default function NotificationSheet({
 }: Props) {
   if (!isOpen) return null;
 
-  const grouped = groupByDate(notifications);
+  const DEFAULT_VISIBLE_COUNT = 7;
+  const [showAll, setShowAll] = useState(false);
+  const unreadCount = useMemo(
+    () => notifications.filter((notification) => !notification.isRead).length,
+    [notifications]
+  );
+  const visibleNotifications = useMemo(
+    () =>
+      showAll ? notifications : notifications.slice(0, Math.min(DEFAULT_VISIBLE_COUNT, notifications.length)),
+    [showAll, notifications]
+  );
+  const grouped = groupByDate(visibleNotifications);
 
   return (
     <div className="notif-sheet-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
@@ -26,7 +38,10 @@ export default function NotificationSheet({
         <header className="notif-sheet-header">
           <div>
             <h2>알림</h2>
-            <p>지난 변화들을 한 눈에 확인해보세요.</p>
+            <p>
+              최근 알림 {Math.min(DEFAULT_VISIBLE_COUNT, notifications.length)}개를 먼저 보여줘요.
+              {unreadCount > 0 ? ` 안 읽은 알림 ${unreadCount}개` : ''}
+            </p>
           </div>
           <button type="button" onClick={onMarkAllRead}>
             모두 읽음
@@ -63,6 +78,17 @@ export default function NotificationSheet({
               </div>
             </div>
           ))}
+          {notifications.length > DEFAULT_VISIBLE_COUNT && (
+            <div className="notif-more-wrap">
+              <button
+                type="button"
+                className="notif-more-btn"
+                onClick={() => setShowAll((prev) => !prev)}
+              >
+                {showAll ? '최근 알림만 보기' : `전체 알림 보기 (${notifications.length}개)`}
+              </button>
+            </div>
+          )}
         </div>
 
         <footer className="notif-sheet-footer">

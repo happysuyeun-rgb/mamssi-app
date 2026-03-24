@@ -8,7 +8,7 @@ import type {
 
 let inMemoryNotifications: NotificationRecord[] = [];
 
-const NOTIFICATION_RETENTION_DAYS = 14;
+const READ_NOTIFICATION_RETENTION_DAYS = 30;
 
 const generateId = () =>
   (globalThis as any)?.crypto?.randomUUID?.() ??
@@ -16,8 +16,8 @@ const generateId = () =>
 
 const nowIso = () => new Date().toISOString();
 
-const isExpired = (createdAt: string) =>
-  Date.now() - new Date(createdAt).getTime() > NOTIFICATION_RETENTION_DAYS * 24 * 60 * 60 * 1000;
+const isOlderThanDays = (createdAt: string, days: number) =>
+  Date.now() - new Date(createdAt).getTime() > days * 24 * 60 * 60 * 1000;
 
 function templateFor(type: NotificationType): NotificationMessageTemplate {
   const template = NOTIFICATION_MESSAGES[type];
@@ -139,8 +139,10 @@ export async function fetchNotifications(userId: string): Promise<NotificationRe
       };
     });
 
-    // 만료된 알림 필터링
-    const validNotifications = notifications.filter((notif) => !isExpired(notif.createdAt));
+    // 읽은 알림은 30일 경과 시 자동 숨김, 안 읽은 알림은 유지
+    const validNotifications = notifications.filter(
+      (notif) => !(notif.isRead && isOlderThanDays(notif.createdAt, READ_NOTIFICATION_RETENTION_DAYS))
+    );
 
     return validNotifications;
   } catch (err) {
@@ -203,7 +205,9 @@ export async function markAllNotificationsRead(userId: string): Promise<void> {
 
 export async function deleteOldNotifications(userId: string): Promise<void> {
   inMemoryNotifications = inMemoryNotifications.filter(
-    (notif: NotificationRecord) => notif.userId !== userId || !isExpired(notif.createdAt)
+    (notif: NotificationRecord) =>
+      notif.userId !== userId ||
+      !(notif.isRead && isOlderThanDays(notif.createdAt, READ_NOTIFICATION_RETENTION_DAYS))
   );
 }
 
