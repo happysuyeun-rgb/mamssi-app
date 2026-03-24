@@ -183,8 +183,10 @@ export default function Record() {
           content: existing.content?.substring(0, 20) + '...',
         });
 
-        // DB 스키마: main_emotion (기존 emotion_type)
-        const emotionOpt = EMOTION_OPTIONS.find((opt) => opt.label === existing.main_emotion);
+        // main_emotion은 코드(JOY) 저장이 기준이며, 과거 라벨 데이터(기쁨)도 호환
+        const emotionOpt = EMOTION_OPTIONS.find(
+          (opt) => opt.code === existing.main_emotion || opt.label === existing.main_emotion
+        );
         setSelectedEmotion(emotionOpt ?? null);
         // DB 스키마: content (최근 추가)
         setNote(existing.content);
@@ -339,7 +341,8 @@ export default function Record() {
             category?: string | null; // 공감숲 카테고리 영문키 (공유 시)
             image_url?: string | null; // 이미지 URL
           } = {
-            emotion_type: selectedEmotion.label,
+            // 꽃 매핑 로직과 일치하도록 감정 코드를 저장
+            emotion_type: selectedEmotion.code,
             content: trimmedContent,
             emotion_date: recordDate, // YYYY-MM-DD
             is_public: isPublic || null,

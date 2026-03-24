@@ -1,4 +1,7 @@
-# Vercel Build 실패 수정 가이드
+﻿# Vercel Build 실패 수정 가이드
+
+> 최종 업데이트: 2026-03-24
+
 
 **증상**: `node_modules/.bin/vite Permission denied (exit 126)`  
 **원인**: 실행 권한 비트 손상. 주로 `node_modules`가 레포에 커밋되었거나, Vercel 캐시가 손상된 경우 발생.

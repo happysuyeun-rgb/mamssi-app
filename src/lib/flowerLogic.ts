@@ -19,6 +19,28 @@ type MaybeSingleResult<T> = {
   data: T | null;
 };
 
+const LEGACY_LABEL_TO_CODE: Record<string, EmotionCode> = {
+  기쁨: 'JOY',
+  차분: 'CALM',
+  불안: 'ANXIOUS',
+  우울: 'BLUE',
+  화남: 'ANGER',
+  지침: 'TIRED',
+  설렘: 'EXCITED',
+  성장: 'GROWTH',
+  뿌듯: 'PROUD',
+  복잡: 'COMPLEX',
+};
+
+function normalizeEmotionCode(value: string | null): EmotionCode | null {
+  if (!value) return null;
+  const upper = value.toUpperCase();
+  if ((EMOTION_PRIORITY as string[]).includes(upper)) {
+    return upper as EmotionCode;
+  }
+  return LEGACY_LABEL_TO_CODE[value] ?? null;
+}
+
 /**
  * 감정 분포를 조회한다.
  *
@@ -43,14 +65,31 @@ export async function getEmotionDistribution(
   let fromDate: string | null = null;
 
   if (range === 'current_cycle') {
-    const { data: flowersRow } = (await supabase
+    // 현재 사이클 기준은 "진행 중 꽃(is_bloomed=false)"의 cycle_start_at을 우선 사용
+    const { data: currentFlowerRow, error: currentFlowerError } = (await supabase
       .from('flowers')
       .select('cycle_start_at')
       .eq('user_id', userId)
-      .maybeSingle()) as MaybeSingleResult<FlowersRow>;
+      .eq('is_bloomed', false)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()) as { data: FlowersRow | null; error: unknown | null };
 
-    if (flowersRow?.cycle_start_at) {
-      fromDate = flowersRow.cycle_start_at;
+    if (!currentFlowerError && currentFlowerRow?.cycle_start_at) {
+      fromDate = currentFlowerRow.cycle_start_at;
+    } else {
+      // fallback: 최신 꽃 row의 cycle_start_at 사용 (레거시/스키마 불일치 환경 대응)
+      const { data: latestFlowerRow } = (await supabase
+        .from('flowers')
+        .select('cycle_start_at')
+        .eq('user_id', userId)
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()) as MaybeSingleResult<FlowersRow>;
+
+      if (latestFlowerRow?.cycle_start_at) {
+        fromDate = latestFlowerRow.cycle_start_at;
+      }
     }
   }
 
@@ -70,7 +109,7 @@ export async function getEmotionDistribution(
   const distribution: EmotionDistribution = {};
 
   for (const row of data) {
-    const code = row.main_emotion as EmotionCode | null;
+    const code = normalizeEmotionCode(row.main_emotion);
     if (!code) continue;
 
     distribution[code] = (distribution[code] ?? 0) + 1;
@@ -90,7 +129,9 @@ export async function getEmotionDistribution(
  * @returns 대표 감정 코드 (예: 'JOY')
  */
 export function pickDominantEmotion(distribution: EmotionDistribution): EmotionCode {
-  const entries = Object.entries(distribution).filter(([, count]) => count > 0);
+  const entries = Object.entries(distribution).filter(
+    ([code, count]) => count > 0 && (EMOTION_PRIORITY as string[]).includes(code)
+  );
 
   if (entries.length === 0) {
     return 'JOY';

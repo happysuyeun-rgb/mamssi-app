@@ -69,10 +69,37 @@ export default function DeleteAccountPage() {
             updateData.delete_reason = deleteReason;
           }
 
-          const { error: updateError } = await supabase
+          let { error: updateError } = await supabase
             .from('users')
             .update(updateData)
             .eq('id', user.id);
+
+          // 스키마에 선택 컬럼(delete_reason/deleted_at)이 없는 환경 대응
+          if (updateError) {
+            const message = (updateError.message || '').toLowerCase();
+            const details = ((updateError as any).details || '').toLowerCase();
+            const missingColumnError = message.includes('column') || details.includes('column');
+            const mentionsDeleteReason =
+              message.includes('delete_reason') || details.includes('delete_reason');
+            const mentionsDeletedAt = message.includes('deleted_at') || details.includes('deleted_at');
+
+            if (missingColumnError && (mentionsDeleteReason || mentionsDeletedAt)) {
+              const fallbackData = { ...updateData };
+              if (mentionsDeleteReason) delete fallbackData.delete_reason;
+              if (mentionsDeletedAt) delete (fallbackData as any).deleted_at;
+
+              diag.log('DeleteAccountPage: 미존재 컬럼 제외 후 soft delete 재시도', {
+                userId: user.id,
+                removedFields: [
+                  ...(mentionsDeleteReason ? ['delete_reason'] : []),
+                  ...(mentionsDeletedAt ? ['deleted_at'] : []),
+                ],
+              });
+
+              const retryResult = await supabase.from('users').update(fallbackData).eq('id', user.id);
+              updateError = retryResult.error;
+            }
+          }
 
           if (updateError) {
             diag.err('DeleteAccountPage: users 테이블 soft delete 실패', updateError);

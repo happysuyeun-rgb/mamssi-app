@@ -213,6 +213,26 @@ textarea {
   color: #065f46;
   font-weight: 600;
 }
+.btn.flower-album-save-btn {
+  background: #4c7877;
+  border: none;
+  color: #ffffff;
+  font-weight: 600;
+}
+.btn.flower-album-save-btn:active {
+  filter: brightness(0.95);
+}
+.flower-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.25fr;
+  gap: 10px;
+}
+.btn.flower-action-equal-btn {
+  width: 100%;
+}
+.btn.flower-album-save-btn {
+  width: 100%;
+}
 .grid2 {
   display: grid;
   grid-template-columns: 1fr 1fr;

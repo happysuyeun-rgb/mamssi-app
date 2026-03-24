@@ -1,4 +1,7 @@
-# Supabase RLS/Storage 권한 회귀 테스트 체크리스트
+﻿# Supabase RLS/Storage 권한 회귀 테스트 체크리스트
+
+> 최종 업데이트: 2026-03-24
+
 
 배포 전 RLS 및 Storage 정책이 의도대로 동작하는지 검증하는 체크리스트입니다.
 

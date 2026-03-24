@@ -82,3 +82,17 @@ export const FLOWER_TYPE_TO_EMOJI: Record<FlowerType, string> = {
   WILD_FLOWER: '💐',
 };
 
+// 6. 꽃 타입 → 실제 앨범 이미지 경로 매핑 (public/assets/flowers)
+export const FLOWER_TYPE_TO_IMAGE_SRC: Record<FlowerType, string> = {
+  SUNFLOWER: '/assets/flowers/JOY.png',
+  HYDRANGEA: '/assets/flowers/CALM.png',
+  LAVENDER: '/assets/flowers/ANXIOUS.png',
+  BLUE_ROSE: '/assets/flowers/BLUE.png',
+  RED_TULIP: '/assets/flowers/ANGER.png',
+  CACTUS: '/assets/flowers/TIRED.png',
+  CHERRY_BLOSSOM: '/assets/flowers/EXCITED.png',
+  SPROUT: '/assets/flowers/GROWTH.png',
+  MAGNOLIA: '/assets/flowers/PROUD.png',
+  WILD_FLOWER: '/assets/flowers/COMPLEX.png',
+};
+

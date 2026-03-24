@@ -16,6 +16,7 @@ import { drawFlowerCanvas } from '@canvas/drawFlowerCanvas';
 import {
   FLOWER_TYPE_TO_BLOOM_CAPTION,
   FLOWER_TYPE_TO_EMOJI,
+  FLOWER_TYPE_TO_IMAGE_SRC,
   FLOWER_TYPE_TO_NAME_KO,
   type FlowerType,
 } from '@constants/flowerMap';
@@ -36,6 +37,7 @@ type AlbumItem = {
   water: number;
   emoji: string;
   flowerType: string | null;
+  flowerImageSrc: string;
   flowerName: string;
   bloomCaption: string;
   message?: string;
@@ -110,8 +112,9 @@ export default function MyPage() {
   }, [user, isGuest, fetchEmotions]);
 
   // Album - 실제 DB에서 개화된 꽃 데이터 가져오기
-  const [album, setAlbum] = useState<AlbumItem[]>([]);
+  const [album, setAlbum] = useState<AlbumItem[]>(() => lsGet<AlbumItem[]>(albumKey, []));
   const [albumLoading, setAlbumLoading] = useState(false);
+  const [albumHydrated, setAlbumHydrated] = useState(false);
 
   function getFlowerMetaByType(flowerType: string | null | undefined) {
     const fallbackEmoji = '🌸';
@@ -121,6 +124,7 @@ export default function MyPage() {
     if (!flowerType) {
       return {
         emoji: fallbackEmoji,
+        flowerImageSrc: FLOWER_TYPE_TO_IMAGE_SRC.WILD_FLOWER,
         flowerName: fallbackName,
         bloomCaption: fallbackCaption,
       };
@@ -131,6 +135,7 @@ export default function MyPage() {
     if (FLOWER_TYPE_TO_NAME_KO[key] && FLOWER_TYPE_TO_EMOJI[key] && FLOWER_TYPE_TO_BLOOM_CAPTION[key]) {
       return {
         emoji: FLOWER_TYPE_TO_EMOJI[key],
+        flowerImageSrc: FLOWER_TYPE_TO_IMAGE_SRC[key],
         flowerName: FLOWER_TYPE_TO_NAME_KO[key],
         bloomCaption: FLOWER_TYPE_TO_BLOOM_CAPTION[key],
       };
@@ -138,6 +143,7 @@ export default function MyPage() {
 
     return {
       emoji: fallbackEmoji,
+      flowerImageSrc: FLOWER_TYPE_TO_IMAGE_SRC.WILD_FLOWER,
       flowerName: fallbackName,
       bloomCaption: fallbackCaption,
     };
@@ -146,8 +152,12 @@ export default function MyPage() {
   useEffect(() => {
     const loadAlbum = async () => {
       if (!user || isGuest) {
-        // 게스트 모드이거나 로그인하지 않은 경우 빈 배열
-        setAlbum([]);
+        // 게스트는 앨범을 비우되, 로그인 판별 중(user 없음)에는 기존 로컬 상태를 유지
+        if (isGuest) {
+          setAlbum([]);
+          lsSet(albumKey, []);
+          setAlbumHydrated(true);
+        }
         return;
       }
 
@@ -155,6 +165,10 @@ export default function MyPage() {
       try {
         const bloomedResult = await fetchBloomedFlowers(user.id);
         const bloomedFlowers = bloomedResult.error ? [] : bloomedResult.data;
+        const localAlbum = lsGet<AlbumItem[]>(albumKey, []);
+        const localMessageById = new Map(
+          localAlbum.map((item) => [item.id, typeof item.message === 'string' ? item.message : ''])
+        );
 
         // user_settings에서 seed_name 가져오기
         const { data: userSettings } = await supabase
@@ -171,7 +185,7 @@ export default function MyPage() {
             ? new Date(flower.bloomed_at).toISOString().split('T')[0]
             : new Date(flower.created_at).toISOString().split('T')[0];
 
-          const { emoji, flowerName, bloomCaption } = getFlowerMetaByType(
+          const { emoji, flowerImageSrc, flowerName, bloomCaption } = getFlowerMetaByType(
             (flower as any).flower_type ?? null
           );
 
@@ -182,20 +196,24 @@ export default function MyPage() {
             water: Math.floor(flower.growth_percent / 10), // 포인트를 공감 수로 변환 (대략)
             emoji,
             flowerType: (flower as any).flower_type ?? null,
+            flowerImageSrc,
             flowerName,
             bloomCaption,
-            message: '',
+            // 사용자가 마지막으로 저장한 한 줄 메시지를 id 기준으로 유지
+            message: localMessageById.get(flower.id) ?? '',
           };
         });
 
         setAlbum(albumItems);
         // 로컬 스토리지에도 저장 (오프라인 대비)
         lsSet(albumKey, albumItems);
+        setAlbumHydrated(true);
       } catch (error) {
         console.error('앨범 로드 실패:', error);
         // 실패 시 로컬 스토리지에서 불러오기
         const localAlbum = lsGet<AlbumItem[]>(albumKey, []);
         setAlbum(localAlbum);
+        setAlbumHydrated(true);
       } finally {
         setAlbumLoading(false);
       }
@@ -226,8 +244,9 @@ export default function MyPage() {
     saveLockSettings(lock);
   }, [lock]);
   useEffect(() => {
+    if (!albumHydrated) return;
     lsSet(albumKey, album);
-  }, [album]);
+  }, [album, albumHydrated]);
 
   // Profile edits
   const fileAvatarRef = useRef<HTMLInputElement | null>(null);
@@ -517,6 +536,7 @@ export default function MyPage() {
         date: curFlower.date,
         water: curFlower.water,
         emoji: curFlower.emoji,
+        flowerImageSrc: curFlower.flowerImageSrc,
         message: flowerMessage || curFlower.message,
       });
     }
@@ -534,9 +554,14 @@ export default function MyPage() {
       notify.warning('한 줄 메시지는 15자 이내로 입력해 주세요.', '⚠️');
       return;
     }
-    setAlbum((prev) =>
-      prev.map((item) => (item.id === curFlower.id ? { ...item, message: flowerMessage } : item))
-    );
+    setAlbum((prev) => {
+      const next = prev.map((item) =>
+        item.id === curFlower.id ? { ...item, message: flowerMessage } : item
+      );
+      // 리로드 직전에도 마지막 저장 메시지가 유지되도록 즉시 로컬 반영
+      lsSet(albumKey, next);
+      return next;
+    });
     setCurFlower((prev) => (prev ? { ...prev, message: flowerMessage } : prev));
     notify.success('한 줄 메시지를 저장했어요.', '✅');
   }
@@ -1113,7 +1138,13 @@ export default function MyPage() {
             <div className="album" id="albumList">
               {album.map((it) => (
                 <div key={it.id} className="item" onClick={() => openFlower(it)}>
-                  <div className="flower">{it.emoji}</div>
+                  <div className="flower">
+                    <img
+                      src={it.flowerImageSrc}
+                      alt={it.flowerName}
+                      style={{ width: 44, height: 44, objectFit: 'contain' }}
+                    />
+                  </div>
                   <div className="meta">
                     <span>{it.title}</span>
                     <span style={{ color: 'var(--ms-ink-muted)' }}>{it.flowerName}</span>
@@ -1189,18 +1220,16 @@ export default function MyPage() {
               </div>
             </div>
           </div>
-          <div className="grid2 flower-actions" style={{ marginTop: 10 }}>
-            <button className="btn" onClick={saveFlowerMessage}>
+          <div className="flower-actions" style={{ marginTop: 10 }}>
+            <button className="btn flower-action-equal-btn" onClick={saveFlowerMessage}>
               메시지 저장
             </button>
-            <div className="grid2">
-              <button className="btn" onClick={downloadFlower}>
-                PNG 저장
-              </button>
-              <button className="btn" onClick={shareFlower}>
-                공유하기
-              </button>
-            </div>
+            <button className="btn flower-action-equal-btn" onClick={shareFlower}>
+              공유하기
+            </button>
+            <button className="btn flower-album-save-btn" onClick={downloadFlower}>
+              앨범저장
+            </button>
           </div>
         </Modal>
       )}
