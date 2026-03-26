@@ -168,7 +168,11 @@ export default function Home() {
 
       const first = dailyRecords[0];
       // DB 스키마: main_emotion 사용
-      const emotionOpt = EMOTION_OPTIONS.find((opt) => opt.label === first.main_emotion);
+      const emotionValue = (first.main_emotion || '').trim();
+      const emotionUpper = emotionValue.toUpperCase();
+      const emotionOpt = EMOTION_OPTIONS.find(
+        (opt) => opt.code === emotionUpper || opt.label === emotionValue
+      );
       return {
         date: iso,
         emoji: emotionOpt?.emoji || '',

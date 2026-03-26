@@ -1,6 +1,6 @@
-﻿# Supabase Auth URL 설정 가이드
+# Supabase Auth URL 설정 가이드
 
-> 최종 업데이트: 2026-03-24
+> 최종 업데이트: 2026-03-26
 
 
 모바일에서 Google 로그인 후 `ERR_CONNECTION_REFUSED`(localhost 리다이렉트)가 발생하지 않도록 Supabase 대시보드 설정을 확인하세요.

@@ -1,6 +1,6 @@
-﻿# Vercel Build 실패 수정 가이드
+# Vercel Build 실패 수정 가이드
 
-> 최종 업데이트: 2026-03-24
+> 최종 업데이트: 2026-03-26
 
 
 **증상**: `node_modules/.bin/vite Permission denied (exit 126)`  

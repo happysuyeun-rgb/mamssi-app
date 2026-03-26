@@ -1,6 +1,6 @@
-﻿# TypeScript 타입 수정 요약
+# TypeScript 타입 수정 요약
 
-> 최종 업데이트: 2026-03-24
+> 최종 업데이트: 2026-03-26
 
 
 ## 1. npm run typecheck 에러 요약 (수정 전)
