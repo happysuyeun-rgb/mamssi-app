@@ -162,6 +162,26 @@ export default function AuthCallback() {
               deletedAt: existingUser.deleted_at,
             });
 
+            // 복구 가능 기간(30일) 체크
+            // - deleted_at이 null이면(레거시/스키마 이슈) 보수적으로 복구 허용
+            // - 30일 초과면 재활성화 하지 않고 로그인으로 이동
+            const deletedAt = existingUser.deleted_at ? new Date(existingUser.deleted_at) : null;
+            const ms30Days = 30 * 24 * 60 * 60 * 1000;
+            const isRecoveryExpired = deletedAt ? Date.now() - deletedAt.getTime() > ms30Days : false;
+            if (isRecoveryExpired) {
+              diag.warn('AuthCallback: 탈퇴 복구 기간 만료 - 재활성화 스킵', {
+                userId,
+                deletedAt: existingUser.deleted_at,
+              });
+              try {
+                await supabase.auth.signOut();
+              } catch (e) {
+                console.warn('[AuthCallback] signOut 실패(무시):', e);
+              }
+              goTo('/login');
+              return;
+            }
+
             safeStorage.setItem(AUTH_FLOW_KEY, 'SIGNUP');
 
             // 계정 재활성화: is_deleted=false, deleted_at=null, onboarding_completed=false
