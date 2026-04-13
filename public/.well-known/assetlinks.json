@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.vercel.mamssi_app.twa",
+      "sha256_cert_fingerprints": [
+        "47:F3:CF:D0:AF:63:4F:05:32:B7:C4:10:DA:2F:5F:BC:18:A3:B3:42:FF:4E:8D:F7:38:A6:03:0D:33:66:C9:32"
+      ]
+    }
+  }
+]
