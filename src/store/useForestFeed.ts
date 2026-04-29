@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@hooks/useAuth';
 import { useEmotions, type EmotionRecord } from '@hooks/useEmotions';
 import { FOREST_CATEGORIES } from '@constants/forest';
-import { EMOTION_OPTIONS } from '@constants/emotions';
+import { resolveEmotionOption } from '@constants/emotions';
 import { RECORD_CATEGORY_TO_FOREST } from '@constants/forest';
 import type {
   ForestCategory,
@@ -15,7 +15,7 @@ const DEFAULT_CATEGORY: ForestCategory = 'BEST';
 
 // EmotionRecord를 ForestPost로 변환
 function emotionToForestPost(emotion: EmotionRecord, userId?: string): ForestPost {
-  const emotionOpt = EMOTION_OPTIONS.find((opt) => opt.label === emotion.main_emotion);
+  const emotionOpt = resolveEmotionOption(emotion.main_emotion);
   const forestCategory = emotion.category
     ? (RECORD_CATEGORY_TO_FOREST[emotion.category] as ForestCategory) || '일상'
     : '일상';

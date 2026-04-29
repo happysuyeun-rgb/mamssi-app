@@ -10,19 +10,19 @@ import {
   reportPost,
   type ReportReason,
 } from '@services/community';
-import { EMOTION_OPTIONS } from '@constants/emotions';
+import { resolveEmotionOption } from '@constants/emotions';
 import type { ForestPost } from '@domain/forest';
 import type { CommunityPost } from '@services/community';
 
 function communityPostToForestPost(post: CommunityPost): ForestPost {
-  const emotionLabel = post.emotion_type ?? post.emotions?.main_emotion ?? null;
-  const emotionOpt = EMOTION_OPTIONS.find((opt) => opt.label === emotionLabel);
+  const emotionRaw = post.emotion_type ?? post.emotions?.main_emotion ?? null;
+  const emotionOpt = resolveEmotionOption(emotionRaw);
   return {
     id: post.id,
     userId: post.user_id,
     emotionCode: emotionOpt?.code || 'CALM',
     emoji: emotionOpt?.emoji || '🙂',
-    label: emotionOpt?.label || emotionLabel || '차분',
+    label: emotionOpt?.label || emotionRaw || '차분',
     content: post.content,
     imageUrl: post.image_url || undefined,
     category: post.category || '일상',
@@ -36,6 +36,7 @@ function communityPostToForestPost(post: CommunityPost): ForestPost {
     mbti: post.profiles?.mbti || undefined,
     recordId: post.emotion_id || undefined,
     emotionEmoji: emotionOpt?.emoji || '🙂',
+    emotionLabel: emotionOpt?.label || emotionRaw || '차분',
   };
 }
 

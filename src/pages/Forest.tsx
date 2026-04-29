@@ -14,7 +14,7 @@ import {
 } from '@hooks/useCommunity';
 import { SUPPORT_EMAIL } from '@constants/app';
 import { FOREST_CATEGORIES } from '@constants/forest';
-import { EMOTION_OPTIONS } from '@constants/emotions';
+import { resolveEmotionOption } from '@constants/emotions';
 import type { ForestCategory, ForestPost, ForestReportReason } from '@domain/forest';
 import '@styles/forest.css';
 
@@ -28,8 +28,8 @@ const REPORT_REASONS: ReportReason[] = ['부적절/혐오', '광고/스팸', '�
 // CommunityPost를 ForestPost로 변환
 function communityPostToForestPost(post: CommunityPost): ForestPost {
   // emotion_type이 비어 있으면 조인된 emotions.main_emotion 사용 (DB 트리거가 emotion_type 미채움 대비)
-  const emotionLabel = post.emotion_type ?? post.emotions?.main_emotion ?? null;
-  const emotionOpt = EMOTION_OPTIONS.find((opt) => opt.label === emotionLabel);
+  const emotionRaw = post.emotion_type ?? post.emotions?.main_emotion ?? null;
+  const emotionOpt = resolveEmotionOption(emotionRaw);
   // category는 이미 TEXT 값으로 저장되어 있음
   const forestCategory = (post.category as ForestCategory) || '일상';
 
@@ -38,7 +38,7 @@ function communityPostToForestPost(post: CommunityPost): ForestPost {
     userId: post.user_id,
     emotionCode: emotionOpt?.code || 'CALM',
     emoji: emotionOpt?.emoji || '🙂',
-    label: emotionOpt?.label || emotionLabel || '차분',
+    label: emotionOpt?.label || emotionRaw || '차분',
     content: post.content,
     imageUrl: post.image_url || undefined,
     category: forestCategory,
